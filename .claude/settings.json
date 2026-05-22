@@ -4,7 +4,7 @@
       "command": "node",
       "args": ["/Users/sarah/flowbite-mcp-pro-1.0.0/build/index.js"],
       "env": {
-        "FIGMA_ACCESS_TOKEN": "figd_A5zpfcHi0LV_AU6VvsCIOZ0GH1HiGt3rHXNWmZrz"
+        "FIGMA_ACCESS_TOKEN": "process.env.FIGMA_ACCESS_TOKEN"
       }
     }
   }
