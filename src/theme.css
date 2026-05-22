@@ -1,0 +1,138 @@
+/* auditV2 Custom Theme - Purple Brand using Tailwind Variables */
+@theme {
+  /* Google Fonts imported in index.css before this file */
+ --font-sans: 'Roboto', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI',
+    'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  
+  --font-body: 'Open Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI',
+    'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  
+  --font-mono: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas',
+    'Liberation Mono', 'Courier New', 'monospace';
+
+    /* Neutral gray — Tailwind `gray-*` (semantic body/heading + borders + neutral-tertiary) */
+    --color-gray-25: #fcfcfd;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+    --color-gray-950: #030712;
+
+    /* App “white”: off-white surfaces + Tailwind `white` utility (no #fff) */
+    --color-white: #fcfcfd;
+    /* Tailwind `black` — same as gray-950 (no pure #000) */
+    --color-black: #030712;
+
+    /*
+     * Flowbite `primary-*` (bg-primary-700, focus:ring-primary-300, etc.)
+     * Matches :root --accent in index.css (#540CAC = primary-700).
+     */
+    --color-primary-25: #faf7fc;
+    --color-primary-50: #f4eff8;
+    --color-primary-100: #e7d9f2;
+    --color-primary-200: #d4b8ea;
+    --color-primary-300: #be93e1;
+    --color-primary-400: #a56cd6;
+    --color-primary-500: #8a45ca;
+    --color-primary-600: #6f24bc;
+    --color-primary-700: #540cac;
+    --color-primary-800: #43088a;
+    --color-primary-900: #310564;
+    --color-primary-950: #160232;
+
+    /*
+     * Secondary scale — slate / cool neutral (Tailwind `secondary-*`).
+     * Flowbite datatables, wysiwyg, etc. use `neutral-secondary*` vars below.
+     */
+    --color-secondary-25: #f7f8fc;
+    --color-secondary-50: #eef1f7;
+    --color-secondary-100: #d9dfeb;
+    --color-secondary-200: #bbc7db;
+    --color-secondary-300: #97a8c8;
+    --color-secondary-400: #7388b3;
+    --color-secondary-500: #586e9e;
+    --color-secondary-600: #445684;
+    --color-secondary-700: #34426a;
+    --color-secondary-800: #25304f;
+    --color-secondary-900: #171f36;
+    --color-secondary-950: #0c111f;
+
+    /*
+     * Status ramps — `emerald-*` success, `red-*` danger, `orange-*` warning,
+     * `cyan-*` info (Flowbite `color="info"`). `rose-*` aliases `red-*`.
+     */
+    --color-emerald-25: #f4fbf7;
+    --color-emerald-50: #e8f7ee;
+    --color-emerald-100: #c7eed5;
+    --color-emerald-200: #9fdfb5;
+    --color-emerald-300: #70cc92;
+    --color-emerald-400: #49b876;
+    --color-emerald-500: #2e9d5b;
+    --color-emerald-600: #237f49;
+    --color-emerald-700: #1b643a;
+    --color-emerald-800: #13492b;
+    --color-emerald-900: #0c2f1c;
+    --color-emerald-950: #04170d;
+
+    --color-red-25: #fff6f7;
+    --color-red-50: #ffe9eb;
+    --color-red-100: #ffc9cf;
+    --color-red-200: #ffa0ab;
+    --color-red-300: #ff7284;
+    --color-red-400: #f0445e;
+    --color-red-500: #d92d4c;
+    --color-red-600: #b4233d;
+    --color-red-700: #8f1c31;
+    --color-red-800: #691424;
+    --color-red-900: #450d18;
+    --color-red-950: #24060c;
+
+    --color-rose-25: var(--color-red-25);
+    --color-rose-50: var(--color-red-50);
+    --color-rose-100: var(--color-red-100);
+    --color-rose-200: var(--color-red-200);
+    --color-rose-300: var(--color-red-300);
+    --color-rose-400: var(--color-red-400);
+    --color-rose-500: var(--color-red-500);
+    --color-rose-600: var(--color-red-600);
+    --color-rose-700: var(--color-red-700);
+    --color-rose-800: var(--color-red-800);
+    --color-rose-900: var(--color-red-900);
+    --color-rose-950: var(--color-red-950);
+
+    --color-orange-25: #fff9f2;
+    --color-orange-50: #fff2e2;
+    --color-orange-100: #ffe0b8;
+    --color-orange-200: #ffca85;
+    --color-orange-300: #ffb04d;
+    --color-orange-400: #f9961e;
+    --color-orange-500: #db7b09;
+    --color-orange-600: #b86406;
+    --color-orange-700: #944e05;
+    --color-orange-800: #6e3903;
+    --color-orange-900: #472401;
+    --color-orange-950: #241200;
+
+    --color-cyan-25: #f4fafd;
+    --color-cyan-50: #e8f5fb;
+    --color-cyan-100: #c5e6f7;
+    --color-cyan-200: #9dd5f1;
+    --color-cyan-300: #6ec0e8;
+    --color-cyan-400: #43aadf;
+    --color-cyan-500: #1f93d3;
+    --color-cyan-600: #1477b0;
+    --color-cyan-700: #105d8a;
+    --color-cyan-800: #0c4566;
+    --color-cyan-900: #072d42;
+    --color-cyan-950: #031622;
+
+
+}
