@@ -10,7 +10,7 @@ import {
   AlertTriangle, BarChart3, CheckCircle2,
   ArrowLeft, ChevronRight, Home,
   Clock, FileSearch,
-  RefreshCw, Search,
+  RefreshCw, Search, ClipboardList,
 } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { useAuth } from '../context/AuthContext'
