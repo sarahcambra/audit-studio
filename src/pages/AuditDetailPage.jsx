@@ -1,25 +1,29 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Badge, Button, Dropdown, DropdownDivider, DropdownItem,
-  Pagination, Select, Spinner,
+  Badge, Breadcrumb, BreadcrumbItem, Button, Dropdown, DropdownDivider, DropdownItem,
+  Pagination, Select, Spinner, Tabs, Textarea,
   Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow,
   TextInput, theme,
 } from 'flowbite-react'
 import {
-  ArrowLeft, AlertTriangle, BarChart3, Calendar, CheckCircle2,
-  ClipboardList, Clock, ExternalLink, FileSearch, Globe,
-  ListChecks, RefreshCw, Search, Shield, User,
+  AlertTriangle, BarChart3, CheckCircle2,
+  ArrowLeft, ChevronRight, Home,
+  Clock, FileSearch,
+  RefreshCw, Search,
 } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { useAuth } from '../context/AuthContext'
 import { getAudit } from '../lib/db/audits'
-import { getTriageItems } from '../lib/db/triage'
-import { getManualChecks } from '../lib/db/manualChecks'
+import { getManualChecks, saveManualCheckVerdict } from '../lib/db/manualChecks'
 import { getScanJobs } from '../lib/db/scans'
 import ScanPanel from '../components/scan/ScanPanel'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { customTheme } from '../theme'
+import { PRINCIPLES, getPrinciple } from '../lib/wcagScData'
+import IssueDetailDrawer from '../components/triage/IssueDetailDrawer'
+import TriageTab from '../components/triage/TriageTab'
+import OverviewTab, { WcagBadge, StatusBadge, DecisionBadge } from '../components/audit/OverviewTab'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,66 +57,27 @@ const DotsIcon = () => (
   </svg>
 )
 
-// ─── Badge components — all use customTheme.badge Bordered variants ───────────
-
-function WcagBadge({ version, level }) {
-  return (
-    <Badge theme={customTheme.badge} color="brandBordered" size="xs">
-      WCAG {version} {level}
-    </Badge>
-  )
-}
-
-function StatusBadge({ status }) {
-  const colorMap = {
-    active:   'brandBordered',
-    complete: 'successBordered',
-    archived: 'grayBordered',
-    draft:    'warningBordered',
-  }
-  const labels = { active: 'Active', complete: 'Complete', archived: 'Archived', draft: 'Draft' }
-  return (
-    <Badge theme={customTheme.badge} color={colorMap[status] ?? 'grayBordered'} size="xs">
-      {labels[status] ?? status}
-    </Badge>
-  )
-}
+// ─── Badge components ───────────────────────────────────────────────────────────
 
 function ImpactBadge({ impact }) {
-  const colorMap = { critical: 'dangerBordered', serious: 'warningBordered', moderate: 'brandBordered', minor: 'grayBordered' }
+  const colorMap = { critical: 'danger', serious: 'warning', moderate: 'primary', minor: 'alternative' }
   return (
-    <Badge theme={customTheme.badge} color={colorMap[impact?.toLowerCase()] ?? 'grayBordered'} size="xs" className="capitalize">
+    <Badge theme={customTheme.badge} color={colorMap[impact?.toLowerCase()] ?? 'gray'} size="xs" className="capitalize">
       {impact || '—'}
-    </Badge>
-  )
-}
-
-function DecisionBadge({ decision }) {
-  const colorMap = {
-    confirmed:      'dangerBordered',
-    dismissed:      'grayBordered',
-    'needs review': 'warningBordered',
-  }
-  const labels = {
-    confirmed: 'Confirmed', dismissed: 'Dismissed', 'needs review': 'Needs review',
-  }
-  return (
-    <Badge theme={customTheme.badge} color={colorMap[decision] ?? 'alternativeBordered'} size="xs">
-      {labels[decision] ?? 'Untriaged'}
     </Badge>
   )
 }
 
 function CheckStatusBadge({ status }) {
   const colorMap = {
-    pass:      'successBordered',
-    fail:      'dangerBordered',
-    partial:   'warningBordered',
-    untriaged: 'grayBordered',
+    pass:      'success',
+    fail:      'danger',
+    partial:   'warning',
+    untriaged: 'gray',
   }
   const labels = { pass: 'Pass', fail: 'Fail', partial: 'Partial', untriaged: 'Untriaged' }
   return (
-    <Badge theme={customTheme.badge} color={colorMap[status] ?? 'grayBordered'} size="xs">
+    <Badge theme={customTheme.badge} color={colorMap[status] ?? 'gray'} size="xs">
       {labels[status] ?? (status || 'Untriaged')}
     </Badge>
   )
@@ -123,477 +88,446 @@ function CheckStatusBadge({ status }) {
 function EmptyState({ icon: Icon, title, body }) {
   return (
     <div className="flex flex-col items-center py-16 text-center">
-      <div className="mb-4 rounded-base bg-brand-softer p-3">
-        <Icon className="h-7 w-7 text-fg-brand" aria-hidden="true" />
+      <div className="mb-4 rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+        <Icon className="h-7 w-7 text-purple-700 dark:text-purple-300" aria-hidden="true" />
       </div>
-      <p className="text-sm font-semibold text-heading">{title}</p>
-      <p className="mt-1 max-w-xs text-xs text-body-subtle">{body}</p>
+      <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
+      <p className="mt-1 max-w-xs text-xs text-gray-500 dark:text-gray-400">{body}</p>
     </div>
   )
 }
 
-// ─── Overview Tab ─────────────────────────────────────────────────────────────
+// ─── Manual Checks — verdict badge ───────────────────────────────────────────
 
-function OverviewTab({ audit, scanJobs }) {
-  const scope       = audit.scope_json?.items ?? []
-  const lastScanned = audit.last_scanned_at ?? scanJobs[0]?.completed_at
-
-  const stats = [
-    { label: 'Critical Issues', value: audit.critical_count  ?? 0, icon: AlertTriangle, iconClass: 'text-fg-danger',  bgClass: 'bg-danger-soft'  },
-    { label: 'Untriaged Items', value: audit.untriaged_count ?? 0, icon: Clock,         iconClass: 'text-fg-warning', bgClass: 'bg-warning-soft' },
-    { label: 'Scans Run',       value: audit.scan_count ?? scanJobs.length, icon: FileSearch, iconClass: 'text-fg-brand',   bgClass: 'bg-brand-softer' },
-    { label: 'Scope Items',     value: scope.length,                        icon: ListChecks, iconClass: 'text-fg-success', bgClass: 'bg-success-soft' },
-  ]
-
-  const detailRows = [
-    { icon: Globe,    label: 'Website',   value: audit.website_url
-        ? <a href={audit.website_url} target="_blank" rel="noopener noreferrer"
-             className="inline-flex items-center gap-1 text-fg-brand hover:underline">
-            <span className="max-w-[180px] truncate">{audit.website_url}</span>
-            <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
-          </a>
-        : '—' },
-    { icon: Shield,   label: 'Standard',  value: <WcagBadge version={audit.wcag_version} level={audit.conformance_level} /> },
-    { icon: User,     label: 'Auditor',   value: audit.auditor_name || '—' },
-    { icon: Calendar, label: 'Started',   value: fmtDate(audit.started_at) },
-    { icon: Clock,    label: 'Last scan', value: fmtDate(lastScanned) },
-  ]
-
-  return (
-    <div className="space-y-4">
-
-      {/* Stat cards — same pattern as AuditsPage */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon, iconClass, bgClass }) => (
-          <div key={label} className="rounded bg-neutral-primary p-5 shadow-sm border border-default">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-body-subtle">{label}</p>
-                <p className="mt-1.5 text-2xl font-semibold text-heading">{value}</p>
-              </div>
-              <div className={`rounded p-2.5 ${bgClass}`}>
-                <Icon className={`h-5 w-5 ${iconClass}`} aria-hidden="true" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Details + Scope — two-column */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-
-        {/* Audit detail card */}
-        <div className="relative overflow-hidden bg-neutral-primary shadow-sm border border-default sm:rounded-lg lg:col-span-1">
-          <div className="flex flex-col px-4 pb-3 pt-4 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-base font-semibold text-heading dark:text-white">Audit Details</h2>
-          </div>
-          <div className="border-t border-default px-4 py-4">
-            <dl className="space-y-4">
-              {detailRows.map(({ icon: Icon, label, value }) => (
-                <div key={label}>
-                  <dt className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-body-subtle">
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                    {label}
-                  </dt>
-                  <dd className="text-sm text-body">{value}</dd>
-                </div>
-              ))}
-              {audit.notes && (
-                <div>
-                  <dt className="mb-1 text-xs font-semibold text-body-subtle">Notes</dt>
-                  <dd className="text-sm text-body">{audit.notes}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        </div>
-
-        {/* Scope table — same white-card pattern */}
-        <div className="relative overflow-hidden bg-neutral-primary shadow-sm border border-default sm:rounded-lg lg:col-span-2">
-          <div className="flex flex-col px-4 pb-3 pt-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-heading dark:text-white">Scope</h2>
-              {scope.length > 0 && (
-                <p className="mt-0.5 text-xs text-body-subtle">{scope.length} items</p>
-              )}
-            </div>
-          </div>
-          {scope.length === 0 ? (
-            <div className="border-t border-default py-12 text-center">
-              <p className="text-sm text-body-subtle">No scope items defined.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table theme={{ root: { wrapper: 'static' } }} className="w-full text-left text-sm text-body dark:text-gray-400">
-                <TableHead className="bg-neutral-tertiary text-xs uppercase text-body-subtle dark:bg-gray-700 dark:text-gray-400">
-                  <TableHeadCell scope="col" className="px-4 py-3">Name</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Type</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">URL / Identifier</TableHeadCell>
-                </TableHead>
-                <TableBody>
-                  {scope.map((item, i) => (
-                    <TableRow key={i} className="border-b border-default hover:bg-neutral-tertiary/50 dark:border-gray-600 dark:hover:bg-gray-700">
-                      <th scope="row" className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white">
-                        {item.name || '—'}
-                      </th>
-                      <TableCell className="whitespace-nowrap px-4 py-3">
-                        <Badge theme={customTheme.badge} color="grayBordered" size="xs">{item.type}</Badge>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate px-4 py-3 text-xs text-body-subtle">
-                        {item.url || item.componentIdentifier || '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+const VERDICT_STYLES = {
+  pass:      { label: 'Pass',        cls: 'bg-success-50 text-success-700 border border-success-200 dark:bg-success-900/20 dark:text-success-300' },
+  fail:      { label: 'Fail',        cls: 'bg-danger-50 text-danger-700 border border-danger-200 dark:bg-danger-900/20 dark:text-danger-300' },
+  na:        { label: 'N/A',         cls: 'bg-gray-100 text-gray-600  dark:bg-gray-700 dark:text-gray-300' },
+  deferred:  { label: 'Deferred',    cls: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300' },
+  untriaged: { label: 'Pending',     cls: 'bg-gray-50 text-gray-500  dark:bg-gray-800 dark:text-gray-400' },
 }
 
-// ─── Triage Tab ───────────────────────────────────────────────────────────────
+const AUTO_STATUS_STYLES = {
+  fail:           { label: 'Axe: Fail',           cls: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300' },
+  'needs-check':  { label: 'Axe: Review',         cls: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300' },
+  na:             { label: 'Axe: N/A',            cls: 'bg-gray-100 text-gray-500  dark:bg-gray-700 dark:text-gray-400' },
+  pass:           { label: 'Axe: Pass',           cls: 'bg-success-50 text-success-600 border border-success-200 dark:bg-success-900/20 dark:text-success-400' },
+  'always-manual':{ label: 'Manual only',         cls: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300' },
+}
 
-function TriageTab({ auditId }) {
-  const [items, setItems]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState(null)
-  const [search, setSearch]       = useState('')
-  const [decisionFilter, setDecisionFilter] = useState('All')
-  const [impactFilter, setImpactFilter]     = useState('All')
-  const [currentPage, setCurrentPage]       = useState(1)
-
-  useEffect(() => {
-    let cancelled = false
-    getTriageItems(auditId).then(({ data, error: err }) => {
-      if (cancelled) return
-      if (err) setError(err.message)
-      else setItems(data ?? [])
-      setLoading(false)
-    })
-    return () => { cancelled = true }
-  }, [auditId])
-
-  const filtered = items.filter(item => {
-    const q = search.toLowerCase()
-    if (q && !item.rule_id?.toLowerCase().includes(q) && !item.description?.toLowerCase().includes(q)) return false
-    if (decisionFilter !== 'All' && (item.decision ?? 'untriaged') !== decisionFilter) return false
-    if (impactFilter   !== 'All' && item.impact?.toLowerCase() !== impactFilter)       return false
-    return true
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
-  const paged      = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
-
-  if (loading) return <div className="flex justify-center py-16"><Spinner size="md" color="purple" /></div>
-  if (error)   return (
-    <div className="relative overflow-hidden bg-neutral-primary shadow-md sm:rounded-lg">
-      <div className="px-4 py-3 text-sm text-fg-danger">{error}</div>
-    </div>
-  )
-
-  return (
-    <div className="relative overflow-hidden bg-neutral-primary shadow-md dark:bg-gray-800 sm:rounded-lg">
-
-      {/* Header */}
-      <div className="flex flex-col px-4 pb-3 pt-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h5 className="text-base font-semibold text-heading dark:text-white">Triage Items</h5>
-          <p className="mt-0.5 text-xs text-body-subtle">{filtered.length} items</p>
-        </div>
-      </div>
-
-      {/* Filter grid — same pattern as AuditsPage */}
-      <div className="grid w-full grid-cols-2 gap-4 px-4 pb-4 md:grid-cols-3 lg:grid-cols-5">
-        <TextInput
-          id="triage-search"
-          aria-label="Search triage items"
-          placeholder="Search rule, description…"
-          value={search}
-          onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
-          icon={Search}
-          sizing="sm"
-        />
-        <Select
-          id="triage-decision"
-          aria-label="Filter by decision"
-          value={decisionFilter}
-          onChange={e => { setDecisionFilter(e.target.value); setCurrentPage(1) }}
-          sizing="sm"
-        >
-          <option value="All">All decisions</option>
-          <option value="untriaged">Untriaged</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="dismissed">Dismissed</option>
-          <option value="needs review">Needs review</option>
-        </Select>
-        <Select
-          id="triage-impact"
-          aria-label="Filter by impact"
-          value={impactFilter}
-          onChange={e => { setImpactFilter(e.target.value); setCurrentPage(1) }}
-          sizing="sm"
-        >
-          <option value="All">All impacts</option>
-          <option value="critical">Critical</option>
-          <option value="serious">Serious</option>
-          <option value="moderate">Moderate</option>
-          <option value="minor">Minor</option>
-        </Select>
-        <div className="hidden lg:block" />
-        <div className="hidden lg:block" />
-      </div>
-
-      {/* Table */}
-      {paged.length === 0 ? (
-        <div className="border-t border-default">
-          <EmptyState
-            icon={CheckCircle2}
-            title="No items found"
-            body="Run a scan to generate triage items, or adjust your filters."
-          />
-        </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <Table theme={{ root: { wrapper: 'static' } }} className="w-full text-left text-sm text-body dark:text-gray-400">
-              <TableHead className="bg-neutral-tertiary text-xs uppercase text-body-subtle dark:bg-gray-700 dark:text-gray-400">
-                <TableHeadCell scope="col" className="px-4 py-3">Rule / Description</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">Impact</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">Type</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">Decision</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">
-                  <span className="sr-only">Actions</span>
-                </TableHeadCell>
-              </TableHead>
-              <TableBody>
-                {paged.map(item => (
-                  <TableRow key={item.id} className="border-b border-default hover:bg-neutral-tertiary/50 dark:border-gray-600 dark:hover:bg-gray-700">
-                    <th scope="row" className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white">
-                      <p className="font-medium text-heading">{item.rule_id}</p>
-                      {item.description && (
-                        <p className="mt-0.5 max-w-xs truncate text-xs font-normal text-body-subtle">{item.description}</p>
-                      )}
-                    </th>
-                    <TableCell className="whitespace-nowrap px-4 py-3">
-                      <ImpactBadge impact={item.impact} />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-body">
-                      {item.issue_type || '—'}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3">
-                      <DecisionBadge decision={item.decision} />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white">
-                      <Dropdown
-                        dismissOnClick={false}
-                        inline
-                        label={
-                          <>
-                            <span className="sr-only">Manage entry</span>
-                            <DotsIcon />
-                          </>
-                        }
-                        theme={dropdownFloatingTheme}
-                      >
-                        <DropdownItem>View details</DropdownItem>
-                        <DropdownItem>Confirm</DropdownItem>
-                        <DropdownItem>Dismiss</DropdownItem>
-                        <DropdownDivider />
-                        <DropdownItem>Needs review</DropdownItem>
-                      </Dropdown>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Footer — same as AuditsPage */}
-          <div className="flex items-center justify-between border-t border-default p-4 dark:border-gray-700">
-            <span className="text-xs text-body-subtle dark:text-gray-400">
-              Total items: {filtered.length}
-            </span>
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                showIcons
-              />
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  )
+const SOURCE_LABELS = {
+  'axe-violations': 'Violations',
+  'axe-incomplete': 'Incomplete',
+  'axe-na':         'N/A from axe',
+  'always-manual':  'Always manual',
+  'sc':             'Scope',
+  'mixed':          'Mixed',
 }
 
 // ─── Manual Checks Tab ────────────────────────────────────────────────────────
 
 function ManualChecksTab({ auditId }) {
-  const [checks, setChecks]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
-  const [search, setSearch]   = useState('')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [currentPage, setCurrentPage]   = useState(1)
+  const [checks, setChecks]           = useState([])
+  const [triageItems, setTriageItems] = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [search, setSearch]           = useState('')
+  const [verdictFilter, setVerdictFilter] = useState('all')
+  const [sourceFilter, setSourceFilter]   = useState('all')
+  const [expandedSC, setExpandedSC]   = useState(null)
+  const [savingId, setSavingId]       = useState(null)
+  // Local edits: { [checkId]: { verdict, notes } }
+  const [localEdits, setLocalEdits]   = useState({})
 
   useEffect(() => {
     let cancelled = false
-    getManualChecks(auditId).then(({ data, error: err }) => {
+    Promise.all([
+      getManualChecks(auditId),
+      getTriageItems(auditId),
+    ]).then(([checksResult, triageResult]) => {
       if (cancelled) return
-      if (err) setError(err.message)
-      else setChecks(data ?? [])
+      if (checksResult.error) setError(checksResult.error.message)
+      else {
+        setChecks(checksResult.data ?? [])
+        setTriageItems(triageResult.data ?? [])
+      }
       setLoading(false)
     })
     return () => { cancelled = true }
   }, [auditId])
 
+  // ── Filtering ───────────────────────────────────────────────────────────────
   const filtered = checks.filter(c => {
     const q = search.toLowerCase()
-    if (q && !c.sc_id?.toLowerCase().includes(q) && !c.title?.toLowerCase().includes(q)) return false
-    if (statusFilter !== 'All' && (c.status ?? 'untriaged') !== statusFilter) return false
+    if (q && !c.sc_id?.toLowerCase().includes(q) && !c.sc_name?.toLowerCase().includes(q)) return false
+    if (verdictFilter !== 'all') {
+      const v = c.verdict ?? 'untriaged'
+      if (v !== verdictFilter) return false
+    }
+    if (sourceFilter !== 'all' && c.source !== sourceFilter) return false
     return true
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
-  const paged      = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+  // ── Summary counts ──────────────────────────────────────────────────────────
+  const counts = checks.reduce((acc, c) => {
+    const v = c.verdict ?? 'untriaged'
+    acc[v] = (acc[v] ?? 0) + 1
+    return acc
+  }, {})
 
+  // ── Group by principle ──────────────────────────────────────────────────────
+  const byPrinciple = useMemo(() => {
+    const groups = {}
+    for (const check of filtered) {
+      const p = getPrinciple(check.sc_id)
+      if (!groups[p]) groups[p] = []
+      groups[p].push(check)
+    }
+    return groups
+  }, [filtered])
+
+  // ── Evidence for a given SC from triage_items ───────────────────────────────
+  const evidenceForSC = (scId) =>
+    triageItems.filter(ti => (ti.sc_ids || []).includes(scId))
+
+  // ── Save verdict ────────────────────────────────────────────────────────────
+  const handleSave = async (check) => {
+    const edits = localEdits[check.id] ?? {}
+    const verdict = edits.verdict ?? check.verdict ?? null
+    const notes   = edits.notes   ?? check.auditor_notes ?? null
+    setSavingId(check.id)
+    const { error: saveErr } = await saveManualCheckVerdict(check.id, { verdict, auditorNotes: notes })
+    setSavingId(null)
+    if (!saveErr) {
+      setChecks(prev => prev.map(c =>
+        c.id === check.id ? { ...c, verdict, auditor_notes: notes } : c
+      ))
+      setLocalEdits(prev => { const n = { ...prev }; delete n[check.id]; return n })
+    }
+  }
+
+  const updateLocal = (checkId, field, value) =>
+    setLocalEdits(prev => ({ ...prev, [checkId]: { ...(prev[checkId] ?? {}), [field]: value } }))
+
+  // ── Loading / error states ──────────────────────────────────────────────────
   if (loading) return <div className="flex justify-center py-16"><Spinner size="md" color="purple" /></div>
   if (error)   return (
-    <div className="relative overflow-hidden bg-neutral-primary shadow-md sm:rounded-lg">
-      <div className="px-4 py-3 text-sm text-fg-danger">{error}</div>
+    <div className="relative overflow-hidden rounded-lg  bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="px-4 py-3 text-sm text-red-600 dark:text-red-400">{error}</div>
     </div>
   )
 
   return (
-    <div className="relative overflow-hidden bg-neutral-primary shadow-md dark:bg-gray-800 sm:rounded-lg">
+    <div className="relative overflow-hidden rounded-lg bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
 
-      {/* Header */}
-      <div className="flex flex-col px-4 pb-3 pt-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h5 className="text-base font-semibold text-heading dark:text-white">Manual Checks</h5>
-          <p className="mt-0.5 text-xs text-body-subtle">{filtered.length} checks</p>
+      {/* ── Header + summary counts ─────────────────────────────────────────── */}
+      <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-900/30">
+              <CheckCircle2 className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Manual Checks</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{checks.length} criteria to verify</p>
+            </div>
+          </div>
+          {/* Summary pills */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'fail',      label: 'Fail',    cls: 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300' },
+              { key: 'pass',      label: 'Pass',    cls: 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300' },
+              { key: 'deferred',  label: 'Deferred',cls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300' },
+              { key: 'untriaged', label: 'Pending', cls: 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+            ].map(({ key, label, cls }) => (counts[key] ?? 0) > 0 && (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setVerdictFilter(verdictFilter === key ? 'all' : key)}
+                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all ${cls}
+                  ${verdictFilter === key ? 'ring-2 ring-purple-300 ring-offset-1' : ''}`}
+              >
+                {counts[key]} {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Filter grid */}
-      <div className="grid w-full grid-cols-2 gap-4 px-4 pb-4 md:grid-cols-3 lg:grid-cols-5">
+      {/* ── Filter bar ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-3 border-b border-gray-200 px-5 py-3 dark:border-gray-700 md:grid-cols-3">
         <TextInput
-          id="checks-search"
-          aria-label="Search manual checks"
-          placeholder="Search criterion, title…"
+          id="manual-search"
+          aria-label="Search success criteria"
+          placeholder="Search SC number or name…"
           value={search}
-          onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
+          onChange={e => setSearch(e.target.value)}
           icon={Search}
           sizing="sm"
         />
         <Select
-          id="checks-status"
-          aria-label="Filter by status"
-          value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1) }}
+          id="manual-verdict"
+          aria-label="Filter by verdict"
+          value={verdictFilter}
+          onChange={e => setVerdictFilter(e.target.value)}
           sizing="sm"
         >
-          <option value="All">All statuses</option>
-          <option value="untriaged">Untriaged</option>
+          <option value="all">All verdicts</option>
+          <option value="untriaged">Pending</option>
           <option value="pass">Pass</option>
           <option value="fail">Fail</option>
-          <option value="partial">Partial</option>
+          <option value="na">N/A</option>
+          <option value="deferred">Deferred</option>
         </Select>
-        <div className="hidden md:block" />
-        <div className="hidden lg:block" />
-        <div className="hidden lg:block" />
+        <Select
+          id="manual-source"
+          aria-label="Filter by source"
+          value={sourceFilter}
+          onChange={e => setSourceFilter(e.target.value)}
+          sizing="sm"
+        >
+          <option value="all">All sources</option>
+          <option value="axe-violations">Axe violations</option>
+          <option value="axe-incomplete">Axe incomplete</option>
+          <option value="axe-na">Axe N/A</option>
+          <option value="always-manual">Always manual</option>
+        </Select>
       </div>
 
-      {/* Table */}
-      {paged.length === 0 ? (
-        <div className="border-t border-default">
+      {/* ── SC table, grouped by principle ────────────────────────────────── */}
+      {filtered.length === 0 ? (
+        <div className="border-t border-gray-200 dark:border-gray-700">
           <EmptyState
             icon={ClipboardList}
-            title="No manual checks yet"
-            body="Manual checks are created automatically from your scope and WCAG criteria."
+            title="No criteria to show"
+            body={checks.length === 0
+              ? 'Manual checks are seeded automatically when a scan completes.'
+              : 'No criteria match the active filters.'}
           />
         </div>
       ) : (
-        <>
-          <div className="overflow-x-auto">
-            <Table theme={{ root: { wrapper: 'static' } }} className="w-full text-left text-sm text-body dark:text-gray-400">
-              <TableHead className="bg-neutral-tertiary text-xs uppercase text-body-subtle dark:bg-gray-700 dark:text-gray-400">
-                <TableHeadCell scope="col" className="px-4 py-3">Success Criterion</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">Level</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">Status</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">Reviewer</TableHeadCell>
-                <TableHeadCell scope="col" className="whitespace-nowrap px-4 py-3">Reviewed</TableHeadCell>
-                <TableHeadCell scope="col" className="px-4 py-3">
-                  <span className="sr-only">Actions</span>
-                </TableHeadCell>
-              </TableHead>
-              <TableBody>
-                {paged.map(check => (
-                  <TableRow key={check.id} className="border-b border-default hover:bg-neutral-tertiary/50 dark:border-gray-600 dark:hover:bg-gray-700">
-                    <th scope="row" className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white">
-                      <p className="font-medium text-heading">{check.sc_id}</p>
-                      {check.title && (
-                        <p className="mt-0.5 text-xs font-normal text-body-subtle">{check.title}</p>
-                      )}
-                    </th>
-                    <TableCell className="whitespace-nowrap px-4 py-3">
-                      <Badge theme={customTheme.badge} color="brandBordered" size="xs">{check.wcag_level || '—'}</Badge>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3">
-                      <CheckStatusBadge status={check.status} />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-body">
-                      {check.reviewer_name || '—'}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-body-subtle">
-                      {fmtDate(check.reviewed_at)}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white">
-                      <Dropdown
-                        dismissOnClick={false}
-                        inline
-                        label={
-                          <>
-                            <span className="sr-only">Manage entry</span>
-                            <DotsIcon />
-                          </>
-                        }
-                        theme={dropdownFloatingTheme}
-                      >
-                        <DropdownItem>View</DropdownItem>
-                        <DropdownItem>Edit</DropdownItem>
-                        <DropdownDivider />
-                        <DropdownItem>Mark as pass</DropdownItem>
-                        <DropdownItem>Mark as fail</DropdownItem>
-                      </Dropdown>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+        <div className="overflow-x-auto">
+          <Table
+            hoverable
+            theme={{
+              ...customTheme.table,
+              head: {
+                base: 'bg-gray-50 dark:bg-gray-700',
+                cell: { base: 'p-4 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-400' }
+              }
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableHeadCell>Success Criterion</TableHeadCell>
+                <TableHeadCell>Level</TableHeadCell>
+                <TableHeadCell>Axe Result</TableHeadCell>
+                <TableHeadCell>Source</TableHeadCell>
+                <TableHeadCell>Verdict</TableHeadCell>
+                <TableHeadCell><span className="sr-only">Expand</span></TableHeadCell>
+              </TableRow>
+            </TableHead>
+            <TableBody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {Object.keys(PRINCIPLES).sort().map(principleKey => {
+                const rows = byPrinciple[principleKey]
+                if (!rows || rows.length === 0) return null
+                return (
+                  <>
+                    {/* Principle section header */}
+                    <tr key={`p-${principleKey}`} className="bg-gray-100 dark:bg-gray-700/80">
+                      <td colSpan={6} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                        {principleKey}. {PRINCIPLES[principleKey]}
+                      </td>
+                    </tr>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-default p-4 dark:border-gray-700">
-            <span className="text-xs text-body-subtle dark:text-gray-400">
-              Total checks: {filtered.length}
-            </span>
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                showIcons
-              />
-            )}
-          </div>
-        </>
+                    {rows.map(check => {
+                      const isExpanded = expandedSC === check.id
+                      const evidence   = evidenceForSC(check.sc_id)
+                      const localEdit  = localEdits[check.id] ?? {}
+                      const currentVerdict = localEdit.verdict !== undefined ? localEdit.verdict : (check.verdict ?? null)
+                      const currentNotes   = localEdit.notes   !== undefined ? localEdit.notes   : (check.auditor_notes ?? '')
+                      const verdictStyle   = VERDICT_STYLES[currentVerdict ?? 'untriaged']
+                      const autoStyle      = AUTO_STATUS_STYLES[check.auto_status] ?? AUTO_STATUS_STYLES['always-manual']
+                      const isDirty = localEdit.verdict !== undefined || localEdit.notes !== undefined
+
+                      return (
+                        <>
+                          {/* SC row */}
+                          <TableRow
+                            key={check.id}
+                            className="bg-white dark:bg-gray-800"
+                          >
+                            {/* SC number + name */}
+                            <th scope="row" className="p-4">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white">{check.sc_id}</span>
+                              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{check.sc_name || '—'}</p>
+                            </th>
+
+                            {/* Level */}
+                            <TableCell className="p-4">
+                              <Badge theme={customTheme.badge} color="primary" size="xs">
+                                {check.wcag_level || '?'}
+                              </Badge>
+                            </TableCell>
+
+                            {/* Axe auto-status */}
+                            <TableCell className="p-4">
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${autoStyle.cls}`}>
+                                {autoStyle.label}
+                              </span>
+                            </TableCell>
+
+                            {/* Source */}
+                            <TableCell className="p-4 text-sm text-gray-500 dark:text-gray-400">
+                              {SOURCE_LABELS[check.source] ?? check.source ?? '—'}
+                            </TableCell>
+
+                            {/* Verdict */}
+                            <TableCell className="p-4">
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${verdictStyle.cls}`}>
+                                {verdictStyle.label}
+                              </span>
+                            </TableCell>
+
+                            {/* Expand toggle */}
+                            <TableCell className="p-4">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedSC(isExpanded ? null : check.id)}
+                                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                                aria-label={isExpanded ? `Collapse ${check.sc_id}` : `Expand ${check.sc_id}`}
+                                aria-expanded={isExpanded}
+                              >
+                                {isExpanded
+                                  ? <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                                  : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
+                              </button>
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Expanded row */}
+                          {isExpanded && (
+                            <tr key={`${check.id}-expanded`} className="bg-gray-100/20 dark:bg-gray-800/60">
+                              <td colSpan={6} className="px-5 py-4">
+                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+                                  {/* Left: Evidence from triage */}
+                                  <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                      Triage Evidence ({evidence.length})
+                                    </p>
+                                    {evidence.length === 0 ? (
+                                      <p className="text-xs italic text-gray-500 dark:text-gray-400">No triage items for this criterion.</p>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        {evidence.map(ti => {
+                                          const decisionColor = {
+                                            confirmed:    'text-red-700 dark:text-red-400',
+                                            'not-failure':'text-green-700 dark:text-green-400',
+                                            'manual-check':'text-amber-700 dark:text-amber-400',
+                                            deferred:     'text-gray-500 dark:text-gray-400',
+                                          }[ti.decision] ?? 'text-gray-500 dark:text-gray-400'
+
+                                          return (
+                                            <div key={ti.id} className="rounded  bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <span className="truncate text-xs font-medium text-gray-900 dark:text-white">
+                                                  {ti.rule_id}
+                                                </span>
+                                                <span className={`shrink-0 text-xs ${decisionColor}`}>
+                                                  {ti.decision
+                                                    ? { confirmed: 'Confirmed failure', 'not-failure': 'Not a failure', 'manual-check': 'Needs manual check', deferred: 'Deferred' }[ti.decision]
+                                                    : 'Untriaged'}
+                                                </span>
+                                              </div>
+                                              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                                {ti.node_count} element{ti.node_count !== 1 ? 's' : ''} · {ti.page_name || 'Unknown page'}
+                                              </p>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Right: Auditor verdict form */}
+                                  <div className="space-y-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                      Auditor Verdict
+                                    </p>
+
+                                    {/* Verdict buttons */}
+                                    <div className="flex flex-wrap gap-2" role="group" aria-label="Select verdict">
+                                      {[
+                                        { value: 'pass',     label: 'Pass',     cls: 'border-green-300 text-green-700 hover:bg-green-50 dark:text-green-400' },
+                                        { value: 'fail',     label: 'Fail',     cls: 'border-red-300 text-red-700 hover:bg-red-50 dark:text-red-400' },
+                                        { value: 'na',       label: 'N/A',      cls: 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:text-gray-400' },
+                                        { value: 'deferred', label: 'Defer',    cls: 'border-amber-300 text-amber-700 hover:bg-amber-50 dark:text-amber-400' },
+                                      ].map(opt => (
+                                        <button
+                                          key={opt.value}
+                                          type="button"
+                                          onClick={() => updateLocal(check.id, 'verdict', opt.value === currentVerdict ? null : opt.value)}
+                                          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors
+                                            ${opt.cls}
+                                            ${currentVerdict === opt.value
+                                              ? 'ring-2 ring-purple-400 ring-offset-1 border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
+                                              : ''}`}
+                                        >
+                                          {opt.label}
+                                        </button>
+                                      ))}
+                                    </div>
+
+                                    {/* Notes */}
+                                    <div>
+                                      <label htmlFor={`notes-${check.id}`} className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                        Notes
+                                      </label>
+                                      <Textarea
+                                        id={`notes-${check.id}`}
+                                        rows={3}
+                                        placeholder="Add testing notes, observations, evidence…"
+                                        value={currentNotes}
+                                        onChange={e => updateLocal(check.id, 'notes', e.target.value)}
+                                        className="text-xs"
+                                      />
+                                    </div>
+
+                                    {/* Save button */}
+                                    <div className="flex justify-end">
+                                      <Button
+                                        color="primary"
+                                        size="xs"
+                                        disabled={!isDirty || savingId === check.id}
+                                        onClick={() => handleSave(check)}
+                                      >
+                                        {savingId === check.id ? 'Saving…' : 'Save'}
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      )
+                    })}
+                  </>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
+
+      {/* Footer count */}
+      <div className="flex items-center justify-between border-t border-gray-200 p-4 dark:border-gray-700">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {filtered.length} of {checks.length} criteria
+        </span>
+      </div>
     </div>
   )
 }
@@ -602,13 +536,13 @@ function ManualChecksTab({ auditId }) {
 
 function ReportTab({ audit }) {
   return (
-    <div className="relative overflow-hidden bg-neutral-primary shadow-md dark:bg-gray-800 sm:rounded-lg">
+    <div className="relative overflow-hidden rounded-lg bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex flex-col items-center px-6 py-16 text-center">
-        <div className="mb-4 rounded-base bg-brand-softer p-3">
-          <BarChart3 className="h-7 w-7 text-fg-brand" aria-hidden="true" />
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30">
+          <BarChart3 className="h-8 w-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
         </div>
-        <h3 className="text-sm font-semibold text-heading">Report generation coming soon</h3>
-        <p className="mt-2 max-w-xs text-xs text-body-subtle">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Report Generation</h3>
+        <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
           Once all triage items are resolved, you'll be able to generate a WCAG{' '}
           {audit.wcag_version} {audit.conformance_level} conformance report.
         </p>
@@ -625,25 +559,15 @@ function ReportTab({ audit }) {
 
 function ScanPanelError({ error, resetErrorBoundary }) {
   return (
-    <div className="relative overflow-hidden bg-neutral-primary shadow-md sm:rounded-lg">
+    <div className="relative overflow-hidden rounded-lg  bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:rounded-lg">
       <div className="flex flex-col items-center px-6 py-12 text-center">
-        <p className="mb-2 text-sm font-semibold text-fg-danger">Scan Panel Error</p>
-        <p className="mb-4 text-xs text-body">{error?.message || 'An unexpected error occurred.'}</p>
-        <Button color="failure" size="sm" onClick={resetErrorBoundary}>Try Again</Button>
+        <p className="mb-2 text-sm font-semibold text-red-600 dark:text-red-400">Scan Panel Error</p>
+        <p className="mb-4 text-xs text-gray-700 dark:text-gray-300">{error?.message || 'An unexpected error occurred.'}</p>
+        <Button color="danger" size="sm" onClick={resetErrorBoundary}>Try Again</Button>
       </div>
     </div>
   )
 }
-
-// ─── Tab definitions ──────────────────────────────────────────────────────────
-
-const TABS = [
-  { key: 'overview',       label: 'Overview',       icon: BarChart3    },
-  { key: 'scan',           label: 'Scan',           icon: FileSearch   },
-  { key: 'triage',         label: 'Triage',         icon: ClipboardList },
-  { key: 'manual-checks',  label: 'Manual Checks',  icon: CheckCircle2 },
-  { key: 'report',         label: 'Report',         icon: BarChart3    },
-]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -691,10 +615,10 @@ export default function AuditDetailPage() {
 
   if (error || !audit) return (
     <div className="space-y-4 p-4 sm:p-6">
-      <div className="relative overflow-hidden bg-neutral-primary shadow-md sm:rounded-lg">
-        <div className="px-4 py-3 text-sm text-fg-danger">{error || 'Audit not found.'}</div>
+      <div className="relative overflow-hidden rounded-lg  bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="px-4 py-3 text-sm text-red-600 dark:text-red-400">{error || 'Audit not found.'}</div>
       </div>
-      <Button color="gray" size="sm" onClick={() => navigate('/audits')}>
+      <Button color="light" size="sm" onClick={() => navigate('/audits')}>
         <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
         Back to Audits
       </Button>
@@ -702,97 +626,87 @@ export default function AuditDetailPage() {
   )
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
+    <div className="grid grid-cols-1 px-4 pt-6 xl:grid-cols-3 xl:gap-4">
 
-      {/* ── Page header card — matches template's relative overflow-hidden wrapper ── */}
-      <div className="relative overflow-hidden bg-neutral-primary shadow-md dark:bg-gray-800 sm:rounded-lg">
-
-        {/* Header — same flex-col / md:flex-row structure as user-management.tsx */}
-        <div className="flex flex-col px-4 pb-3 pt-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              onClick={() => navigate('/audits')}
-              className="rounded p-1.5 text-body-subtle transition-colors hover:bg-neutral-tertiary dark:text-gray-400 dark:hover:bg-gray-700"
-              aria-label="Back to audits"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-base font-semibold text-heading dark:text-white">{audit.name}</h1>
-                <WcagBadge version={audit.wcag_version} level={audit.conformance_level} />
-                <StatusBadge status={audit.status} />
-              </div>
-              {audit.project_name && (
-                <p className="mt-0.5 text-xs text-body-subtle">{audit.project_name}</p>
-              )}
+      {/* ── Breadcrumb + Title header */}
+      <div className="col-span-full mb-4 xl:mb-2">
+        <Breadcrumb className="mb-5">
+          <BreadcrumbItem href="/">
+            <div className="flex items-center gap-x-3">
+              <Home className="h-4 w-4" />
+              <span className="dark:text-white">Home</span>
             </div>
+          </BreadcrumbItem>
+          <BreadcrumbItem href="/audits">Audits</BreadcrumbItem>
+          <BreadcrumbItem>{audit.name}</BreadcrumbItem>
+        </Breadcrumb>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{audit.name}</h1>
+            {audit.project_name && (
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{audit.project_name}</p>
+            )}
           </div>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="mt-3 rounded p-1.5 text-body-subtle transition-colors hover:bg-neutral-tertiary disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700 md:mt-0"
+            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700"
             aria-label="Refresh audit data"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
         </div>
-
-        {/* Tab navigation row — same border-t structure as AuditsPage radio row */}
-        <div className="block w-full items-center justify-between border-t border-default px-4 py-0 dark:border-gray-700 md:flex">
-          <div className="flex flex-wrap">
-            {TABS.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`mr-4 flex items-center gap-1.5 whitespace-nowrap border-b-2 py-3 text-sm font-medium transition-colors ${
-                  activeTab === key
-                    ? 'border-fg-brand text-fg-brand dark:border-primary-500 dark:text-primary-500'
-                    : 'border-transparent text-body-subtle hover:border-default-strong hover:text-body dark:text-gray-400 dark:hover:text-white'
-                }`}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
       </div>
 
-      {/* ── Tab content ── */}
-      {activeTab === 'overview' && (
-        <OverviewTab audit={audit} scanJobs={scanJobs} />
-      )}
-
-      {activeTab === 'scan' && (
-        <ErrorBoundary fallback={ScanPanelError}>
-          <ScanPanel
-            audit={{
-              id: audit.id,
-              auditName: audit.name,
-              wcagVersion: audit.wcag_version,
-              conformanceLevel: audit.conformance_level,
-              preTestAnswers: audit.pre_test_answers ?? {},
-              scope_json: audit.scope_json ?? { items: [] },
-            }}
-            auditId={auditId}
-            userId={user?.id}
-          />
-        </ErrorBoundary>
-      )}
-
-      {activeTab === 'triage' && (
-        <TriageTab auditId={auditId} />
-      )}
-
-      {activeTab === 'manual-checks' && (
-        <ManualChecksTab auditId={auditId} />
-      )}
-
-      {activeTab === 'report' && (
-        <ReportTab audit={audit} />
-      )}
+      {/* ── Tabs */}
+      <div className="col-span-full">
+        <Tabs
+          aria-label="Audit tabs"
+          variant="underline"
+          className="gap-0"
+          onActiveTabChange={(tab) => setActiveTab(tab)}
+        >
+          <Tabs.Item title="Overview" icon={BarChart3}>
+            <div className="pt-4">
+              <OverviewTab audit={audit} scanJobs={scanJobs} />
+            </div>
+          </Tabs.Item>
+          <Tabs.Item title="Scan" icon={FileSearch}>
+            <div className="pt-4">
+              <ErrorBoundary fallback={ScanPanelError}>
+                <ScanPanel
+                  audit={{
+                    id: audit.id,
+                    auditName: audit.name,
+                    wcagVersion: audit.wcag_version,
+                    conformanceLevel: audit.conformance_level,
+                    preTestAnswers: audit.pre_test_answers ?? {},
+                    scope_json: audit.scope_json ?? { items: [] },
+                  }}
+                  auditId={auditId}
+                  userId={user?.id}
+                />
+              </ErrorBoundary>
+            </div>
+          </Tabs.Item>
+          <Tabs.Item title="Triage" icon={ClipboardList}>
+            <div className="pt-4">
+              <TriageTab auditId={auditId} />
+            </div>
+          </Tabs.Item>
+          <Tabs.Item title="Manual Checks" icon={CheckCircle2}>
+            <div className="pt-4">
+              <ManualChecksTab auditId={auditId} />
+            </div>
+          </Tabs.Item>
+          <Tabs.Item title="Report" icon={BarChart3}>
+            <div className="pt-4">
+              <ReportTab audit={audit} />
+            </div>
+          </Tabs.Item>
+        </Tabs>
+      </div>
 
     </div>
   )

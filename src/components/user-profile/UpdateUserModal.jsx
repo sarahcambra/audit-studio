@@ -52,7 +52,7 @@ export default function UpdateUserModal({ open, onClose }) {
                             </button>
                             <button
                               type="button"
-                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                              className="rounded-lg  bg-white px-3 py-2 text-xs font-medium text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                             >
                               Delete
                             </button>
@@ -149,7 +149,7 @@ export default function UpdateUserModal({ open, onClose }) {
             <Button type="submit">
               Update user
             </Button>
-            <Button type="button" color="failure">
+            <Button type="button" color="danger">
               Delete
             </Button>
           </div>

@@ -1,8 +1,9 @@
-import { Label, TextInput, Select, Textarea, Checkbox, Button } from "flowbite-react"
+import { Label, TextInput, Select, Textarea, Checkbox } from "flowbite-react"
+import { customTheme } from "../../theme"
 
 export default function Step1Info({ form, updateForm, showValidationErrors }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl">
 
       {/* STEP HEADER */}
       <div>
@@ -23,6 +24,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
           value={form.auditName || ""}
           onChange={(e) => updateForm({ auditName: e.target.value })}
           color={showValidationErrors && !form.auditName?.trim() ? "failure" : undefined}
+          sizing="md"
+          theme={customTheme.textInput}
           required
         />
         {showValidationErrors && !form.auditName?.trim() && (
@@ -40,6 +43,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
             id="wcagVersion"
             value={form.wcagVersion || "2.2"}
             onChange={(e) => updateForm({ wcagVersion: e.target.value })}
+            sizing="md"
+            theme={customTheme.select}
           >
             <option value="2.1">WCAG 2.1</option>
             <option value="2.2">WCAG 2.2</option>
@@ -54,6 +59,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
             id="conformanceLevel"
             value={form.conformanceLevel || "AA"}
             onChange={(e) => updateForm({ conformanceLevel: e.target.value })}
+            sizing="md"
+            theme={customTheme.select}
           >
             <option value="A">Level A</option>
             <option value="AA">Level AA (Recommended)</option>
@@ -73,6 +80,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
           rows={4}
           value={form.description || ""}
           onChange={(e) => updateForm({ description: e.target.value })}
+          sizing="md"
+          theme={customTheme.textarea}
         />
       </div>
 
@@ -88,6 +97,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
               id="en301549"
               checked={form.en301549 || false}
               onChange={(e) => updateForm({ en301549: e.target.checked })}
+              sizing="md"
+              theme={customTheme.checkbox}
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">EN 301 549</span>
           </label>
@@ -97,6 +108,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
               id="digg"
               checked={form.digg || false}
               onChange={(e) => updateForm({ digg: e.target.checked })}
+              sizing="md"
+              theme={customTheme.checkbox}
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">DIGG (Sweden)</span>
           </label>
@@ -115,6 +128,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
               id="themeContrast"
               checked={form.themeContrast || false}
               onChange={(e) => updateForm({ themeContrast: e.target.checked })}
+              sizing="md"
+              theme={customTheme.checkbox}
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Evaluate theme contrast</span>
           </label>
@@ -124,6 +139,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
               id="keyboardNav"
               checked={form.keyboardNav || false}
               onChange={(e) => updateForm({ keyboardNav: e.target.checked })}
+              sizing="md"
+              theme={customTheme.checkbox}
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Include keyboard navigation tests</span>
           </label>
@@ -133,6 +150,8 @@ export default function Step1Info({ form, updateForm, showValidationErrors }) {
               id="screenReader"
               checked={form.screenReader || false}
               onChange={(e) => updateForm({ screenReader: e.target.checked })}
+              sizing="md"
+              theme={customTheme.checkbox}
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Screen reader compatibility</span>
           </label>

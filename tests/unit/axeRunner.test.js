@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mapTagsToSC, buildAxeTags } from '../../src/lib/axeRunner'
+import { mapTagsToSC, buildAxeTags } from '../../api/lib/axeRunner'
 
 describe('mapTagsToSC', () => {
   describe('WCAG 2.x tag conversion', () => {

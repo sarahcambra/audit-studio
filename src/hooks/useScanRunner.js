@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { supabase } from '../../supabaseClient.js'
+import { supabase } from '../lib/supabase'
 
 /**
  * Hook for managing sequential scan execution via Vercel API.
@@ -20,11 +20,17 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
   const pollIntervalsRef = useRef({})
   // Ref to track latest job states for atomic updates (avoids stale closures)
   const latestJobsRef = useRef([])
+  // Ref to track isRunning without closure staleness (used in runAll polling loop)
+  const isRunningRef = useRef(false)
 
-  // Keep ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => {
     latestJobsRef.current = jobs
   }, [jobs])
+
+  useEffect(() => {
+    isRunningRef.current = isRunning
+  }, [isRunning])
 
   /**
    * Add a page scan job to the queue
@@ -136,14 +142,19 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
                   ...j,
                   status: 'complete',
                   completedAt: new Date().toISOString(),
-                  results: results.grouped_violations,
+                  results: {
+                    groupedViolations: results.grouped_violations ?? [],
+                    incomplete:        results.incomplete_json    ?? [],
+                    passes:            results.passes_json        ?? [],
+                    inapplicable:      results.inapplicable_json  ?? [],
+                  },
                   summary: results.summary,
                 }
               : j
           )
         )
 
-        onProgress?.(localJobId, 'complete', results.grouped_violations)
+        onProgress?.(localJobId, 'complete')
 
         // Stop polling
         if (pollIntervalsRef.current[localJobId]) {
@@ -282,6 +293,7 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
               userId,
               scanType: pendingJob.scanType,
               url: pendingJob.url,
+              scanName: pendingJob.scanName,
               selector: pendingJob.scanType === 'component' ? pendingJob.selector : undefined,
               steps: pendingJob.scanType === 'flow' ? pendingJob.steps : undefined,
               wcagVersion: audit.wcagVersion,
@@ -328,7 +340,7 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
       setJobs(prev =>
         prev.map(j =>
           j.id === pendingJob.id
-            ? { ...j, supabaseJobId: jobId, summary }
+            ? { ...j, supabaseJobId: jobId, summary: { ...summary, scanName: pendingJob.scanName } }
             : j
         )
       )
@@ -382,7 +394,8 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
         const startTime = Date.now()
         const timeout = 300000 // 5 minute timeout per job
         const checkInterval = setInterval(() => {
-          if (!isRunning) {
+          // Use ref to read current isRunning value without stale closure
+          if (!isRunningRef.current) {
             clearInterval(checkInterval)
             resolve()
           } else if (Date.now() - startTime > timeout) {
@@ -396,7 +409,7 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
       })
     }
     return results
-  }, [jobs, runNextJob, isRunning])
+  }, [jobs, runNextJob])
 
   /**
    * Remove a job from the queue
@@ -416,6 +429,56 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
   const clearCompleted = useCallback(() => {
     setJobs(prev => prev.filter(j => j.status === 'pending' || j.status === 'running'))
   }, [])
+
+  /**
+   * Load completed scan history for this audit from Supabase on mount.
+   * Restores the scan history table when the user navigates away and back.
+   */
+  useEffect(() => {
+    if (!auditId) return
+    async function loadHistory() {
+      const { data, error } = await supabase
+        .from('scan_jobs')
+        .select(`
+          id, scan_type, url, selector, flow_steps, status, completed_at,
+          scan_results ( grouped_violations, incomplete_json, passes_json, inapplicable_json, summary )
+        `)
+        .eq('audit_id', auditId)
+        .eq('status', 'complete')
+        .order('completed_at', { ascending: false })
+        .limit(20)
+
+      if (error) {
+        console.error('useScanRunner: Failed to load scan history:', error.message)
+        return
+      }
+      if (!data?.length) return
+
+      const loaded = data.map(job => {
+        const sr = job.scan_results?.[0] ?? {}
+        return {
+          id:             job.id,
+          supabaseJobId:  job.id,
+          scanType:       job.scan_type,
+          scanName:       sr.summary?.scanName || job.url,
+          url:            job.url,
+          selector:       job.selector,
+          steps:          job.flow_steps,
+          status:         'complete',
+          completedAt:    job.completed_at,
+          results: {
+            groupedViolations: sr.grouped_violations ?? [],
+            incomplete:        sr.incomplete_json    ?? [],
+            passes:            sr.passes_json        ?? [],
+            inapplicable:      sr.inapplicable_json  ?? [],
+          },
+          summary: sr.summary ?? {},
+        }
+      })
+      setJobs(loaded)
+    }
+    loadHistory()
+  }, [auditId])
 
   /**
    * Cleanup polling intervals on unmount

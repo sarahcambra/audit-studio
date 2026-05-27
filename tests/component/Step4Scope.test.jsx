@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import Step4Scope from '../../src/components/wizard/Step4Scope'
 
@@ -12,6 +13,11 @@ const mockForm = {
 }
 
 const mockUpdateForm = vi.fn()
+
+// Reset mock between tests so call history doesn't bleed across assertions
+beforeEach(() => {
+  mockUpdateForm.mockClear()
+})
 
 describe('Step4Scope', () => {
   describe('Rendering', () => {
@@ -49,7 +55,8 @@ describe('Step4Scope', () => {
     it('should render add button', () => {
       render(<Step4Scope form={mockForm} updateForm={mockUpdateForm} />)
 
-      expect(screen.getByText('+ Add page/flow/component')).toBeInTheDocument()
+      // Component renders spaces around slashes: "+ Add page / flow / component"
+      expect(screen.getByText('+ Add page / flow / component')).toBeInTheDocument()
     })
   })
 
@@ -127,7 +134,8 @@ describe('Step4Scope', () => {
 
       render(<Step4Scope form={componentForm} updateForm={mockUpdateForm} />)
 
-      const selectorInput = screen.getByPlaceholderText(/\.button/i)
+      // Component type shows "Type or pick a component…" as placeholder
+      const selectorInput = screen.getByPlaceholderText(/Type or pick a component/i)
       fireEvent.change(selectorInput, { target: { value: '.new-button' } })
 
       expect(mockUpdateForm).toHaveBeenCalledWith({
@@ -138,15 +146,21 @@ describe('Step4Scope', () => {
     })
 
     it('should auto-prefix https:// on blur', () => {
-      render(<Step4Scope form={mockForm} updateForm={mockUpdateForm} />)
+      // Start with a URL that already lacks the protocol so handleUrlBlur
+      // can detect it and prepend https://. Firing change + blur on a static
+      // mock prop would only read the original form value on blur.
+      const noPrefixForm = {
+        ...mockForm,
+        scopeItems: [{ type: 'Page', name: 'Test', url: 'example.com', componentIdentifier: '' }],
+      }
+      render(<Step4Scope form={noPrefixForm} updateForm={mockUpdateForm} />)
 
       const urlInput = screen.getByPlaceholderText(/example.com/i)
-      fireEvent.change(urlInput, { target: { value: 'example.com' } })
       fireEvent.blur(urlInput)
 
       expect(mockUpdateForm).toHaveBeenCalledWith({
         scopeItems: [
-          { ...mockForm.scopeItems[0], url: 'https://example.com' },
+          { ...noPrefixForm.scopeItems[0], url: 'https://example.com' },
         ],
       })
     })
@@ -171,7 +185,8 @@ describe('Step4Scope', () => {
     it('should add new scope item when clicking add button', () => {
       render(<Step4Scope form={mockForm} updateForm={mockUpdateForm} />)
 
-      const addButton = screen.getByText('+ Add page/flow/component')
+      // Component renders spaces around slashes: "+ Add page / flow / component"
+      const addButton = screen.getByText('+ Add page / flow / component')
       fireEvent.click(addButton)
 
       expect(mockUpdateForm).toHaveBeenCalledWith({
@@ -185,26 +200,32 @@ describe('Step4Scope', () => {
 
   describe('Remove item', () => {
     it('should remove item when clicking remove button', () => {
-      render(<Step4Scope form={mockForm} updateForm={mockUpdateForm} />)
+      // Need at least 2 items — the guard `if (form.scopeItems.length > 1)` prevents
+      // removal of the last item, and `dismissible` is false when only one item exists.
+      const twoItemForm = {
+        ...mockForm,
+        scopeItems: [
+          { type: 'Page', name: 'Homepage', url: 'https://example.com', componentIdentifier: '' },
+          { type: 'Page', name: 'About', url: 'https://example.com/about', componentIdentifier: '' },
+        ],
+      }
 
-      const removeButton = screen.getByRole('button', { name: /✕/i })
-      fireEvent.click(removeButton)
+      render(<Step4Scope form={twoItemForm} updateForm={mockUpdateForm} />)
+
+      // Badge renders dismiss button with aria-label "Remove <children>" → "Remove Remove"
+      const removeButtons = screen.getAllByRole('button', { name: /Remove/i })
+      fireEvent.click(removeButtons[0])
 
       expect(mockUpdateForm).toHaveBeenCalledWith({
-        scopeItems: [],
+        scopeItems: [twoItemForm.scopeItems[1]],
       })
     })
 
-    it('should not remove last item', () => {
-      const singleItemForm = {
-        ...mockForm,
-        scopeItems: [{ type: 'Page', name: 'Only', url: 'https://only.com', componentIdentifier: '' }],
-      }
+    it('should not show remove button for last item', () => {
+      // With only one item, dismissible=false so no dismiss <button> is rendered at all
+      render(<Step4Scope form={mockForm} updateForm={mockUpdateForm} />)
 
-      render(<Step4Scope form={singleItemForm} updateForm={mockUpdateForm} />)
-
-      const removeButton = screen.getByRole('button', { name: /✕/i })
-      expect(removeButton).toBeDisabled()
+      expect(screen.queryByRole('button', { name: /Remove/i })).not.toBeInTheDocument()
     })
   })
 
@@ -217,13 +238,14 @@ describe('Step4Scope', () => {
 
       render(<Step4Scope form={invalidForm} updateForm={mockUpdateForm} showValidationErrors />)
 
-      expect(screen.getByText(/At least one valid scope item/i)).toBeInTheDocument()
+      // Actual text: "✕ At least one scope item with name and URL/selector is required to proceed."
+      expect(screen.getByText(/At least one scope item/i)).toBeInTheDocument()
     })
 
     it('should not show validation error when has valid scope items', () => {
       render(<Step4Scope form={mockForm} updateForm={mockUpdateForm} showValidationErrors />)
 
-      expect(screen.queryByText(/At least one valid scope item/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/At least one scope item/i)).not.toBeInTheDocument()
     })
 
     it('should show warning (not error) when validation not triggered', () => {
@@ -234,7 +256,7 @@ describe('Step4Scope', () => {
 
       render(<Step4Scope form={invalidForm} updateForm={mockUpdateForm} showValidationErrors={false} />)
 
-      // Warning should be present but styled differently
+      // Warning text: "⚠ At least one scope item is required with a name and URL/selector to proceed."
       expect(screen.getByText(/⚠ At least one scope item/i)).toBeInTheDocument()
     })
   })
@@ -252,11 +274,10 @@ describe('Step4Scope', () => {
 
       render(<Step4Scope form={multiForm} updateForm={mockUpdateForm} />)
 
-      // Should show 2 pages
-      const pageCountElement = screen.getAllByRole('status').find(el =>
-        el.textContent === '2'
-      )
-      expect(pageCountElement).toBeInTheDocument()
+      // Find the stat box labelled "Pages" and verify its count is 2
+      const pagesLabel = screen.getByText('Pages')
+      const pagesBox = pagesLabel.closest('div')
+      expect(pagesBox).toHaveTextContent('2')
     })
   })
 })

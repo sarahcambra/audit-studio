@@ -113,7 +113,7 @@ export default function CreateAuditDrawer() {
             <div className="mt-6 flex w-full gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
               {currentStep > 1 && (
                 <Button
-                  color="light"
+                  color="ghost"
                   onClick={handleBack}
                   className="w-full"
                 >
@@ -139,7 +139,7 @@ export default function CreateAuditDrawer() {
                 </Button>
               )}
               <Button
-                color="light"
+                color="ghost"
                 onClick={handleClose}
                 className="w-full"
               >

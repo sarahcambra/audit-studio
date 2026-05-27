@@ -1,5 +1,4 @@
 import { Route, Routes, Navigate } from 'react-router-dom'
-import { useTheme } from './context/ThemeContext'
 import { useAuth } from './context/AuthContext'
 import ApplicationShell from './components/ApplicationShell'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -23,8 +22,6 @@ function PrivateRoute({ children }) {
 }
 
 function App() {
-  const { theme, toggleTheme } = useTheme()
-
   return (
     <ErrorBoundary>
       <Routes>
@@ -36,38 +33,18 @@ function App() {
           <PrivateRoute>
             <ApplicationShell>
               <Routes>
-                <Route path="/"                    element={<AuditsPage />} />
-                <Route path="/audits"              element={<AuditsPage />} />
-                <Route path="/audits/new"          element={<NewAuditPage />} />
-                <Route path="/audits/:auditId"     element={<AuditDetailPage />} />
+                <Route path="/"                     element={<AuditsPage />} />
+                <Route path="/audits"               element={<AuditsPage />} />
+                <Route path="/audits/new"           element={<NewAuditPage />} />
+                <Route path="/audits/:auditId"      element={<AuditDetailPage />} />
                 {/* Legacy scan route — redirect to detail page */}
                 <Route path="/audits/:auditId/scan" element={<AuditDetailPage />} />
-                <Route path="/users/profile"       element={<UserProfilePage />} />
+                <Route path="/users/profile"        element={<UserProfilePage />} />
               </Routes>
             </ApplicationShell>
           </PrivateRoute>
         } />
       </Routes>
-
-      {/* Theme Toggle — dev helper, remove before shipping */}
-      <button
-        onClick={toggleTheme}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          padding: '10px 16px',
-          borderRadius: '8px',
-          border: '1px solid var(--border)',
-          background: 'var(--bg)',
-          color: 'var(--text)',
-          cursor: 'pointer',
-          fontSize: '14px',
-          zIndex: 9999
-        }}
-      >
-        {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-      </button>
     </ErrorBoundary>
   )
 }

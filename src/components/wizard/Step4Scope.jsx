@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { Badge, Button, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow } from 'flowbite-react'
-import { X } from 'lucide-react'
+import { Button, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, TextInput, Select, Badge, Alert } from 'flowbite-react'
+import { X, FileText, CheckCircle, Layers, GitBranch, Info, AlertCircle } from 'lucide-react'
 import { getApproxScCount, SUPERSESSION_MAP } from '../../lib/scCount'
-import { customTheme } from '../../theme' 
+import { COMPONENT_SELECTORS } from '../../lib/componentSelectors'
+import { isValidUrl, normaliseUrl } from '../../lib/urlUtils'
+import { customTheme } from '../../theme'
+import { StatCard } from '../StatCard'
 
 export default function Step4Scope({ form, updateForm, showValidationErrors }) {
-  const inputClass = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-  const selectClass = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-
   const [duplicateError, setDuplicateError] = useState(null)
 
   const handleItemChange = (index, field, value) => {
@@ -61,20 +61,12 @@ export default function Step4Scope({ form, updateForm, showValidationErrors }) {
 
   const handleUrlBlur = (index) => {
     const item = form.scopeItems[index]
-    if (item.type !== 'Component' && item.url && !item.url.match(/^https?:\/\//)) {
-      handleItemChange(index, 'url', `https://${item.url}`)
+    if (item.type !== 'Component' && item.url) {
+      handleItemChange(index, 'url', normaliseUrl(item.url))
     }
   }
 
-  const validateUrlFormat = (url) => {
-    if (!url) return false
-    try {
-      new URL(url)
-      return true
-    } catch {
-      return false
-    }
-  }
+  const validateUrlFormat = (url) => isValidUrl(url)
 
   const pageCount = form.scopeItems.filter(i => i.type === 'Page').length
   const flowCount = form.scopeItems.filter(i => i.type === 'User Flow').length
@@ -91,7 +83,7 @@ export default function Step4Scope({ form, updateForm, showValidationErrors }) {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h2 className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
           Define Audit Scope
@@ -104,47 +96,53 @@ export default function Step4Scope({ form, updateForm, showValidationErrors }) {
       <div className="space-y-4">
         {/* Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 bg-brand-softer dark:bg-brand-soft border border-brand-subtle dark:border-brand-soft rounded-xl">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Total Items</p>
-            <p className="text-lg font-semibold tabular-nums text-fg-brand-strong dark:text-fg-brand">{form.scopeItems.length}</p>
-          </div>
-          <div className="p-3 bg-success-soft dark:bg-success-soft border border-success-subtle dark:border-success-soft rounded-xl">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Success Criteria</p>
-            <p className="text-lg font-semibold tabular-nums text-fg-success-strong dark:text-fg-success">
-              {scResults.active}/{scResults.total}
-            </p>
-          </div>
-          <div className="p-3 bg-brand-softer dark:bg-brand-soft border border-brand-subtle dark:border-brand-soft rounded-xl">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Pages</p>
-            <p className="text-lg font-semibold tabular-nums text-fg-brand-strong dark:text-fg-brand">{pageCount}</p>
-          </div>
-          <div className="p-3 bg-warning-soft dark:bg-warning-soft border border-warning-subtle dark:border-warning-soft rounded-xl">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Flows / Components</p>
-            <p className="text-lg font-semibold tabular-nums text-fg-warning dark:text-fg-warning">{flowCount + componentCount}</p>
-          </div>
+          <StatCard
+            icon={FileText}
+            label="Total Items"
+            value={form.scopeItems.length}
+            color="primary"
+          />
+          <StatCard
+            icon={CheckCircle}
+            label="Success Criteria"
+            value={`${scResults.active}/${scResults.total}`}
+            color="success"
+          />
+          <StatCard
+            icon={Layers}
+            label="Pages"
+            value={pageCount}
+            color="info"
+          />
+          <StatCard
+            icon={GitBranch}
+            label="Flows / Components"
+            value={flowCount + componentCount}
+            color="warning"
+          />
         </div>
 
         {/* SC Count Details */}
-        <div className="p-4 bg-brand-softer dark:bg-brand-soft border border-brand-subtle dark:border-brand-soft rounded-xl">
+        <Alert color="info" icon={Info} className="!bg-primary-50 dark:!bg-primary-900/20 !border-primary-200/60 dark:!border-primary-800/50">
           <div className="flex items-baseline gap-2 mb-2">
-            <p className="text-sm font-medium text-heading">
-              <span className="text-xl font-semibold">{scResults.active}</span>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <span className="text-xl font-semibold text-primary-700 dark:text-primary-300">{scResults.active}</span>
               {' '}of{' '}
-              <span className="font-semibold">{scResults.total}</span>
+              <span className="font-semibold text-primary-700 dark:text-primary-300">{scResults.total}</span>
               {' '}criteria in scope
             </p>
           </div>
           {scResults.skipped > 0 && (
-            <p className="text-sm text-body">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               <span className="font-semibold">{scResults.skipped}</span> skipped based on your answers
             </p>
           )}
           {scResults.superseded > 0 && (
-            <div className="mt-2 pt-2 border-t border-default">
-              <p className="text-sm text-body mb-1">
+            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
                 <span className="font-semibold">{scResults.superseded}</span> covered by a stricter AAA criterion
               </p>
-              <ul className="text-xs text-body-subtle space-y-0.5 ml-1">
+              <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5 ml-1">
                 {scResults.supersededList.map((aaSC) => {
                   const aaaSC = Object.keys(SUPERSESSION_MAP).find(key => SUPERSESSION_MAP[key] === aaSC)
                   return (
@@ -156,35 +154,36 @@ export default function Step4Scope({ form, updateForm, showValidationErrors }) {
               </ul>
             </div>
           )}
-        </div>
+        </Alert>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <Table hoverable>
-            <TableHead>
-              <TableHeadCell>Type</TableHeadCell>
-              <TableHeadCell>Name</TableHeadCell>
-              <TableHeadCell>URL / Selector</TableHeadCell>
-              <TableHeadCell className="text-center">Action</TableHeadCell>
+        <div className="overflow-x-auto rounded-xl  dark:border-gray-700">
+          <Table theme={customTheme.table} className="w-full text-sm text-left">
+            <TableHead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-400">
+              <TableHeadCell className="px-4 py-3 font-medium">Type</TableHeadCell>
+              <TableHeadCell className="px-4 py-3 font-medium">Name</TableHeadCell>
+              <TableHeadCell className="px-4 py-3 font-medium">URL / Selector</TableHeadCell>
+              <TableHeadCell className="px-4 py-3 font-medium text-center">Action</TableHeadCell>
             </TableHead>
-            <TableBody className="divide-y">
+            <TableBody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
               {form.scopeItems.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <select
+                <TableRow key={index} className="border-b border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+                  <TableCell className="px-4 py-2">
+                    <Select
                       value={item.type}
                       onChange={(e) => handleItemChange(index, 'type', e.target.value)}
-                      className={selectClass + ' text-xs h-9'}
+                      sizing="sm"
+                      theme={customTheme.select}
+                      className="text-xs"
                     >
                       <option value="Page">Page</option>
                       <option value="User Flow">User Flow</option>
                       <option value="Component">Component</option>
-                    </select>
+                    </Select>
                   </TableCell>
 
-                  <TableCell>
-                    <input
-                      type="text"
+                  <TableCell className="px-4 py-2">
+                    <TextInput
                       value={item.name}
                       onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                       placeholder={
@@ -192,41 +191,66 @@ export default function Step4Scope({ form, updateForm, showValidationErrors }) {
                         item.type === 'Component' ? 'e.g. Button' :
                         'e.g. Homepage'
                       }
-                      className={inputClass + ' text-xs h-9' + (showValidationErrors && !item.name ? ' border-red-500 bg-red-50 dark:bg-red-900/20' : '')}
+                      sizing="sm"
+                      theme={customTheme.textInput}
+                      color={showValidationErrors && !item.name ? "failure" : undefined}
+                      className="text-xs"
                     />
                   </TableCell>
 
-                  <TableCell>
-                    <input
-                      type="text"
-                      value={item.type === 'Component' ? item.componentIdentifier : item.url}
-                      onChange={(e) => {
-                        if (item.type === 'Component') {
-                          handleItemChange(index, 'componentIdentifier', e.target.value)
-                        } else {
-                          handleItemChange(index, 'url', e.target.value)
-                        }
-                      }}
-                      onBlur={() => item.type !== 'Component' && handleUrlBlur(index)}
-                      placeholder={item.type === 'Component' ? '.button, #header' : 'example.com'}
-                      className={inputClass + ' text-xs h-9 font-mono' + (showValidationErrors && !(item.type === 'Component' ? item.componentIdentifier : item.url) ? ' border-red-500 bg-red-50 dark:bg-red-900/20' : '')}
-                    />
+                  <TableCell className="px-4 py-2">
+                    {item.type === 'Component' ? (
+                      <>
+                        <TextInput
+                          list={`component-selectors-${index}`}
+                          value={item.componentIdentifier}
+                          onChange={(e) => {
+                            // If the user picked a datalist option, extract just the selector part
+                            const picked = COMPONENT_SELECTORS.find(s => `${s.label} — ${s.selector}` === e.target.value)
+                            handleItemChange(index, 'componentIdentifier', picked ? picked.selector : e.target.value)
+                          }}
+                          placeholder="Type or pick a component…"
+                          autoComplete="off"
+                          sizing="sm"
+                          theme={customTheme.textInput}
+                          color={showValidationErrors && !item.componentIdentifier ? "failure" : undefined}
+                          className="text-xs font-mono"
+                        />
+                        <datalist id={`component-selectors-${index}`}>
+                          {COMPONENT_SELECTORS.map(({ label, selector }) => (
+                            <option key={label} value={`${label} — ${selector}`} />
+                          ))}
+                        </datalist>
+                      </>
+                    ) : (
+                      <TextInput
+                        type="text"
+                        value={item.url}
+                        onChange={(e) => handleItemChange(index, 'url', e.target.value)}
+                        onBlur={() => handleUrlBlur(index)}
+                        placeholder="example.com"
+                        sizing="sm"
+                        theme={customTheme.textInput}
+                        color={showValidationErrors && !item.url ? "failure" : undefined}
+                        className="text-xs font-mono"
+                      />
+                    )}
                   </TableCell>
 
-                  <TableCell className="text-center">
-                  <div className="flex justify-center">
-  <Badge
-    theme={customTheme.badge}
-    color="danger"
-    size="xs"
-    className={`rounded-full border transition-opacity ${
-      form.scopeItems.length === 1 ? "opacity-30 pointer-events-none" : "cursor-pointer"
-    }`}
-    onDismiss={form.scopeItems.length > 1 ? () => handleRemoveItem(index) : undefined}
-  >
-    Remove
-  </Badge>
-</div>
+                  <TableCell className="px-4 py-2 text-center">
+                    <div className="flex justify-center">
+                      <Button
+                        size="xs"
+                        color="failure"
+                        outline
+                        disabled={form.scopeItems.length === 1}
+                        onClick={() => handleRemoveItem(index)}
+                        theme={customTheme.button}
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -235,26 +259,28 @@ export default function Step4Scope({ form, updateForm, showValidationErrors }) {
         </div>
 
         {/* Add Button */}
-        <Button onClick={handleAddItem} color="light">
+        <Button
+          onClick={handleAddItem}
+          color="primary"
+          outline
+          theme={customTheme.button}
+          className="w-fit"
+        >
           + Add page / flow / component
         </Button>
 
       {/* Duplicate Error Message */}
       {duplicateError && (
-        <div className="p-3 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
-          <p className="text-sm font-medium text-red-700 dark:text-red-300">
-            ✕ {duplicateError}
-          </p>
-        </div>
+        <Alert color="failure" icon={AlertCircle}>
+          {duplicateError}
+        </Alert>
       )}
 
       {/* Validation Message */}
       {!hasValidScope && (
-        <div className={`p-3 rounded-xl border ${showValidationErrors ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' : 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'}`}>
-          <p className={`text-sm font-medium ${showValidationErrors ? 'text-red-700 dark:text-red-300' : 'text-yellow-800'}`}>
-            {showValidationErrors ? '✕ At least one scope item with name and URL/selector is required to proceed.' : '⚠ At least one scope item is required with a name and URL/selector to proceed.'}
-          </p>
-        </div>
+        <Alert color={showValidationErrors ? 'failure' : 'warning'} icon={showValidationErrors ? AlertCircle : Info}>
+          {showValidationErrors ? 'At least one scope item with name and URL/selector is required to proceed.' : 'At least one scope item is required with a name and URL/selector to proceed.'}
+        </Alert>
       )}
       </div>
     </div>

@@ -217,7 +217,7 @@ export default function ApplicationShell({ children }) {
      * This creates the visible gap around every panel (sidebar, navbar, content)
      * so they appear as floating cards, like the Nolito reference design.
      */
-    <div className="flex h-screen gap-3 overflow-hidden bg-gray-100 p-3 dark:bg-gray-950">
+    <div className="flex h-screen gap-3 overflow-hidden bg-gray-50 p-3 dark:bg-gray-950">
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────────
           Animates between:
@@ -228,7 +228,7 @@ export default function ApplicationShell({ children }) {
         className={twMerge(
           "hidden lg:flex flex-col flex-none",
           "rounded-2xl bg-white dark:bg-gray-800",
-          "border border-gray-200 dark:border-gray-700 shadow-sm",
+          "shadow-sm",
           "overflow-hidden transition-[width] duration-300 ease-in-out",
           isSidebarOpen ? "w-60" : "w-[60px]"
         )}
@@ -295,7 +295,7 @@ export default function ApplicationShell({ children }) {
       <div className="flex flex-1 min-w-0 flex-col gap-3">
 
         {/* Navbar card */}
-        <header className="flex h-14 shrink-0 items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <header className="flex h-14 shrink-0 items-center gap-3 rounded-2xl bg-white px-4 shadow-sm dark:bg-gray-800">
           {/* Mobile hamburger */}
           <button
             className="lg:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors"

@@ -32,7 +32,7 @@ const defaultForm = {
 
 const TOTAL_STEPS = 5
 
-export default function UserProfilePage({ sidebarExpanded = true }) {
+export default function UserProfilePage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [form, setForm] = useState(defaultForm)
@@ -81,35 +81,31 @@ export default function UserProfilePage({ sidebarExpanded = true }) {
     }
   }
 
-  const mainMl = sidebarExpanded ? 'sm:ml-80' : 'sm:ml-16'
-
   return (
-    <div className="min-w-0 flex-1 bg-neutral-primary-soft antialiased">
-      <main className={`min-w-0 overflow-x-hidden bg-neutral-primary-soft pb-16 ${mainMl} transition-[margin] duration-300 ease-out`}>
-        <ProfilePageHeader
-          title="New Audit"
-          belowTitle={<NewAuditStepper currentStep={currentStep} />}
+    <div className="space-y-4 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
+      <ProfilePageHeader
+        title="New Audit"
+        belowTitle={<NewAuditStepper currentStep={currentStep} />}
+      />
+
+      <div className="w-full max-w-3xl">
+        <div className="rounded bg-neutral-primary border border-default shadow-sm p-5 sm:p-6">
+          {renderStep()}
+        </div>
+      </div>
+
+      <div className="w-full max-w-3xl">
+        <AuditNavFooter
+          currentStep={currentStep}
+          totalSteps={TOTAL_STEPS}
+          onBack={handleBack}
+          onNext={handleNext}
+          canNext={currentStep === 1 ? step1Complete : true}
+          isFinalStep={currentStep === TOTAL_STEPS}
+          onCreate={handleCreate}
+          canCreate={hasValidScope}
         />
-
-        <div className="w-full max-w-3xl px-4 pb-4">
-          <div className="rounded bg-neutral-primary border border-default shadow-sm p-5 sm:p-6">
-            {renderStep()}
-          </div>
-        </div>
-
-        <div className="w-full max-w-3xl px-4">
-          <AuditNavFooter
-            currentStep={currentStep}
-            totalSteps={TOTAL_STEPS}
-            onBack={handleBack}
-            onNext={handleNext}
-            canNext={currentStep === 1 ? step1Complete : true}
-            isFinalStep={currentStep === TOTAL_STEPS}
-            onCreate={handleCreate}
-            canCreate={hasValidScope}
-          />
-        </div>
-      </main>
+      </div>
     </div>
   )
 }

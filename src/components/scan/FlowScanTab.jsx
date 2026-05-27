@@ -5,9 +5,11 @@ import {
 } from 'flowbite-react'
 import {
   GitBranch, Play, Trash2, Plus, CheckCircle2, AlertTriangle,
-  Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, X,
+  ChevronDown, ChevronUp, ArrowUp, ArrowDown, X,
 } from 'lucide-react'
+import ScanProgressBanner from './ScanProgressBanner'
 import { customTheme } from '../../theme'
+import { normaliseUrl, isValidUrl } from '../../lib/urlUtils'
 
 // ── Flow step templates ───────────────────────────────────────────────────────
 
@@ -81,7 +83,7 @@ function StepBuilder({ steps, setSteps }) {
             <span className="text-xs font-semibold text-heading">Step {i + 1}</span>
             <div className="flex items-center gap-1">
               <Button
-                color="gray"
+                color="ghost"
                 size="sm"
                 className="p-1"
                 disabled={i === 0}
@@ -91,7 +93,7 @@ function StepBuilder({ steps, setSteps }) {
                 <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
               </Button>
               <Button
-                color="gray"
+                color="ghost"
                 size="sm"
                 className="p-1"
                 disabled={i === steps.length - 1}
@@ -101,7 +103,7 @@ function StepBuilder({ steps, setSteps }) {
                 <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
               </Button>
               <Button
-                color="failure"
+                color="danger"
                 size="sm"
                 className="p-1"
                 onClick={() => remove(i)}
@@ -201,7 +203,7 @@ function StepBuilder({ steps, setSteps }) {
 
 export default function FlowScanTab({
   flows, onScan, onAddItem, onRemoveItem,
-  getJobForItem, isRunning, progress, savingScope,
+  getJobForItem, isRunning, savingScope,
 }) {
   const [showAddForm, setShowAddForm]   = useState(false)
   const [addName, setAddName]           = useState('')
@@ -210,17 +212,11 @@ export default function FlowScanTab({
   const [configState, setConfigState]   = useState({})
   const [runningForIdx, setRunningForIdx] = useState(null)
 
-  const normaliseUrl = (val) => {
-    let u = val.trim()
-    if (u && !u.match(/^https?:\/\//i)) u = `https://${u}`
-    return u
-  }
-
   const validateAddUrl = (val) => {
     const u = normaliseUrl(val)
     if (!u) { setAddUrlError('URL is required'); return '' }
-    try { new URL(u); setAddUrlError(''); return u }
-    catch { setAddUrlError('Enter a valid URL (e.g. https://example.com)'); return '' }
+    if (!isValidUrl(u)) { setAddUrlError('Enter a valid URL (e.g. example.com)'); return '' }
+    setAddUrlError(''); return u
   }
 
   const getConfig = (idx) => configState[idx] ?? { open: false, template: '', steps: [] }
@@ -252,18 +248,22 @@ export default function FlowScanTab({
   }
 
   const ScanStatusBadge = ({ job }) => {
-    if (!job) return <Badge theme={customTheme.badge} color="grayBordered" size="xs">Not scanned</Badge>
-    if (job.status !== 'complete') return (
-      <Badge theme={customTheme.badge} color="warningBordered" size="xs" className="capitalize">
-        {job.status}
+    if (!job) return <Badge theme={customTheme.badge} color="gray" size="xs">Not scanned</Badge>
+    if (job.status === 'error') return (
+      <Badge theme={customTheme.badge} color="danger" size="xs" title={job.error ?? 'Scan failed'}>Error</Badge>
+    )
+    if (job.status === 'running') return (
+      <Badge theme={customTheme.badge} color="warning" size="xs">Running…</Badge>
+    )
+    if (job.status === 'pending') return (
+      <Badge theme={customTheme.badge} color="alternative" size="xs">Queued</Badge>
+    )
+    if ((job.summary?.totalViolations ?? 0) > 0) return (
+      <Badge theme={customTheme.badge} color="danger" size="xs" icon={AlertTriangle}>
+        {job.summary.totalViolations} issue{job.summary.totalViolations !== 1 ? 's' : ''}
       </Badge>
     )
-    if (job.results?.violations?.length > 0) return (
-      <Badge theme={customTheme.badge} color="dangerBordered" size="xs" icon={AlertTriangle}>
-        {job.results.violations.length} issue{job.results.violations.length !== 1 ? 's' : ''}
-      </Badge>
-    )
-    return <Badge theme={customTheme.badge} color="successBordered" size="xs" icon={CheckCircle2}>Clean</Badge>
+    return <Badge theme={customTheme.badge} color="success" size="xs" icon={CheckCircle2}>Clean</Badge>
   }
 
   // ── Empty state ───────────────────────────────────────────────────────────
@@ -289,35 +289,17 @@ export default function FlowScanTab({
     <div className="space-y-4">
 
       {/* ── Scanning progress banner ──────────────────────────────────────── */}
-      {isRunning && (
-        <div className="flex items-center gap-3 rounded border border-brand-subtle bg-brand-softer px-4 py-3">
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-fg-brand" aria-hidden="true" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-heading">Running flow scan…</p>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-brand-soft">
-              <div
-                className="h-1.5 rounded-full bg-primary-600 transition-all duration-500"
-                style={{ width: `${progress}%` }}
-                role="progressbar"
-                aria-valuenow={progress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
-            </div>
-          </div>
-          <span className="shrink-0 text-xs text-body-subtle">{progress}%</span>
-        </div>
-      )}
+      <ScanProgressBanner isRunning={isRunning} />
 
       {/* ── Flows table ───────────────────────────────────────────────────── */}
       {flows.length > 0 && (
         <div className="overflow-x-auto rounded border border-default">
-          <Table hoverable theme={{ root: { wrapper: 'static' } }}>
-            <TableHead className="bg-neutral-tertiary text-xs uppercase tracking-wide text-body-subtle">
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Flow name</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Starting URL</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Last scan</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">
+          <Table hoverable theme={customTheme.table}>
+            <TableHead>
+              <TableHeadCell scope="col">Flow name</TableHeadCell>
+              <TableHeadCell scope="col">Starting URL</TableHeadCell>
+              <TableHeadCell scope="col">Last scan</TableHeadCell>
+              <TableHeadCell scope="col">
                 <span className="sr-only">Actions</span>
               </TableHeadCell>
             </TableHead>
@@ -342,7 +324,7 @@ export default function FlowScanTab({
                       <TableCell className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <Button
-                            color="gray"
+                            color="ghost"
                             size="sm"
                             onClick={() => updateConfig(item._idx, { open: !cfg.open })}
                             aria-expanded={cfg.open}
@@ -370,7 +352,7 @@ export default function FlowScanTab({
                             </Button>
                           )}
                           <Button
-                            color="gray"
+                            color="secondary"
                             size="sm"
                             className="p-1.5"
                             onClick={() => onRemoveItem(item._idx)}
@@ -427,7 +409,7 @@ export default function FlowScanTab({
                                 Run flow scan
                               </Button>
                               <Button
-                                color="gray"
+                                color="ghost"
                                 size="sm"
                                 onClick={() => updateConfig(item._idx, { open: false })}
                               >
@@ -469,8 +451,8 @@ export default function FlowScanTab({
               </Label>
               <TextInput
                 id="add-flow-url"
-                type="url"
-                placeholder="https://example.com"
+                type="text"
+                placeholder="example.com"
                 value={addUrl}
                 onChange={e => { setAddUrl(e.target.value); if (addUrlError) validateAddUrl(e.target.value) }}
                 onBlur={e => validateAddUrl(e.target.value)}
@@ -493,7 +475,7 @@ export default function FlowScanTab({
               {savingScope ? 'Saving…' : 'Add flow'}
             </Button>
             <Button
-              color="gray"
+              color="ghost"
               size="sm"
               onClick={() => { setShowAddForm(false); setAddName(''); setAddUrl(''); setAddUrlError('') }}
             >

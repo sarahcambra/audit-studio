@@ -4,7 +4,6 @@
 @plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
 @source "../../audit-studio-storybook/src";
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&family=Open+Sans:wght@400;500;600&display=swap');
 
 @custom-variant dark (&:where(.dark, .dark *));
 @config "../tailwind.config.js";
@@ -12,15 +11,12 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: #fcfcfd;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #540cac;
   --accent-bg: rgba(84, 12, 172, 0.1);
   --accent-border: rgba(84, 12, 172, 0.45);
   --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -30,7 +26,6 @@
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);
-  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -44,16 +39,12 @@
 html.dark {
   --text: #41454e;
   --text-h: #32353c;
-  --bg: #16171d;
   --border: #9ca3af;
   --code-bg: #26282e;
   --accent: #540cac;
   --accent-bg: rgba(231, 217, 242, 0.14);
   --accent-border: rgba(190, 147, 225, 0.55);
   --social-bg: rgba(47, 48, 58, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
-    rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 }
 
 html.dark #social .button-icon {
@@ -62,6 +53,26 @@ html.dark #social .button-icon {
 
 body {
   margin: 0;
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white;
+}
+
+/* ── Native date / time picker calendar icon ───────────────────────────────
+ * Chrome/Edge render a small calendar icon inside <input type="date">.
+ * Its default color is a browser-controlled gray that differs from our
+ * --color-input-border. This override pins it to the same #777777 so the
+ * icon and border appear as one consistent element.
+ * The filter converts black to #777777 (approx. brightness 47%).
+ */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.47;
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.7;
 }
 
 #root {

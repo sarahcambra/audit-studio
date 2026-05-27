@@ -20,7 +20,7 @@ export default function ProfilePreferencesForm({ form, updateForm, onNext }) {
         </div>
         <Button
           type="button"
-          color="blue"
+          color="primary"
           onClick={() => onNext?.()}
         >
           Next

@@ -1,7 +1,6 @@
-import { Check, X, HelpCircle } from "lucide-react"
-import { Badge } from "flowbite-react"
+import { Check, X, HelpCircle, AlertCircle } from "lucide-react"
+import { Badge, Button, Alert } from "flowbite-react"
 import { getVisibleQuestions, PRETEST_SC_MAP, getAllSCsForTarget } from "../../lib/scCount"
-import { twMerge } from "tailwind-merge"
 import { customTheme } from '../../theme'
 
 
@@ -51,40 +50,31 @@ const QUESTIONS = [
   },
 ]
 
-/** Button style map — idle and selected states per answer value */
-const ANSWER_STYLES = {
-  yes: {
-    idle:     "border border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:bg-green-50 hover:text-green-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400",
-    selected: "border border-green-400 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/30 dark:text-green-400",
-  },
-  no: {
-    idle:     "border border-gray-200 bg-white text-gray-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400",
-    selected: "border border-red-400 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/30 dark:text-red-400",
-  },
-  unsure: {
-    idle:     "border border-gray-200 bg-white text-gray-600 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-amber-500 dark:hover:bg-amber-900/20 dark:hover:text-amber-400",
-    selected: "border border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-500 dark:bg-amber-900/30 dark:text-amber-400",
-  },
+/** Answer button color configuration */
+const ANSWER_COLORS = {
+  yes: { idle: 'gray', selected: 'success' },
+  no: { idle: 'gray', selected: 'gray' },
+  unsure: { idle: 'gray', selected: 'warning' },
 }
 
 function AnswerButton({ value, label, icon: Icon, currentAnswer, showError, onClick }) {
   const isSelected = currentAnswer === value
-  const styles = ANSWER_STYLES[value]
-  const errorIdle = "border border-red-300 bg-white text-red-400 hover:border-red-400 hover:bg-red-50 hover:text-red-600 dark:border-red-700 dark:bg-gray-800 dark:text-red-500 dark:hover:bg-red-900/20"
+  const color = showError ? 'failure' : isSelected ? ANSWER_COLORS[value].selected : ANSWER_COLORS[value].idle
 
   return (
-    <button
+    <Button
       type="button"
+      size="sm"
+      color={color}
+      outline={!isSelected}
       onClick={() => onClick(value)}
       aria-pressed={isSelected}
-      className={twMerge(
-        "flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-150",
-        isSelected ? styles.selected : showError ? errorIdle : styles.idle
-      )}
+      theme={customTheme.button}
+      className="gap-1.5"
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
       {label}
-    </button>
+    </Button>
   )
 }
 
@@ -114,7 +104,8 @@ function PreTestForm({ values, onChange, showValidationErrors, wcagVersion, conf
   const isIncomplete = showValidationErrors && answeredCount < visibleQuestions.length
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-3xl">
+
 
       {/* Header */}
       <div>
@@ -128,11 +119,9 @@ function PreTestForm({ values, onChange, showValidationErrors, wcagVersion, conf
 
       {/* Validation banner */}
       {isIncomplete && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-          <p className="text-sm font-medium text-red-700 dark:text-red-300">
-            All {visibleQuestions.length} questions must be answered to proceed
-          </p>
-        </div>
+        <Alert color="failure" icon={AlertCircle}>
+          All {visibleQuestions.length} questions must be answered to proceed
+        </Alert>
       )}
 
       {/* Questions */}
@@ -147,17 +136,16 @@ function PreTestForm({ values, onChange, showValidationErrors, wcagVersion, conf
           const isUnanswered = !answer
           const showError = showValidationErrors && isUnanswered
 
+          const questionCardClasses = answer
+            ? "border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
+            : showError
+              ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
+              : "border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+
           return (
             <div
               key={answerKey}
-              className={twMerge(
-                "rounded-xl border p-4 transition-colors",
-                answer
-                  ? "border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
-                  : showError
-                    ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
-                    : "border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-750"
-              )}
+              className={`rounded-xl border p-4 transition-colors ${questionCardClasses}`}
             >
               {/* Question row */}
               <div className="mb-3 flex items-start gap-3">

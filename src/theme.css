@@ -13,8 +13,17 @@
     'Liberation Mono', 'Courier New', 'monospace';
 
     /* Neutral gray — Tailwind `gray-*` (semantic body/heading + borders + neutral-tertiary) */
+
+    /*
+     * Form input border — #777777 neutral gray.
+     * Contrast against white: ~4.0:1 — passes WCAG 3:1 non-text requirement (SC 1.4.11)
+     * Also applied to the native calendar-picker-indicator via index.css.
+     * Use: border-input-border on all TextInput, Textarea, Select, Checkbox, Radio.
+     */
+    --color-input-border: #777777;
+
     --color-gray-25: #fcfcfd;
-    --color-gray-50: #f9fafb;
+    --color-gray-50:  #F8F9FA;
     --color-gray-100: #f3f4f6;
     --color-gray-200: #e5e7eb;
     --color-gray-300: #d1d5db;
@@ -134,5 +143,68 @@
     --color-cyan-900: #072d42;
     --color-cyan-950: #031622;
 
+    /*
+     * Semantic color aliases — used by Button and Badge components
+     * Maps to emerald (success), orange (warning), red (danger), cyan (info)
+     */
+    --color-success-25: var(--color-emerald-25);
+    --color-success-50: var(--color-emerald-50);
+    --color-success-100: var(--color-emerald-100);
+    --color-success-200: var(--color-emerald-200);
+    --color-success-300: var(--color-emerald-300);
+    --color-success-400: var(--color-emerald-400);
+    --color-success-500: var(--color-emerald-500);
+    --color-success-600: var(--color-emerald-600);
+    --color-success-700: var(--color-emerald-700);
+    --color-success-800: var(--color-emerald-800);
+    --color-success-900: var(--color-emerald-900);
+    --color-success-950: var(--color-emerald-950);
+
+    --color-warning-25: var(--color-orange-25);
+    --color-warning-50: var(--color-orange-50);
+    --color-warning-100: var(--color-orange-100);
+    --color-warning-200: var(--color-orange-200);
+    --color-warning-300: var(--color-orange-300);
+    --color-warning-400: var(--color-orange-400);
+    --color-warning-500: var(--color-orange-500);
+    --color-warning-600: var(--color-orange-600);
+    --color-warning-700: var(--color-orange-700);
+    --color-warning-800: var(--color-orange-800);
+    --color-warning-900: var(--color-orange-900);
+    --color-warning-950: var(--color-orange-950);
+
+    --color-danger-25: var(--color-red-25);
+    --color-danger-50: var(--color-red-50);
+    --color-danger-100: var(--color-red-100);
+    --color-danger-200: var(--color-red-200);
+    --color-danger-300: var(--color-red-300);
+    --color-danger-400: var(--color-red-400);
+    --color-danger-500: var(--color-red-500);
+    --color-danger-600: var(--color-red-600);
+    --color-danger-700: var(--color-red-700);
+    --color-danger-800: var(--color-red-800);
+    --color-danger-900: var(--color-red-900);
+    --color-danger-950: var(--color-red-950);
+
+    --color-info-25: var(--color-cyan-25);
+    --color-info-50: var(--color-cyan-50);
+    --color-info-100: var(--color-cyan-100);
+    --color-info-200: var(--color-cyan-200);
+    --color-info-300: var(--color-cyan-300);
+    --color-info-400: var(--color-cyan-400);
+    --color-info-500: var(--color-cyan-500);
+    --color-info-600: var(--color-cyan-600);
+    --color-info-700: var(--color-cyan-700);
+    --color-info-800: var(--color-cyan-800);
+    --color-info-900: var(--color-cyan-900);
+    --color-info-950: var(--color-cyan-950);
+
+    /* Flowbite neutral color aliases — for tables, cards, backgrounds */
+    --color-neutral-primary: var(--color-white);
+    --color-neutral-secondary-soft: var(--color-gray-50);
+    --color-neutral-tertiary: var(--color-gray-100);
+    --color-neutral-quaternary: var(--color-gray-200);
+    --color-default: var(--color-gray-200);
+    --color-default-subtle: var(--color-gray-100);
 
 }

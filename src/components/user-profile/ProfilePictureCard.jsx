@@ -27,7 +27,7 @@ export default function ProfilePictureCard({ onEditClick }) {
 
       <Button
         type="button"
-        color="light"
+        color="ghost"
         onClick={onEditClick}
       >
         <SvgEdit className="-ms-0.5 me-1.5 h-4 w-4" />

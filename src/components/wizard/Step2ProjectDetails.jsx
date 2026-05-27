@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { Label, TextInput } from "flowbite-react";
-
-const isValidUrl = (url) => {
-  if (!url) return false
-  try { return Boolean(new URL(url)) } catch { return false }
-}
+import { isValidUrl, normaliseUrl } from "../../lib/urlUtils";
+import { customTheme } from "../../theme";
 
 function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
   const [touched, setTouched] = useState({})
@@ -19,7 +16,8 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
   const isAuditorNameInvalid = showError('auditorName') && !values.auditorName?.trim()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl">
+
 
       {/* STEP HEADER */}
       <div>
@@ -41,6 +39,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
           onChange={(e) => onChange("projectName", e.target.value)}
           onBlur={() => handleBlur('projectName')}
           color={isProjectNameInvalid ? "failure" : undefined}
+          theme={customTheme.textInput}
           required
         />
         {isProjectNameInvalid && (
@@ -59,6 +58,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
             placeholder="e.g. Acme Corp"
             value={values.clientName ?? ""}
             onChange={(e) => onChange("clientName", e.target.value)}
+            theme={customTheme.textInput}
           />
         </div>
 
@@ -68,15 +68,19 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
           </Label>
           <TextInput
             id="websiteUrl"
-            type="url"
-            placeholder="https://example.com"
+            type="text"
+            placeholder="example.com"
             value={values.websiteUrl ?? ""}
             onChange={(e) => onChange("websiteUrl", e.target.value)}
-            onBlur={() => handleBlur('websiteUrl')}
+            onBlur={() => {
+              handleBlur('websiteUrl')
+              if (values.websiteUrl) onChange("websiteUrl", normaliseUrl(values.websiteUrl))
+            }}
             color={isUrlInvalid ? "failure" : undefined}
+            theme={customTheme.textInput}
           />
           {isUrlInvalid && (
-            <p className="text-xs text-red-600 dark:text-red-400 mt-1">Enter a valid URL</p>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">Enter a valid URL (e.g. example.com)</p>
           )}
         </div>
       </div>
@@ -92,6 +96,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
             type="date"
             value={values.startDate ?? ""}
             onChange={(e) => onChange("startDate", e.target.value)}
+            theme={customTheme.textInput}
           />
         </div>
 
@@ -104,6 +109,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
             type="date"
             value={values.targetEndDate ?? ""}
             onChange={(e) => onChange("targetEndDate", e.target.value)}
+            theme={customTheme.textInput}
           />
         </div>
       </div>
@@ -121,6 +127,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
             onChange={(e) => onChange("auditorName", e.target.value)}
             onBlur={() => handleBlur('auditorName')}
             color={isAuditorNameInvalid ? "failure" : undefined}
+            theme={customTheme.textInput}
           />
           {isAuditorNameInvalid && (
             <p className="text-xs text-red-600 dark:text-red-400 mt-1">Auditor name is required</p>
@@ -137,6 +144,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
             placeholder="name@example.com"
             value={values.auditorEmail ?? ""}
             onChange={(e) => onChange("auditorEmail", e.target.value)}
+            theme={customTheme.textInput}
           />
         </div>
       </div>
@@ -151,6 +159,7 @@ function ProjectDetailsForm({ values, onChange, showValidationErrors }) {
           placeholder="Company or agency name"
           value={values.org ?? ""}
           onChange={(e) => onChange("org", e.target.value)}
+          theme={customTheme.textInput}
         />
       </div>
     </div>
@@ -165,24 +174,8 @@ export default function Step2ProjectDetails({ form, updateForm, showValidationEr
     }
   }, [])
 
-  useEffect(() => {
-    if (!form.websiteUrl) return
-
-    const firstItem = form.scopeItems[0]
-    // Only auto-sync if the first scope item still has the default empty state
-    // This prevents overwriting manual edits made in Step 4
-    const isDefaultScope = !firstItem.name && !firstItem.url
-    if (isDefaultScope) {
-      updateForm({
-        scopeItems: [{
-          type: 'Page',
-          name: 'Homepage',
-          url: form.websiteUrl,
-          componentIdentifier: ''
-        }, ...form.scopeItems.slice(1)]
-      })
-    }
-  }, [form.websiteUrl])
+  // URL pre-fill is now handled by the wizard's handleNext when leaving Step 2,
+  // so we don't need a useEffect here that can race with onBlur normalisation.
 
   const handleFieldChange = (field, value) => {
     updateForm({ [field]: value })

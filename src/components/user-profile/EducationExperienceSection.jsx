@@ -98,7 +98,7 @@ export default function EducationExperienceSection({ onEditClick }) {
         </div>
       </div>
 
-      <Button type="button" onClick={onEditClick} color="light">
+      <Button type="button" onClick={onEditClick} color="ghost">
         <SvgEdit className="-ms-0.5 me-1.5 h-4 w-4" />
         Edit
       </Button>

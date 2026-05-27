@@ -21,17 +21,23 @@ function isWcagFailure(tags) {
 }
 
 /**
- * Get issueType from enrichment or default to 'failure'
+ * Get issueType from enrichment or axe tags.
+ * 'best-practice' tagged violations are NOT wcag failures — they get their own type.
  */
-function getIssueType(ruleId, enrichment) {
-  // Check if enrichment has explicit issueType
+function getIssueType(ruleId, enrichment, tags = []) {
+  // Explicit enrichment issueType always wins
   if (enrichment?.issueType) {
     return enrichment.issueType
   }
 
-  // Default based on ruleType
+  // Axe best-practice tag → 'best-practice' (not 'needs review')
+  if (tags.includes('best-practice')) {
+    return 'best-practice'
+  }
+
+  // Enrichment ruleType fallback
   if (enrichment?.ruleType === 'best-practice') {
-    return 'needs review'
+    return 'best-practice'
   }
 
   return 'failure'
@@ -43,9 +49,9 @@ function getIssueType(ruleId, enrichment) {
 export function groupViolations(violations, wcagVersion, conformanceLevel) {
   const groups = new Map()
 
-  for (const violation of violations) {
+  for (const violation of (violations ?? [])) {
     const enrichment = RULE_ENRICHMENTS[violation.id] || null
-    const issueType = getIssueType(violation.id, enrichment)
+    const issueType = getIssueType(violation.id, enrichment, violation.tags || [])
 
     // Group each node by its landmark
     for (const node of violation.nodes) {
@@ -78,6 +84,7 @@ export function groupViolations(violations, wcagVersion, conformanceLevel) {
           impact: violation.impact || 'minor',
           isWcagFailure: isWcagFailure(violation.tags || []),
           scIds: [...scIdsSet],
+          tags: violation.tags || [],
           nodeCount: 0,
           nodes: [],
           enrichment,
@@ -86,7 +93,7 @@ export function groupViolations(violations, wcagVersion, conformanceLevel) {
           auditorTitle: enrichment?.auditorTitle || violation.description,
           auditorNotes: enrichment?.auditorNotes || null,
           clientFix: enrichment?.clientFix || null,
-          fixDifficulty: enrichment?.fixDifficulty || 'Medium',
+          fixDifficulty: enrichment?.fixDifficulty || null,
           affectedUsers: enrichment?.affectedUsers || [],
           wcagTechniques: enrichment?.wcagTechniques || [],
           wcagFailures: enrichment?.wcagFailures || [],

@@ -50,7 +50,7 @@ export default function AuditDetailsFields({ values, onChange, auditNameError })
             <Label className="mb-3 block text-sm font-medium">Conformance Level</Label>
             <div className="space-y-3">
               {/* Level A */}
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg  p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
                 <input
                   type="radio"
                   name="conformanceLevel"
@@ -85,7 +85,7 @@ export default function AuditDetailsFields({ values, onChange, auditNameError })
               </label>
 
               {/* Level AAA */}
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg  p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
                 <input
                   type="radio"
                   name="conformanceLevel"
@@ -106,7 +106,7 @@ export default function AuditDetailsFields({ values, onChange, auditNameError })
           <div>
             <Label className="mb-3 block text-sm font-medium">Additional Standards</Label>
             <div className="space-y-3">
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg  p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
                 <Checkbox
                   id="digg"
                   checked={values.standards?.digg ?? false}
@@ -129,7 +129,7 @@ export default function AuditDetailsFields({ values, onChange, auditNameError })
         <h3 className="mb-5 text-lg font-semibold text-gray-900 dark:text-white">Scan Options</h3>
 
         <div className="space-y-3">
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg  p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
             <Checkbox
               id="theme-contrast"
               checked={values.themeContrast ?? false}
@@ -142,7 +142,7 @@ export default function AuditDetailsFields({ values, onChange, auditNameError })
               </span>
             </div>
           </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg  p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
             <Checkbox
               id="keyboard-nav"
               checked={values.keyboardNav ?? false}
@@ -155,7 +155,7 @@ export default function AuditDetailsFields({ values, onChange, auditNameError })
               </span>
             </div>
           </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg  p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
             <Checkbox
               id="screen-reader"
               checked={values.screenReader ?? false}

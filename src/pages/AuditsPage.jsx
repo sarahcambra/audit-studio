@@ -2,17 +2,22 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Badge, Button, Checkbox, Dropdown, DropdownDivider, DropdownItem,
-  Label, Modal, Pagination, Radio, Select, Spinner,
+  Label, Modal, ModalBody, ModalFooter, ModalHeader,
+  Pagination, Radio, Select, Spinner,
   Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow,
   TextInput, theme,
 } from 'flowbite-react'
 import {
-  Plus, Search, Lock, CheckCircle2, AlertTriangle,
-  ClipboardList, FileCheck, Globe, Archive, Trash2,
+  Plus, Search, AlertTriangle,
+  ClipboardList, Globe, Archive, Trash2, ChevronDown,
+  Clock, HelpCircle,
 } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { useAuth } from '../context/AuthContext'
-import { getAudits, archiveAudit } from '../lib/db/audits'
+import { getAudits, archiveAudit, updateAudit } from '../lib/db/audits'
+import { PipelineBar } from '../components/PipelineBar'
+import { IssuesBadge } from '../components/IssuesBadge'
+import { StatCard } from '../components/StatCard'
 import { customTheme } from '../theme'
 
 // Captured once at module load — used for relative due-date calculations.
@@ -26,106 +31,107 @@ function getPipelineStage(audit) {
   return Math.min(s, 3)
 }
 
-const STAGE_LABELS = ['Scan', 'Triage', 'Manual', 'Report']
-
-function PipelineBar({ stage }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs text-body-subtle">{STAGE_LABELS[stage] ?? 'Scan'}</span>
-      <div className="flex gap-1">
-        {STAGE_LABELS.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 w-5 rounded-full ${
-              i < stage
-                ? 'bg-primary-600'
-                : i === stage
-                ? 'bg-primary-200'
-                : 'bg-neutral-quaternary'
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function WcagBadge({ version, level }) {
+  // Combine version + level for unique color mapping
+  const key = `${version} ${level}`
+
+  const colorMap = {
+    // WCAG 2.1
+    '2.1 A':   'warning',    // amber
+    '2.1 AA':  'info',       // blue/purple
+    '2.1 AAA': 'success',    // green
+    // WCAG 2.2
+    '2.2 A':   'purple',     // purple
+    '2.2 AA':  'primary',    // purple/primary
+    '2.2 AAA': 'indigo',     // indigo
+  }
+
   return (
-    <Badge color="info" size="xs" className="border border-primary-200 dark:border-primary-700">
-      {version} {level}
+    <Badge color={colorMap[key] ?? 'gray'} className="w-fit">
+      WCAG {version} {level}
     </Badge>
   )
 }
 
 function StatusBadge({ status }) {
-  const colorMap = {
-    active:   'success',
-    complete: 'success',
-    archived: 'gray',
-    draft:    'warning',
+  const statusConfig = {
+    active:   { color: 'primary', label: 'Active' },
+    complete: { color: 'success', label: 'Complete' },
+    archived: { color: 'gray', label: 'Archived' },
+    draft:    { color: 'warning', label: 'Draft' },
   }
-  const borderMap = {
-    active:   'border border-emerald-200 dark:border-emerald-700',
-    complete: 'border border-emerald-200 dark:border-emerald-700',
-    archived: 'border border-gray-300 dark:border-gray-500',
-    draft:    'border border-orange-200 dark:border-orange-700',
-  }
-  const labels = { active: 'Active', complete: 'Complete', archived: 'Archived', draft: 'Draft' }
+  const config = statusConfig[status] ?? { color: 'gray', label: status }
+
   return (
-    <Badge color={colorMap[status] ?? 'gray'} size="xs" className={borderMap[status] ?? 'border border-gray-300 dark:border-gray-500'}>
-      {labels[status] ?? status}
+    <Badge color={config.color} className="w-fit">
+      {config.label}
     </Badge>
   )
 }
 
-function DueDate({ date }) {
-  if (!date) return <span className="text-xs text-body-subtle">—</span>
-  const d    = new Date(date)
-  const days = Math.ceil((d - MODULE_NOW) / 86400000)
-  const fmt  = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  if (days < 0)   return <span className="text-xs font-medium text-fg-danger">{fmt} · overdue</span>
-  if (days <= 7)  return <span className="text-xs font-medium text-fg-danger">{fmt} · {days}d</span>
-  if (days <= 14) return <span className="text-xs font-medium text-fg-warning">{fmt} · {days}d</span>
-  return <span className="text-xs text-body-subtle">{fmt} · {days}d</span>
-}
-
-function BlockingBadge({ untriaged }) {
-  if (!untriaged || untriaged === 0) {
+function DueDate({ date, onSetDate, auditId }) {
+  // No date set — show "+ Set date" link
+  if (!date) {
     return (
-      <Badge theme={customTheme.badge} color="successBordered" size="xs" icon={CheckCircle2}>
-        All triaged
-      </Badge>
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onSetDate?.(auditId)
+        }}
+        className="text-xs font-medium text-gray-400 hover:text-purple-600 hover:underline dark:text-gray-500 dark:hover:text-purple-400"
+      >
+        + Set date
+      </button>
     )
   }
+
+  // Date set — show colored dot + formatted date
+  const d = new Date(date)
+  const days = Math.ceil((d - MODULE_NOW) / 86400000)
+  const fmt = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
+  // Determine dot color
+  let dotColor = 'bg-emerald-500' // > 7 days
+  if (days < 0 || days < 2) dotColor = 'bg-rose-500'     // overdue or < 2 days
+  else if (days <= 7) dotColor = 'bg-amber-500'          // 2-7 days
+
   return (
-    <Badge theme={customTheme.badge} color="dangerBordered" size="xs" icon={Lock}>
-      {untriaged} untriaged
-    </Badge>
+    <span className="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+      <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${dotColor}`} />
+      {fmt}
+    </span>
   )
 }
 
-function StatCard({ icon: Icon, label, value, sub, subColor }) {
-  return (
-    <div className="rounded bg-neutral-primary p-5 shadow-sm border border-default">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-body-subtle uppercase tracking-wide">{label}</p>
-          <p className="mt-1.5 text-2xl font-semibold text-heading">{value}</p>
-          {sub && (
-            <p className={`mt-1 text-xs ${
-              subColor === 'warn' ? 'text-fg-warning'
-              : subColor === 'up' ? 'text-fg-success'
-              : 'text-body-subtle'
-            }`}>
-              {sub}
-            </p>
-          )}
-        </div>
-        <div className="rounded bg-brand-softer p-2.5">
-          <Icon className="h-5 w-5 text-fg-brand" aria-hidden="true" />
-        </div>
+function BlockingBadge({ audit }) {
+  const untriaged = audit.untriaged_count ?? 0
+  const blocking = audit.blocking_count ?? 0
+
+  // All triaged (no untriaged items)
+  if (untriaged === 0) {
+    return (
+      <div className="flex items-center">
+        <div className="mr-2 h-3 w-3 rounded-full bg-emerald-500" />
+        All triaged
       </div>
+    )
+  }
+
+  // Has blocking issues
+  if (blocking > 0) {
+    return (
+      <div className="flex items-center">
+        <div className="mr-2 h-3 w-3 rounded-full bg-rose-500" />
+        {blocking} blocking
+      </div>
+    )
+  }
+
+  // Has untriaged items but not blocking
+  return (
+    <div className="flex items-center">
+      <div className="mr-2 h-3 w-3 rounded-full bg-amber-500" />
+      Awaiting review
     </div>
   )
 }
@@ -133,13 +139,13 @@ function StatCard({ icon: Icon, label, value, sub, subColor }) {
 function EmptyState({ search, activeTab, onCreateNew }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="mb-4 rounded-base bg-brand-softer p-3">
-        <ClipboardList className="h-7 w-7 text-fg-brand" aria-hidden="true" />
+      <div className="mb-4 rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+        <ClipboardList className="h-7 w-7 text-purple-700 dark:text-purple-300" aria-hidden="true" />
       </div>
-      <h3 className="text-sm font-semibold text-heading">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
         {search || activeTab !== 'all' ? 'No audits match your filters' : 'No audits yet'}
       </h3>
-      <p className="mt-1 mb-5 max-w-xs text-xs text-body-subtle">
+      <p className="mb-5 mt-1 max-w-xs text-xs text-gray-500 dark:text-gray-400">
         {search || activeTab !== 'all'
           ? 'Try adjusting your search or filter criteria.'
           : 'Create your first audit to get started.'}
@@ -162,9 +168,6 @@ const TABS = [
   { key: 'archived', label: 'Archived' },
 ]
 
-const WCAG_VERSIONS = ['All', '2.1', '2.2']
-const WCAG_LEVELS   = ['All', 'A', 'AA', 'AAA']
-const STATUSES      = ['All', 'active', 'complete', 'draft', 'archived']
 
 /* ─── 3-dots icon (matches template's inline dots svg) ─────────── */
 const DotsIcon = () => (
@@ -179,7 +182,7 @@ const DotsIcon = () => (
   </svg>
 )
 
-/* ─── chevron-down icon (matches template's actions dropdown) ───── */
+/* ─── chevron-down icon (for dropdowns) ───── */
 const ChevronDownIcon = () => (
   <svg
     className="-ml-1 mr-1.5 h-5 w-5"
@@ -219,6 +222,12 @@ export default function AuditsPage() {
   const [currentPage, setCurrentPage]   = useState(1)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [selectedIds, setSelectedIds]   = useState(new Set())
+  const [datePickerOpen, setDatePickerOpen]     = useState(false)
+  const [datePickerAuditId, setDatePickerAuditId] = useState(null)
+  const [dateDraft, setDateDraft]               = useState('')
+  const [editTarget, setEditTarget]             = useState(null)   // audit object being edited
+  const [editForm, setEditForm]                 = useState({})     // local draft of editable fields
+  const [editSaving, setEditSaving]             = useState(false)
   const PER_PAGE = 10
 
   useEffect(() => {
@@ -234,12 +243,14 @@ export default function AuditsPage() {
 
   /* ── derived stats ── */
   const stats = useMemo(() => {
-    const active    = audits.filter(a => a.status === 'active').length
-    const complete  = audits.filter(a => a.status === 'complete').length
-    const untriaged = audits.reduce((n, a) => n + (a.untriaged_count ?? 0), 0)
-    const blocking  = audits.filter(a => (a.untriaged_count ?? 0) > 0).length
-    const critical  = audits.reduce((n, a) => n + (a.critical_count ?? 0), 0)
-    return { active, complete, untriaged, blocking, critical }
+    const active          = audits.filter(a => a.status === 'active').length
+    const complete        = audits.filter(a => a.status === 'complete').length
+    // critical_count in the view = confirmed WCAG failures (decision='confirmed', issue_type='failure')
+    const confirmedFails  = audits.reduce((n, a) => n + (a.critical_count         ?? 0), 0)
+    const pendingTriage   = audits.reduce((n, a) => n + (a.untriaged_count        ?? 0), 0)
+    const triageAudits    = audits.filter(a => (a.untriaged_count ?? 0) > 0).length
+    const needsReview     = audits.reduce((n, a) => n + (a.needs_review_count     ?? 0), 0)
+    return { active, complete, confirmedFails, pendingTriage, triageAudits, needsReview }
   }, [audits])
 
   /* ── filtered list ── */
@@ -268,6 +279,56 @@ export default function AuditsPage() {
   const handleArchive = async (auditId) => {
     await archiveAudit(auditId)
     setAudits(prev => prev.map(a => a.id === auditId ? { ...a, status: 'archived' } : a))
+  }
+
+  /* ── date picker ── */
+  const openDatePicker = (auditId) => {
+    const audit = audits.find(a => a.id === auditId)
+    // Pre-fill with existing date if set; date input expects YYYY-MM-DD
+    setDateDraft(audit?.target_end_date?.slice(0, 10) ?? '')
+    setDatePickerAuditId(auditId)
+    setDatePickerOpen(true)
+  }
+  const handleSaveDate = async () => {
+    if (!dateDraft || !datePickerAuditId) return
+    await updateAudit(datePickerAuditId, { target_end_date: dateDraft })
+    setAudits(prev => prev.map(a =>
+      a.id === datePickerAuditId ? { ...a, target_end_date: dateDraft } : a
+    ))
+    setDatePickerOpen(false)
+  }
+
+  /* ── edit modal ── */
+  const openEdit = (audit) => {
+    setEditTarget(audit)
+    setEditForm({
+      name:              audit.name              ?? '',
+      client_name:       audit.client_name       ?? '',
+      project_name:      audit.project_name      ?? '',
+      wcag_version:      audit.wcag_version      ?? '2.2',
+      conformance_level: audit.conformance_level ?? 'AA',
+      target_end_date:   audit.target_end_date?.slice(0, 10) ?? '',
+    })
+  }
+  const handleEditSave = async () => {
+    if (!editTarget) return
+    setEditSaving(true)
+    const payload = {
+      name:              editForm.name              || null,
+      client_name:       editForm.client_name       || null,
+      project_name:      editForm.project_name      || null,
+      wcag_version:      editForm.wcag_version,
+      conformance_level: editForm.conformance_level,
+      target_end_date:   editForm.target_end_date   || null,
+    }
+    const { error } = await updateAudit(editTarget.id, payload)
+    if (!error) {
+      setAudits(prev => prev.map(a =>
+        a.id === editTarget.id ? { ...a, ...payload } : a
+      ))
+      setEditTarget(null)
+    }
+    setEditSaving(false)
   }
 
   // TODO: wire up real delete when confirmation modal component is chosen
@@ -300,120 +361,256 @@ export default function AuditsPage() {
   }
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
+    <div className="grid grid-cols-1 gap-4 px-4 pt-6">
 
-      {/* ── Stat cards — separate from main white card (user requirement) ── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* ── Page header (matches Next.js pattern) */}
+      <div className="col-span-full mb-2">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Audits</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage and track accessibility audits</p>
+      </div>
+
+      {/* ── Stat cards row */}
+      <div className="col-span-full grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard
-          icon={ClipboardList}
-          label="Total active"
+          icon={Globe}
+          label="Active audits"
           value={stats.active}
-          sub={stats.complete > 0 ? `${stats.complete} complete` : null}
-          subColor="up"
+          trend={stats.complete > 0 ? `${stats.complete} completed` : 'none completed yet'}
+          trendDirection={stats.complete > 0 ? 'up' : 'neutral'}
+          color="primary"
         />
-        <StatCard
-          icon={Lock}
-          label="Untriaged items"
-          value={stats.untriaged}
-          sub={stats.blocking > 0 ? `blocking ${stats.blocking} report${stats.blocking > 1 ? 's' : ''}` : 'nothing blocked'}
-          subColor={stats.blocking > 0 ? 'warn' : 'up'}
-        />
+
         <StatCard
           icon={AlertTriangle}
-          label="Critical issues"
-          value={stats.critical}
-          sub={stats.critical > 0 ? 'across active audits' : 'none found'}
-          subColor={stats.critical > 0 ? 'warn' : 'up'}
+          label="Confirmed failures"
+          value={stats.confirmedFails}
+          trend={stats.confirmedFails > 0 ? 'verified WCAG violations' : 'none found yet'}
+          trendDirection={stats.confirmedFails > 0 ? 'down' : 'up'}
+          color="danger"
         />
+
         <StatCard
-          icon={FileCheck}
-          label="Reports ready"
-          value={audits.filter(a => a.status === 'complete' && (a.untriaged_count ?? 0) === 0).length}
-          sub="ready to export"
-          subColor="up"
+          icon={Clock}
+          label="Pending triage"
+          value={stats.pendingTriage}
+          trend={stats.pendingTriage > 0
+            ? `across ${stats.triageAudits} audit${stats.triageAudits !== 1 ? 's' : ''}`
+            : 'all items reviewed'}
+          trendDirection={stats.pendingTriage > 0 ? 'down' : 'up'}
+          color="warning"
+        />
+
+        <StatCard
+          icon={HelpCircle}
+          label="Needs review"
+          value={stats.needsReview}
+          trend={stats.needsReview > 0 ? 'require human check' : 'nothing to review'}
+          trendDirection={stats.needsReview > 0 ? 'down' : 'up'}
+          color="info"
         />
       </div>
 
-      {/* ── Main white card — matches template's relative overflow-hidden wrapper ── */}
-      <div className="relative overflow-hidden bg-neutral-primary shadow-md dark:bg-gray-800 sm:rounded-lg">
+      {/* ── Main white card */}
+      <div className="col-span-full overflow-hidden rounded-lg bg-white shadow-sm dark:bg-gray-800">
 
-        {/* Header — matches template's flex flex-col … md:flex-row md:justify-between */}
-        <div className="flex flex-col px-4 pb-3 pt-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-base font-semibold text-heading dark:text-white">All Audits</h1>
-            <p className="mt-0.5 text-xs text-body-subtle">
-              {stats.active} active · {stats.blocking > 0 ? `${stats.blocking} need attention` : 'nothing blocking'}
-            </p>
-          </div>
-          <Button
-            color="primary"
-            size="sm"
-            onClick={() => navigate('/audits/new')}
-            className="mt-3 md:m-0"
-          >
-            <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            Add new audit
-          </Button>
-        </div>
+        {/* Header Row 1: Search + Filters + Add button */}
+        <div className="flex flex-col-reverse items-center justify-between py-3 mx-4 md:flex-row md:space-x-4">
+          <div className="flex w-full flex-col space-y-3 md:flex-row md:items-center md:space-y-0 lg:w-2/3">
+            {/* Search form — flex row so button sits flush at the same height */}
+            <form
+              className="w-full flex-1 md:mr-4 md:max-w-sm"
+              onSubmit={e => e.preventDefault()}
+            >
+              <Label htmlFor="audit-search" className="sr-only">Search audits</Label>
+              <div className="flex">
+                {/* Input */}
+                <div className="relative flex-1">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Search className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                  </div>
+                  <input
+                    id="audit-search"
+                    name="audit-search"
+                    type="search"
+                    placeholder="Search..."
+                    value={search}
+                    onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
+                    className="block w-full rounded-l-lg rounded-r-none border border-r-0 border-gray-300 bg-white py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-purple-400"
+                  />
+                </div>
+                {/* Search button — same height + border-gray-300 as Filter/Config buttons */}
+                <button
+                  type="submit"
+                  className="inline-flex items-center rounded-r-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                >
+                  Search
+                </button>
+              </div>
+            </form>
 
-        {/* Filter grid — matches template's grid w-full grid-cols-2 gap-4 … lg:grid-cols-5 */}
-        <div className="grid w-full grid-cols-2 gap-4 px-4 pb-4 md:grid-cols-3 lg:grid-cols-5">
-          <TextInput
-            id="audit-search"
-            aria-label="Search audits and clients"
-            placeholder="Search audits, clients…"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
-            icon={Search}
-            sizing="sm"
-          />
-          <Select
-            id="status-filter"
-            aria-label="Filter by status"
-            value={statusFilter}
-            onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1) }}
-            sizing="sm"
-          >
-            {STATUSES.map(s => (
-              <option key={s} value={s}>
-                {s === 'All' ? 'All statuses' : s.charAt(0).toUpperCase() + s.slice(1)}
-              </option>
-            ))}
-          </Select>
-          <Select
-            id="wcag-version"
-            aria-label="Filter by WCAG version"
-            value={wcagVer}
-            onChange={e => { setWcagVer(e.target.value); setCurrentPage(1) }}
-            sizing="sm"
-          >
-            {WCAG_VERSIONS.map(v => (
-              <option key={v} value={v}>{v === 'All' ? 'All WCAG versions' : `WCAG ${v}`}</option>
-            ))}
-          </Select>
-          <Select
-            id="wcag-level"
-            aria-label="Filter by conformance level"
-            value={wcagLevel}
-            onChange={e => { setWcagLevel(e.target.value); setCurrentPage(1) }}
-            sizing="sm"
-          >
-            {WCAG_LEVELS.map(l => (
-              <option key={l} value={l}>{l === 'All' ? 'All levels' : `Level ${l}`}</option>
-            ))}
-          </Select>
-          {/* 5th slot — intentionally empty for grid alignment on large screens */}
-          <div className="hidden lg:block" />
-        </div>
+            {/* Filters + Configurations dropdowns */}
+            <div className="flex items-center space-x-4">
+              <Dropdown
+                theme={customTheme.dropdown}
+                renderTrigger={() => (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden
+                      className="h-4 w-4 text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                      />
+                    </svg>
+                    Filter
+                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" aria-hidden="true" />
+                  </button>
+                )}
+              >
+                <div className="p-3 min-w-[200px]">
+                  <h6 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    By status
+                  </h6>
+                  <ul className="space-y-1 text-sm">
+                    {['active', 'draft', 'complete', 'archived'].map(s => (
+                      <li key={s}>
+                        <Label className="flex w-full cursor-pointer items-center rounded px-1.5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600">
+                          <Checkbox
+                            checked={statusFilter === s}
+                            onChange={() => setStatusFilter(statusFilter === s ? 'All' : s)}
+                            theme={customTheme.checkbox}
+                            className="mr-2"
+                          />
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </Label>
+                      </li>
+                    ))}
+                  </ul>
 
-        {/* Show: radio row — matches template's exact design */}
-        <div className="block w-full items-center justify-between border-t border-default px-4 py-3 dark:border-gray-700 md:flex">
-          <div className="flex flex-wrap">
-            <div className="mr-4 flex items-center text-sm font-medium text-heading dark:text-white">
-              Show:
+                  <div className="my-2 h-px bg-gray-200 dark:bg-gray-600" />
+
+                  <h6 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    WCAG Version
+                  </h6>
+                  <ul className="space-y-1 text-sm">
+                    {['2.1', '2.2'].map(v => (
+                      <li key={v}>
+                        <Label className="flex w-full cursor-pointer items-center rounded px-1.5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600">
+                          <Checkbox
+                            checked={wcagVer === v}
+                            onChange={() => setWcagVer(wcagVer === v ? 'All' : v)}
+                            theme={customTheme.checkbox}
+                            className="mr-2"
+                          />
+                          WCAG {v}
+                        </Label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Dropdown>
+
+              {/* Configurations dropdown */}
+              <Dropdown
+                theme={{
+                  ...customTheme.dropdown,
+                  floating: {
+                    ...customTheme.dropdown.floating,
+                    base: twMerge(customTheme.dropdown.floating.base, 'w-48'),
+                  },
+                  arrowIcon: 'hidden',
+                }}
+                renderTrigger={() => (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-4 w-4 text-gray-400"
+                      aria-hidden
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M11.828 2.25c-.916 0-1.699.663-1.85 1.567l-.091.549a.798.798 0 01-.517.608 7.45 7.45 0 00-.478.198.798.798 0 01-.796-.064l-.453-.324a1.875 1.875 0 00-2.416.2l-.243.243a1.875 1.875 0 00-.2 2.416l.324.453a.798.798 0 01.064.796 7.448 7.448 0 00-.198.478.798.798 0 01-.608.517l-.55.092a1.875 1.875 0 00-1.566 1.849v.344c0 .916.663 1.699 1.567 1.85l.549.091c.281.047.508.25.608.517.06.162.127.321.198.478a.798.798 0 01-.064.796l-.324.453a1.875 1.875 0 00.2 2.416l.243.243c.648.648 1.67.733 2.416.2l.453-.324a.798.798 0 01.796-.064c.157.071.316.137.478.198.267.1.47.327.517.608l.092.55c.15.903.932 1.566 1.849 1.566h.344c.916 0 1.699-.663 1.85-1.567l.091-.549a.798.798 0 01.517-.608 7.52 7.52 0 00.478-.198.798.798 0 01.796.064l.453.324a1.875 1.875 0 002.416-.2l.243-.243c.648-.648.733-1.67.2-2.416l-.324-.453a.798.798 0 01-.064-.796c.071-.157.137-.316.198-.478.1-.267.327-.47.608-.517l.55-.091a1.875 1.875 0 001.566-1.85v-.344c0-.916-.663-1.699-1.567-1.85l-.549-.091a.798.798 0 01-.608-.517 7.507 7.507 0 00-.198-.478.798.798 0 01.064-.796l.324-.453a1.875 1.875 0 00-.2-2.416l-.243-.243a1.875 1.875 0 00-2.416-.2l-.453.324a.798.798 0 01-.796.064 7.462 7.462 0 00-.478-.198.798.798 0 01-.517-.608l-.091-.55a1.875 1.875 0 00-1.85-1.566h-.344zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Configurations
+                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" aria-hidden="true" />
+                  </button>
+                )}
+              >
+                <DropdownItem>By Category</DropdownItem>
+                <DropdownItem>By Brand</DropdownItem>
+                <DropdownDivider />
+                <DropdownItem>Reset</DropdownItem>
+              </Dropdown>
             </div>
+          </div>
+
+          {/* Right side: Add new audit + Manage Columns buttons */}
+          <div className="mb-3 flex w-full shrink-0 flex-col items-stretch justify-end md:mb-0 md:w-auto md:flex-row md:items-center md:space-x-3">
+            <Button color="primary" onClick={() => navigate('/audits/new')}>
+              <Plus className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+              Add new audit
+            </Button>
+          </div>
+        </div>
+
+        {/* Header Row 2: Title + results count with tooltip */}
+        <div className="flex flex-col items-center justify-between py-3 mx-4 space-y-3 border-b border-gray-200 md:flex-row md:space-y-0 md:space-x-4 dark:border-gray-700">
+          <div className="flex items-center w-full space-x-3">
+            <h5 className="font-semibold dark:text-white">All Audits</h5>
+            <div className="font-medium text-gray-500 dark:text-gray-400">
+              {filtered.length} results
+            </div>
+            {/* Tooltip with results info */}
+            <div className="relative group">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4 text-gray-400 cursor-help"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="sr-only">More info</span>
+              {/* Tooltip */}
+              <div
+                role="tooltip"
+                className="absolute z-10 invisible inline-block px-3 py-2 text-xs font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 group-hover:visible group-hover:opacity-100 tooltip dark:bg-gray-700 -left-1/2 top-full mt-2 whitespace-nowrap"
+              >
+                Showing {(currentPage - 1) * PER_PAGE + 1}-{Math.min(currentPage * PER_PAGE, filtered.length)} of {filtered.length} audits
+                <div className="tooltip-arrow" data-popper-arrow></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Show only: radio filters */}
+        <div className="flex flex-wrap items-center px-4 py-4 dark:border-gray-700">
+          <div className="hidden mr-4 text-sm font-medium text-gray-900 md:flex dark:text-white">
+            Show only:
+          </div>
+          <div className="flex flex-wrap">
             {TABS.map(tab => (
-              <div key={tab.key} className="mr-4 flex items-center">
+              <div key={tab.key} className="flex items-center mr-4">
                 <Radio
                   id={`show-${tab.key}`}
                   name="show-only"
@@ -422,7 +619,7 @@ export default function AuditsPage() {
                 />
                 <label
                   htmlFor={`show-${tab.key}`}
-                  className="ml-2 text-sm font-medium text-heading dark:text-gray-300"
+                  className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
                 >
                   {tab.label}
                   {tab.key === 'triage' && stats.blocking > 0 && (
@@ -433,21 +630,6 @@ export default function AuditsPage() {
                 </label>
               </div>
             ))}
-          </div>
-          <div className="mt-3 md:mt-0">
-            {/* Actions dropdown — matches template's pattern exactly */}
-            <Dropdown
-              color="gray"
-              label={
-                <>
-                  <ChevronDownIcon />
-                  Actions
-                </>
-              }
-              theme={dropdownFloatingTheme}
-            >
-              <DropdownItem>Export CSV</DropdownItem>
-            </Dropdown>
           </div>
         </div>
 
@@ -464,52 +646,47 @@ export default function AuditsPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto rounded-base bg-white shadow-xs dark:bg-gray-800">
               <Table
-                theme={{ root: { wrapper: 'static' } }}
-                className="w-full text-left text-sm text-body dark:text-gray-400"
+                theme={customTheme.table}
+                className="w-full text-left text-sm text-gray-500 dark:text-gray-400"
               >
-                <TableHead className="bg-neutral-tertiary text-xs uppercase text-body-subtle dark:bg-gray-700 dark:text-gray-400">
-                  <TableHeadCell scope="col" className="p-4">
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="checkbox-all"
-                        name="checkbox-all"
-                        checked={paginated.length > 0 && paginated.every(a => selectedIds.has(a.id))}
-                        onChange={handleSelectAll}
-                      />
-                      <Label htmlFor="checkbox-all" className="sr-only">Select all</Label>
-                    </div>
-                  </TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Audit / Client</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Standard</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Pipeline</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Issues</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Blocking</TableHeadCell>
-                  <TableHeadCell scope="col" className="whitespace-nowrap px-4 py-3">Due date</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">Status</TableHeadCell>
-                  <TableHeadCell scope="col" className="px-4 py-3">
-                    <span className="sr-only">Actions</span>
-                  </TableHeadCell>
+                <TableHead>
+                  <TableRow>
+                    <TableHeadCell scope="col" className="p-4">
+                      <div className="flex items-center">
+                        <Checkbox
+                          id="checkbox-all"
+                          name="checkbox-all"
+                          checked={paginated.length > 0 && paginated.every(a => selectedIds.has(a.id))}
+                          onChange={handleSelectAll}
+                        />
+                        <Label htmlFor="checkbox-all" className="sr-only">Select all</Label>
+                      </div>
+                    </TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">Audit / Client</TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">Standard</TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">Pipeline</TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">Issues</TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">Blocking</TableHeadCell>
+                    <TableHeadCell scope="col" className="whitespace-nowrap px-4 py-3">Due date</TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">Status</TableHeadCell>
+                    <TableHeadCell scope="col" className="px-4 py-3">
+                      <span className="sr-only">Actions</span>
+                    </TableHeadCell>
+                  </TableRow>
                 </TableHead>
                 <TableBody>
                   {paginated.map(audit => {
-                    const stage     = getPipelineStage(audit)
-                    const critical  = audit.critical_count     ?? 0
-                    const needs     = audit.needs_review_count ?? 0
-                    const untriaged = audit.untriaged_count    ?? 0
+                    const stage = getPipelineStage(audit)
 
                     return (
                       <TableRow
                         key={audit.id}
-                        className="cursor-pointer border-b border-default hover:bg-neutral-tertiary/50 dark:border-gray-600 dark:hover:bg-gray-700"
-                        onClick={() => navigate(`/audits/${audit.id}`)}
+                        className="border-b border-gray-200 bg-white hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
                       >
-                        {/* Checkbox — stop row navigation on click */}
-                        <TableCell
-                          className="w-4 px-4 py-3"
-                          onClick={e => e.stopPropagation()}
-                        >
+                        {/* Checkbox */}
+                        <TableCell className="w-4 px-4 py-3">
                           <div className="flex items-center">
                             <Checkbox
                               id={`checkbox-${audit.id}`}
@@ -524,95 +701,77 @@ export default function AuditsPage() {
                         </TableCell>
 
                         {/* Audit / client */}
-                        <th
+                        <TableCell
                           scope="row"
-                          className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white"
+                          className="whitespace-nowrap px-4 py-2 font-medium text-gray-900 dark:text-white"
                         >
-                          <p className="text-sm font-medium text-heading">{audit.name}</p>
-                          <p className="mt-0.5 text-xs font-normal text-body-subtle">
-                            {audit.client_name ?? audit.project_name ?? '—'}
-                            {audit.website_url && (
-                              <span className="ml-1.5 inline-flex items-center gap-0.5 font-mono">
-                                <Globe className="h-2.5 w-2.5" aria-hidden="true" />
-                                {new URL(audit.website_url).hostname}
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                              <span className="text-xs font-medium text-primary-700">
+                                {(audit.name?.[0] ?? 'A').toUpperCase()}
                               </span>
-                            )}
-                          </p>
-                        </th>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{audit.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {audit.client_name ?? audit.project_name ?? '—'}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
 
                         {/* WCAG standard */}
-                        <TableCell className="px-4 py-3">
-                          <WcagBadge version={audit.wcag_version} level={audit.conformance_level} />
+                        <TableCell className="px-4 py-2">
+                          <Badge className="w-fit" color="gray">
+                            {audit.wcag_version} {audit.conformance_level}
+                          </Badge>
                         </TableCell>
 
                         {/* Pipeline */}
-                        <TableCell className="px-4 py-3">
+                        <TableCell className="px-4 py-2">
                           <PipelineBar stage={stage} />
                         </TableCell>
 
                         {/* Issues */}
-                        <TableCell className="whitespace-nowrap px-4 py-3">
-                          {critical > 0 ? (
-                            <>
-                              <span className="text-sm font-medium text-fg-danger">{critical} critical</span>
-                              {needs > 0 && (
-                                <p className="mt-0.5 text-xs text-body-subtle">{needs} needs review</p>
-                              )}
-                            </>
-                          ) : stage === 0 ? (
-                            <span className="text-xs text-body-subtle">Not scanned</span>
-                          ) : (
-                            <span className="text-xs font-medium text-fg-success">0 critical</span>
-                          )}
+                        <TableCell className="px-4 py-2">
+                          <IssuesBadge audit={audit} onScanClick={(a) => navigate(`/audits/${a.id}/scan`)} />
                         </TableCell>
 
                         {/* Blocking */}
-                        <TableCell className="px-4 py-3">
-                          <BlockingBadge untriaged={stage > 0 ? untriaged : null} />
+                        <TableCell className="px-4 py-2">
+                          <BlockingBadge audit={audit} />
                         </TableCell>
 
                         {/* Due date */}
-                        <TableCell className="whitespace-nowrap px-4 py-3">
-                          <DueDate date={audit.target_end_date} />
+                        <TableCell className="whitespace-nowrap px-4 py-2">
+                          <DueDate
+                            date={audit.target_end_date}
+                            auditId={audit.id}
+                            onSetDate={openDatePicker}
+                          />
                         </TableCell>
 
-                        {/* Status */}
-                        <TableCell className="whitespace-nowrap px-4 py-3">
+                        {/* Status — dot + text pattern */}
+                        <TableCell className="whitespace-nowrap px-4 py-2 font-medium text-gray-900 dark:text-white">
                           <StatusBadge status={audit.status} />
                         </TableCell>
 
-                        {/* 3-dot actions — stop row click propagation */}
-                        {/* Matches template's Dropdown dismissOnClick={false} inline + twMerge theme */}
-                        <TableCell
-                          className="whitespace-nowrap px-4 py-3 font-medium text-heading dark:text-white"
-                          onClick={e => e.stopPropagation()}
-                        >
+                        {/* Actions — 3 dots dropdown */}
+                        <TableCell className="whitespace-nowrap px-4 py-2 font-medium text-gray-900 dark:text-white">
                           <Dropdown
-                            dismissOnClick={false}
                             inline
                             label={
                               <>
-                                <span className="sr-only">Manage entry</span>
+                                <span className="sr-only">Edit audit</span>
                                 <DotsIcon />
                               </>
                             }
                             theme={dropdownFloatingTheme}
                           >
-                            <DropdownItem onClick={() => navigate(`/audits/${audit.id}`)}>
-                              Open
-                            </DropdownItem>
+                            <DropdownItem onClick={() => navigate(`/audits/${audit.id}`)}>Show</DropdownItem>
+                            <DropdownItem onClick={() => openEdit(audit)}>Edit</DropdownItem>
                             <DropdownDivider />
-                            <DropdownItem onClick={() => handleArchive(audit.id)}>
-                              <Archive className="mr-2 h-4 w-4" aria-hidden="true" />
-                              Archive
-                            </DropdownItem>
-                            <DropdownItem
-                              className="text-red-600 dark:text-red-600"
-                              onClick={() => setDeleteTarget(audit)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                              Delete
-                            </DropdownItem>
+                            <DropdownItem onClick={() => handleArchive(audit.id)}>Archive</DropdownItem>
                           </Dropdown>
                         </TableCell>
                       </TableRow>
@@ -622,9 +781,9 @@ export default function AuditsPage() {
               </Table>
             </div>
 
-            {/* Footer — matches template's flex items-center justify-between p-4 */}
-            <div className="flex items-center justify-between border-t border-default p-4 dark:border-gray-700">
-              <span className="text-xs text-body-subtle dark:text-gray-400">
+            {/* Footer */}
+            <div className="flex items-center justify-between p-4 dark:border-gray-700">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 Total audits: {filtered.length}
               </span>
               {totalPages > 1 && (
@@ -642,22 +801,144 @@ export default function AuditsPage() {
       </div>
 
       {/* ── Delete confirmation modal ── */}
-      {/* TODO: replace with Flowbite delete-confirm component when chosen */}
       <Modal show={!!deleteTarget} onClose={() => setDeleteTarget(null)} size="md">
-        <Modal.Header className="border-b border-default text-base font-semibold text-heading">
+        <ModalHeader className="border-b border-gray-200 text-base font-semibold text-gray-900 dark:text-white">
           Delete audit
-        </Modal.Header>
-        <Modal.Body>
-          <p className="text-sm text-body">
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
             Are you sure you want to delete{' '}
-            <span className="font-semibold text-heading">{deleteTarget?.name}</span>?
+            <span className="font-semibold text-gray-900 dark:text-white">{deleteTarget?.name}</span>?
             This action cannot be undone.
           </p>
-        </Modal.Body>
-        <Modal.Footer className="flex justify-end gap-2 border-t border-default">
+        </ModalBody>
+        <ModalFooter className="flex justify-end gap-2 border-t border-gray-200">
           <Button color="gray" size="sm" onClick={() => setDeleteTarget(null)}>Cancel</Button>
           <Button color="failure" size="sm" onClick={handleDelete}>Delete</Button>
-        </Modal.Footer>
+        </ModalFooter>
+      </Modal>
+
+      {/* ── Date picker modal ── */}
+      <Modal show={datePickerOpen} onClose={() => setDatePickerOpen(false)} size="sm">
+        <ModalHeader className="border-b border-gray-200 text-base font-semibold text-gray-900 dark:text-white">
+          Set due date
+        </ModalHeader>
+        <ModalBody>
+          <Label htmlFor="due-date" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+            Due date
+          </Label>
+          <TextInput
+            id="due-date"
+            type="date"
+            value={dateDraft}
+            onChange={e => setDateDraft(e.target.value)}
+          />
+        </ModalBody>
+        <ModalFooter className="flex justify-end gap-2 border-t border-gray-200">
+          <Button color="gray" size="sm" onClick={() => setDatePickerOpen(false)}>Cancel</Button>
+          <Button color="primary" size="sm" disabled={!dateDraft} onClick={handleSaveDate}>Save</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* ── Edit audit modal ── */}
+      <Modal show={!!editTarget} onClose={() => setEditTarget(null)} size="md">
+        <ModalHeader className="border-b border-gray-200 text-base font-semibold text-gray-900 dark:text-white">
+          Edit audit
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+                Audit name
+              </Label>
+              <TextInput
+                id="edit-name"
+                value={editForm.name ?? ''}
+                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Website accessibility audit"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-client" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+                  Client
+                </Label>
+                <TextInput
+                  id="edit-client"
+                  value={editForm.client_name ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, client_name: e.target.value }))}
+                  placeholder="Client name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-project" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+                  Project
+                </Label>
+                <TextInput
+                  id="edit-project"
+                  value={editForm.project_name ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, project_name: e.target.value }))}
+                  placeholder="Project name"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-wcag" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+                  WCAG version
+                </Label>
+                <Select
+                  id="edit-wcag"
+                  value={editForm.wcag_version ?? '2.2'}
+                  onChange={e => setEditForm(f => ({ ...f, wcag_version: e.target.value }))}
+                >
+                  <option value="2.1">WCAG 2.1</option>
+                  <option value="2.2">WCAG 2.2</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-level" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+                  Conformance level
+                </Label>
+                <Select
+                  id="edit-level"
+                  value={editForm.conformance_level ?? 'AA'}
+                  onChange={e => setEditForm(f => ({ ...f, conformance_level: e.target.value }))}
+                >
+                  <option value="A">A</option>
+                  <option value="AA">AA</option>
+                  <option value="AAA">AAA</option>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-due" className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">
+                Due date
+              </Label>
+              <TextInput
+                id="edit-due"
+                type="date"
+                value={editForm.target_end_date ?? ''}
+                onChange={e => setEditForm(f => ({ ...f, target_end_date: e.target.value }))}
+              />
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter className="flex justify-end gap-2 border-t border-gray-200">
+          <Button color="gray" size="sm" onClick={() => setEditTarget(null)}>Cancel</Button>
+          <Button
+            color="primary"
+            size="sm"
+            disabled={!editForm.name?.trim() || editSaving}
+            isProcessing={editSaving}
+            onClick={handleEditSave}
+          >
+            Save changes
+          </Button>
+        </ModalFooter>
       </Modal>
 
     </div>

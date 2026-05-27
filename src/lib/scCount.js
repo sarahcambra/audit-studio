@@ -108,9 +108,9 @@ export const SUPERSESSION_MAP = {
 
 /** Build the applicable SC set for version + level */
 export function getAllSCsForTarget(wcagVersion = '2.2', conformanceLevel = 'AA') {
-  // Normalize inputs
-  const versionKey = wcagVersion.includes('2.1') ? '2.1' : '2.2'
-  const levelKey = conformanceLevel.replace('Level ', '').trim().toUpperCase()
+  // Normalize inputs — guard against null/undefined
+  const versionKey = (wcagVersion ?? '2.2').includes('2.1') ? '2.1' : '2.2'
+  const levelKey = (conformanceLevel ?? 'AA').replace('Level ', '').trim().toUpperCase()
 
   // Validate level - default to AA if invalid
   if (!['A', 'AA', 'AAA'].includes(levelKey)) {
@@ -142,11 +142,9 @@ export function getAllSCsForTarget(wcagVersion = '2.2', conformanceLevel = 'AA')
 
 /** Get list of questions visible for this version + level combination */
 export function getVisibleQuestions(wcagVersion = '2.2', conformanceLevel = 'AA') {
-  // Normalize wcagVersion to '2.1' or '2.2' (remove 'WCAG ' prefix if present)
-  const versionKey = wcagVersion.includes('2.1') ? '2.1' : '2.2'
-
-  // Normalize conformanceLevel to 'A', 'AA', or 'AAA' (remove 'Level ' prefix if present)
-  const levelKey = conformanceLevel.replace('Level ', '').trim().toUpperCase()
+  // Normalize — guard against null/undefined inputs
+  const versionKey = (wcagVersion ?? '2.2').includes('2.1') ? '2.1' : '2.2'
+  const levelKey = (conformanceLevel ?? 'AA').replace('Level ', '').trim().toUpperCase()
 
   // Validate level - default to AA if invalid
   if (!['A', 'AA', 'AAA'].includes(levelKey)) {
@@ -235,8 +233,10 @@ export function getApproxScCount(wcagVersion = '2.2', conformanceLevel = 'AA', p
     }
   }
 
-  if (preTestAnswers && typeof preTestAnswers !== 'object') {
-    console.error('getApproxScCount: preTestAnswers must be an object')
+  if (!preTestAnswers || typeof preTestAnswers !== 'object') {
+    if (preTestAnswers != null) {
+      console.error('getApproxScCount: preTestAnswers must be an object')
+    }
     preTestAnswers = {}
   }
 
@@ -258,12 +258,13 @@ export function getApproxScCount(wcagVersion = '2.2', conformanceLevel = 'AA', p
   )
 
   return {
-    total:          allSCs.size,
-    skipped:        skippedSCs.size,
-    superseded:     supersededSCs.size,
-    active:         activeSCs.size,
-    skippedList:    [...skippedSCs],
-    supersededList: [...supersededSCs],
-    activeList:     [...activeSCs],
+    total:            allSCs.size,
+    skipped:          skippedSCs.size,
+    superseded:       supersededSCs.size,
+    active:           activeSCs.size,
+    skippedList:      [...skippedSCs],
+    supersededList:   [...supersededSCs],
+    activeList:       [...activeSCs],
+    visibleQuestions: getVisibleQuestions(wcagVersion, conformanceLevel),
   }
 }

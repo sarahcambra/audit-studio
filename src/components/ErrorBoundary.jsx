@@ -55,7 +55,7 @@ export default class ErrorBoundary extends Component {
                     {this.state.errorInfo.componentStack}
                   </details>
                 )}
-                <Button onClick={this.resetErrorBoundary} color="failure" size="sm">
+                <Button onClick={this.resetErrorBoundary} color="danger" size="sm">
                   Try Again
                 </Button>
               </div>

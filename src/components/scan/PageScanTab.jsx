@@ -3,12 +3,14 @@ import {
   Badge, Button, Label, Spinner, TextInput,
   Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow,
 } from 'flowbite-react'
-import { Globe, Play, Trash2, Plus, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
+import { Globe, Play, Trash2, Plus, CheckCircle2, AlertTriangle } from 'lucide-react'
+import ScanProgressBanner from './ScanProgressBanner'
 import { customTheme } from '../../theme'
+import { normaliseUrl, isValidUrl } from '../../lib/urlUtils'
 
 export default function PageScanTab({
   pages, onScan, onAddItem, onRemoveItem,
-  getJobForItem, isRunning, progress, savingScope,
+  getJobForItem, isRunning, savingScope,
 }) {
   const [showAddForm, setShowAddForm]       = useState(false)
   const [addName, setAddName]               = useState('')
@@ -16,17 +18,11 @@ export default function PageScanTab({
   const [addUrlError, setAddUrlError]       = useState('')
   const [runningForIdx, setRunningForIdx]   = useState(null)
 
-  const normaliseUrl = (val) => {
-    let u = val.trim()
-    if (u && !u.match(/^https?:\/\//i)) u = `https://${u}`
-    return u
-  }
-
   const validateAddUrl = (val) => {
     const u = normaliseUrl(val)
     if (!u) { setAddUrlError('URL is required'); return '' }
-    try { new URL(u); setAddUrlError(''); return u }
-    catch { setAddUrlError('Enter a valid URL (e.g. https://example.com)'); return '' }
+    if (!isValidUrl(u)) { setAddUrlError('Enter a valid URL (e.g. example.com)'); return '' }
+    setAddUrlError(''); return u
   }
 
   const handleAdd = () => {
@@ -43,18 +39,28 @@ export default function PageScanTab({
   }
 
   const ScanStatusBadge = ({ job }) => {
-    if (!job) return <Badge color="gray" size="xs" className="border border-gray-300 dark:border-gray-500">Not scanned</Badge>
-    if (job.status !== 'complete') return (
-      <Badge color="warning" size="xs" className="capitalize border border-orange-200 dark:border-orange-700">
-        {job.status}
+    if (!job) return <Badge theme={customTheme.badge} color="gray" size="xs">Not scanned</Badge>
+    if (job.status === 'error') return (
+      <Badge theme={customTheme.badge} color="danger" size="xs" title={job.error ?? 'Scan failed'}>
+        Error
       </Badge>
     )
-    if (job.results?.violations?.length > 0) return (
-      <Badge color="failure" size="xs" icon={AlertTriangle} className="border border-red-200 dark:border-red-700">
-        {job.results.violations.length} issue{job.results.violations.length !== 1 ? 's' : ''}
+    if (job.status === 'running') return (
+      <Badge theme={customTheme.badge} color="warning" size="xs">
+        Running…
       </Badge>
     )
-    return <Badge color="success" size="xs" icon={CheckCircle2} className="border border-emerald-200 dark:border-emerald-700">Clean</Badge>
+    if (job.status === 'pending') return (
+      <Badge theme={customTheme.badge} color="alternative" size="xs">
+        Queued
+      </Badge>
+    )
+    if ((job.summary?.totalViolations ?? 0) > 0) return (
+      <Badge theme={customTheme.badge} color="danger" size="xs" icon={AlertTriangle}>
+        {job.summary.totalViolations} issue{job.summary.totalViolations !== 1 ? 's' : ''}
+      </Badge>
+    )
+    return <Badge theme={customTheme.badge} color="success" size="xs" icon={CheckCircle2}>Clean</Badge>
   }
 
   // ── Empty state ───────────────────────────────────────────────────────────
@@ -80,35 +86,17 @@ export default function PageScanTab({
     <div className="space-y-4">
 
       {/* ── Scanning progress banner ──────────────────────────────────────── */}
-      {isRunning && (
-        <div className="flex items-center gap-3 rounded border border-brand-subtle bg-brand-softer px-4 py-3">
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-fg-brand" aria-hidden="true" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-heading">Scanning…</p>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-brand-soft">
-              <div
-                className="h-1.5 rounded-full bg-primary-600 transition-all duration-500"
-                style={{ width: `${progress}%` }}
-                role="progressbar"
-                aria-valuenow={progress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
-            </div>
-          </div>
-          <span className="shrink-0 text-xs text-body-subtle">{progress}%</span>
-        </div>
-      )}
+      <ScanProgressBanner isRunning={isRunning} />
 
       {/* ── Pages table ───────────────────────────────────────────────────── */}
       {pages.length > 0 && (
         <div className="overflow-x-auto rounded border border-default">
-          <Table hoverable theme={{ root: { wrapper: 'static' } }}>
-            <TableHead className="bg-neutral-tertiary text-xs uppercase tracking-wide text-body-subtle">
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Page name</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">URL</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Last scan</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">
+          <Table hoverable theme={customTheme.table}>
+            <TableHead>
+              <TableHeadCell scope="col">Page name</TableHeadCell>
+              <TableHeadCell scope="col">URL</TableHeadCell>
+              <TableHeadCell scope="col">Last scan</TableHeadCell>
+              <TableHeadCell scope="col">
                 <span className="sr-only">Actions</span>
               </TableHeadCell>
             </TableHead>
@@ -143,7 +131,7 @@ export default function PageScanTab({
                           Scan
                         </Button>
                         <Button
-                          color="gray"
+                          color="secondary"
                           size="sm"
                           className="p-1.5"
                           onClick={() => onRemoveItem(item._idx)}
@@ -185,8 +173,8 @@ export default function PageScanTab({
               </Label>
               <TextInput
                 id="add-page-url"
-                type="url"
-                placeholder="https://example.com"
+                type="text"
+                placeholder="example.com"
                 value={addUrl}
                 onChange={e => { setAddUrl(e.target.value); if (addUrlError) validateAddUrl(e.target.value) }}
                 onBlur={e => validateAddUrl(e.target.value)}
@@ -206,7 +194,7 @@ export default function PageScanTab({
               {savingScope ? 'Saving…' : 'Add page'}
             </Button>
             <Button
-              color="gray"
+              color="ghost"
               size="sm"
               onClick={() => { setShowAddForm(false); setAddName(''); setAddUrl(''); setAddUrlError('') }}
             >

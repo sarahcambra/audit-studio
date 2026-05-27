@@ -2,7 +2,15 @@
 -- audit_summary view
 -- Adds computed columns the dashboard needs.
 -- Paste into Supabase SQL Editor and run.
+--
+-- NOTE: DROP is required before CREATE OR REPLACE because
+-- PostgreSQL expands `a.*` at view-creation time. Any column
+-- added to `audits` after the view was first created (e.g.
+-- favicon_url, started_at) will be invisible until the view
+-- is dropped and recreated from scratch.
 -- ============================================================
+
+DROP VIEW IF EXISTS public.audit_summary;
 
 CREATE OR REPLACE VIEW public.audit_summary AS
 SELECT
@@ -47,6 +55,14 @@ SELECT
       AND ti.issue_type IN ('needs review', 'failure, needs review')
       AND ti.decision IS NULL
   ) AS needs_review_count,
+
+  -- Best-practice issues (not WCAG failures)
+  (
+    SELECT COUNT(*) FROM public.triage_items ti
+    WHERE ti.audit_id = a.id
+      AND ti.issue_type = 'best-practice'
+      AND ti.decision IS NULL
+  ) AS best_practice_count,
 
   -- Total scan jobs for this audit
   (

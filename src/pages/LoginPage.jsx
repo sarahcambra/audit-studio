@@ -5,7 +5,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-950 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm dark:bg-gray-800">
 
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-2">

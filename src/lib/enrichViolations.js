@@ -1,7 +1,8 @@
-import { RULE_ENRICHMENTS } from './ruleEnrichments'
+import { RULE_ENRICHMENTS } from './ruleEnrichments.js'
 
 export function enrichViolation(violation) {
-  const enrichment = RULE_ENRICHMENTS[violation.ruleId] ?? {}
+  // axe violations use `id`, not `ruleId`
+  const enrichment = RULE_ENRICHMENTS[violation.id ?? violation.ruleId] ?? {}
   return {
     ...violation,
     auditorTitle:   enrichment.auditorTitle   ?? violation.description,

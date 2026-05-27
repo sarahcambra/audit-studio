@@ -778,7 +778,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Adjust colors to meet WCAG contrast requirements. Use a contrast checker tool. Consider adding a semi-transparent background behind text over images.",
     badExample: "<span style='color: #888888;'>Light gray text on white</span>",
     goodExample: "<span style='color: #595959;'>Dark gray text (4.5:1 contrast)</span>",
-    affectedUsers: ["Users with low vision", "Users in bright sunlight", "Older users"],
+    affectedUsers: ["Low vision users", "Colorblind users"],
     fixDifficulty: "Medium"
   },
 

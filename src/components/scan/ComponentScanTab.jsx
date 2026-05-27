@@ -3,13 +3,15 @@ import {
   Badge, Button, Label, Select, Spinner, TextInput,
   Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow,
 } from 'flowbite-react'
-import { Puzzle, Play, Trash2, Plus, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
+import { Puzzle, Play, Trash2, Plus, CheckCircle2, AlertTriangle } from 'lucide-react'
+import ScanProgressBanner from './ScanProgressBanner'
 import { COMPONENT_SELECTORS } from '../../lib/componentSelectors'
 import { customTheme } from '../../theme'
+import { normaliseUrl, isValidUrl } from '../../lib/urlUtils'
 
 export default function ComponentScanTab({
   components, onScan, onAddItem, onRemoveItem,
-  getJobForItem, isRunning, progress, savingScope,
+  getJobForItem, isRunning, savingScope,
 }) {
   const [showAddForm, setShowAddForm]           = useState(false)
   const [addName, setAddName]                   = useState('')
@@ -20,17 +22,11 @@ export default function ComponentScanTab({
   const [addSelectorError, setAddSelectorError] = useState('')
   const [runningForIdx, setRunningForIdx]       = useState(null)
 
-  const normaliseUrl = (val) => {
-    let u = val.trim()
-    if (u && !u.match(/^https?:\/\//i)) u = `https://${u}`
-    return u
-  }
-
   const validateAddUrl = (val) => {
     const u = normaliseUrl(val)
     if (!u) { setAddUrlError('URL is required'); return '' }
-    try { new URL(u); setAddUrlError(''); return u }
-    catch { setAddUrlError('Enter a valid URL (e.g. https://example.com)'); return '' }
+    if (!isValidUrl(u)) { setAddUrlError('Enter a valid URL (e.g. example.com)'); return '' }
+    setAddUrlError(''); return u
   }
 
   const validateAddSelector = (val) => {
@@ -65,18 +61,22 @@ export default function ComponentScanTab({
   }
 
   const ScanStatusBadge = ({ job }) => {
-    if (!job) return <Badge theme={customTheme.badge} color="grayBordered" size="xs">Not scanned</Badge>
-    if (job.status !== 'complete') return (
-      <Badge theme={customTheme.badge} color="warningBordered" size="xs" className="capitalize">
-        {job.status}
+    if (!job) return <Badge theme={customTheme.badge} color="gray" size="xs">Not scanned</Badge>
+    if (job.status === 'error') return (
+      <Badge theme={customTheme.badge} color="danger" size="xs" title={job.error ?? 'Scan failed'}>Error</Badge>
+    )
+    if (job.status === 'running') return (
+      <Badge theme={customTheme.badge} color="warning" size="xs">Running…</Badge>
+    )
+    if (job.status === 'pending') return (
+      <Badge theme={customTheme.badge} color="alternative" size="xs">Queued</Badge>
+    )
+    if ((job.summary?.totalViolations ?? 0) > 0) return (
+      <Badge theme={customTheme.badge} color="danger" size="xs" icon={AlertTriangle}>
+        {job.summary.totalViolations} issue{job.summary.totalViolations !== 1 ? 's' : ''}
       </Badge>
     )
-    if (job.results?.violations?.length > 0) return (
-      <Badge theme={customTheme.badge} color="dangerBordered" size="xs" icon={AlertTriangle}>
-        {job.results.violations.length} issue{job.results.violations.length !== 1 ? 's' : ''}
-      </Badge>
-    )
-    return <Badge theme={customTheme.badge} color="successBordered" size="xs" icon={CheckCircle2}>Clean</Badge>
+    return <Badge theme={customTheme.badge} color="success" size="xs" icon={CheckCircle2}>Clean</Badge>
   }
 
   // ── Empty state ───────────────────────────────────────────────────────────
@@ -102,36 +102,18 @@ export default function ComponentScanTab({
     <div className="space-y-4">
 
       {/* ── Scanning progress banner ──────────────────────────────────────── */}
-      {isRunning && (
-        <div className="flex items-center gap-3 rounded border border-brand-subtle bg-brand-softer px-4 py-3">
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-fg-brand" aria-hidden="true" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-heading">Scanning component…</p>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-brand-soft">
-              <div
-                className="h-1.5 rounded-full bg-primary-600 transition-all duration-500"
-                style={{ width: `${progress}%` }}
-                role="progressbar"
-                aria-valuenow={progress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
-            </div>
-          </div>
-          <span className="shrink-0 text-xs text-body-subtle">{progress}%</span>
-        </div>
-      )}
+      <ScanProgressBanner isRunning={isRunning} />
 
       {/* ── Components table ──────────────────────────────────────────────── */}
       {components.length > 0 && (
         <div className="overflow-x-auto rounded border border-default">
-          <Table hoverable theme={{ root: { wrapper: 'static' } }}>
-            <TableHead className="bg-neutral-tertiary text-xs uppercase tracking-wide text-body-subtle">
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Component</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">URL</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Selector</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">Last scan</TableHeadCell>
-              <TableHeadCell scope="col" className="px-5 py-3 font-medium">
+          <Table hoverable theme={customTheme.table}>
+            <TableHead>
+              <TableHeadCell scope="col">Component</TableHeadCell>
+              <TableHeadCell scope="col">URL</TableHeadCell>
+              <TableHeadCell scope="col">Selector</TableHeadCell>
+              <TableHeadCell scope="col">Last scan</TableHeadCell>
+              <TableHeadCell scope="col">
                 <span className="sr-only">Actions</span>
               </TableHeadCell>
             </TableHead>
@@ -175,7 +157,7 @@ export default function ComponentScanTab({
                           Scan
                         </Button>
                         <Button
-                          color="gray"
+                          color="secondary"
                           size="sm"
                           className="p-1.5"
                           onClick={() => onRemoveItem(item._idx)}
@@ -217,8 +199,8 @@ export default function ComponentScanTab({
               </Label>
               <TextInput
                 id="add-comp-url"
-                type="url"
-                placeholder="https://example.com/page"
+                type="text"
+                placeholder="example.com/page"
                 value={addUrl}
                 onChange={e => { setAddUrl(e.target.value); if (addUrlError) validateAddUrl(e.target.value) }}
                 onBlur={e => validateAddUrl(e.target.value)}
@@ -274,7 +256,7 @@ export default function ComponentScanTab({
               {savingScope ? 'Saving…' : 'Add component'}
             </Button>
             <Button
-              color="gray"
+              color="ghost"
               size="sm"
               onClick={() => {
                 setShowAddForm(false)

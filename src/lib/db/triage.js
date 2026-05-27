@@ -20,7 +20,7 @@ export async function saveTriage({ auditId, jobId, groupId, ruleId, landmark, is
       client_fix_override:  clientFixOverride,
       auditor_notes:        auditorNotes,
       updated_at:           new Date().toISOString(),
-    }, { onConflict: 'audit_id,job_id,group_id' })
+    }, { onConflict: 'audit_id,group_id' })
     .select()
     .single()
 
@@ -52,4 +52,60 @@ export async function updateTriageItem(triageId, updates) {
     .single()
 
   return { data, error }
+}
+
+/**
+ * Save auditor overrides (clientFix, fixDifficulty, badExample, goodExample, affectedUsers)
+ * to the overrides_json column.
+ */
+export async function saveOverrides(triageId, overrides) {
+  return updateTriageItem(triageId, { overrides_json: overrides })
+}
+
+/**
+ * Upload a file to the triage-evidence Supabase Storage bucket.
+ * Returns { url, error } — url is the public-accessible signed URL (1 hour).
+ *
+ * @param {string} triageId   - triage_items row id (used in storage path)
+ * @param {File}   file       - File object from the input element
+ */
+export async function uploadEvidenceFile(triageId, file) {
+  const ext      = file.name.split('.').pop()
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const path     = `${triageId}/${filename}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('triage-evidence')
+    .upload(path, file, { contentType: file.type, upsert: false })
+
+  if (uploadError) return { url: null, path: null, error: uploadError }
+
+  const { data: signedData, error: signError } = await supabase.storage
+    .from('triage-evidence')
+    .createSignedUrl(path, 60 * 60) // 1-hour signed URL
+
+  if (signError) return { url: null, path, error: signError }
+
+  return { url: signedData.signedUrl, path, error: null }
+}
+
+/**
+ * Append new file metadata entries to the evidence_files JSONB array.
+ * Fetches the current array first to avoid overwriting existing entries.
+ *
+ * @param {string} triageId
+ * @param {{ type: string, url: string, path: string, name: string, uploadedAt: string }[]} newFiles
+ */
+export async function appendEvidenceFiles(triageId, newFiles) {
+  // Fetch current evidence_files array
+  const { data: current, error: fetchError } = await supabase
+    .from('triage_items')
+    .select('evidence_files')
+    .eq('id', triageId)
+    .single()
+
+  if (fetchError) return { data: null, error: fetchError }
+
+  const existing = current?.evidence_files ?? []
+  return updateTriageItem(triageId, { evidence_files: [...existing, ...newFiles] })
 }

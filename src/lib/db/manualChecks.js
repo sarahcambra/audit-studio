@@ -1,7 +1,7 @@
 import { supabase } from '../supabase'
 
 /**
- * Fetch all manual checks for an audit.
+ * Fetch all manual checks for an audit, ordered by sort_order then sc_id.
  */
 export async function getManualChecks(auditId) {
   const { data, error } = await supabase
@@ -9,8 +9,20 @@ export async function getManualChecks(auditId) {
     .select('*')
     .eq('audit_id', auditId)
     .order('sort_order', { ascending: true })
+    .order('sc_id',     { ascending: true })
 
   return { data, error }
+}
+
+/**
+ * Save auditor verdict + notes for a manual check.
+ */
+export async function saveManualCheckVerdict(checkId, { verdict, auditorNotes }) {
+  return updateManualCheck(checkId, {
+    verdict,
+    auditor_notes: auditorNotes ?? null,
+    status:        verdict ?? 'untriaged',
+  })
 }
 
 /**

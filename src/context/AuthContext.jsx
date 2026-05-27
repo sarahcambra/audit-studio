@@ -27,13 +27,25 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setProfile(data)
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (error) {
+        // Profile row may not exist yet for brand-new OAuth users — not fatal
+        console.warn('fetchProfile: could not load profile', error.message)
+        setProfile(null)
+      } else {
+        setProfile(data)
+      }
+    } catch (err) {
+      console.error('fetchProfile: unexpected error', err)
+      setProfile(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function signInWithGitHub() {
