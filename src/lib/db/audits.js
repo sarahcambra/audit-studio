@@ -1,4 +1,4 @@
-import { supabase } from '../supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Create a new audit from the wizard form data.
@@ -18,7 +18,7 @@ export async function createAudit(userId, form) {
     project_name:      form.projectName   ?? null,
     client_name:       form.clientName    ?? null,
     website_url:       form.websiteUrl    ?? null,
-    notes:             form.notes         ?? null,
+    notes:             form.description   ?? null,
     scope_json:        { items: form.scopeItems ?? [] },
     audit_goal:        form.auditGoal     ?? null,
     is_draft:          false,
@@ -109,6 +109,20 @@ export async function updateAudit(auditId, updates) {
  */
 export async function archiveAudit(auditId) {
   return updateAudit(auditId, { status: 'archived' })
+}
+
+/**
+ * Permanently delete an audit and all its related data.
+ * Supabase cascades the delete to scan_jobs, triage_items, manual_checks, etc.
+ * via the foreign-key constraints defined in the schema.
+ * Returns { error }
+ */
+export async function deleteAudit(auditId) {
+  const { error } = await supabase
+    .from('audits')
+    .delete()
+    .eq('id', auditId)
+  return { error }
 }
 
 /**

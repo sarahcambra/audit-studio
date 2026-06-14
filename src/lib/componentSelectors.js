@@ -1,9 +1,27 @@
 /**
  * Component selectors for quick-select dropdown in Component Scan tab.
- * These are generic patterns that work on most websites — not Flowbite-specific.
- * Each selector uses multiple strategies: semantic HTML + ARIA + data attributes + common class names.
+ *
+ * These are generic CSS selector patterns that work on most websites — they are
+ * intentionally not Flowbite-specific. Each entry combines multiple discovery
+ * strategies: semantic HTML, ARIA roles/labels, data attributes, and common
+ * class-name conventions. This maximises the chance of matching a component
+ * regardless of how the target site is built.
+ *
+ * When a user picks an item from the datalist in Step4Scope or the Component
+ * Scan tab, the UI stores the raw `selector` string and passes it to the scan
+ * worker as the `selector` field. The worker uses Playwright's `page.locator()`
+ * or `page.$()` to target that element for axe-core testing.
+ *
+ * @example
+ * // Used in Step4Scope.jsx datalist
+ * <datalist id={`component-selectors-${index}`}>
+ *   {COMPONENT_SELECTORS.map(({ label, selector }) => (
+ *     <option key={label} value={`${label} — ${selector}`} />
+ *   ))}
+ * </datalist>
+ *
+ * @type {Array<{label: string, selector: string}>}
  */
-
 export const COMPONENT_SELECTORS = [
   // Navigation
   { label: 'Navbar',         selector: 'nav, [role="navigation"], [aria-label*="nav" i], .navbar' },

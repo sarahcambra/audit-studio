@@ -8,7 +8,7 @@ export default function ProfilePageHeader({ title = 'Settings', belowTitle = nul
           <li className="inline-flex items-center">
             <Link
               to="/"
-              className="inline-flex items-center text-sm font-medium text-body hover:text-fg-brand"
+              className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary-700 dark:text-gray-300 dark:hover:text-primary-400"
             >
               <svg className="me-2.5 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                 <path
@@ -22,23 +22,23 @@ export default function ProfilePageHeader({ title = 'Settings', belowTitle = nul
           </li>
           <li>
             <div className="flex items-center">
-              <svg className="mx-1 h-4 w-4 text-body-subtle rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="mx-1 h-4 w-4 text-gray-500 dark:text-gray-400 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 5 7 7-7 7" />
               </svg>
-              <span className="ms-1 text-sm font-medium text-body md:ms-2">User</span>
+              <span className="ms-1 text-sm font-medium text-gray-700 dark:text-gray-300 md:ms-2">User</span>
             </div>
           </li>
           <li aria-current="page">
             <div className="flex items-center">
-              <svg className="mx-1 h-4 w-4 text-body-subtle rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="mx-1 h-4 w-4 text-gray-500 dark:text-gray-400 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 5 7 7-7 7" />
               </svg>
-              <span className="ms-1 text-sm font-medium text-body-subtle md:ms-2">{title}</span>
+              <span className="ms-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ms-2">{title}</span>
             </div>
           </li>
         </ol>
       </nav>
-      <h1 className="text-2xl font-semibold tracking-tight text-heading sm:text-3xl lg:text-[36px] lg:leading-tight">
+      <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl lg:text-[36px] lg:leading-tight">
         {title}
       </h1>
       {belowTitle != null ? <div className="mt-8 min-w-0 max-w-[min(56rem,calc(100vw-2rem))]">{belowTitle}</div> : null}

@@ -43,6 +43,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure each accesskey value is unique. Consider if accesskeys are needed at all, as they can conflict with browser shortcuts.",
     badExample: "<button accesskey='s'>Save</button>\n<button accesskey='s'>Search</button>",
     goodExample: "<button accesskey='s'>Save</button>\n<button accesskey='e'>Search</button>",
+        codeHighlight: "accesskey",
     affectedUsers: ["Keyboard users"],
     fixDifficulty: "Easy",
   },
@@ -64,6 +65,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add alt attribute to each area element describing the link destination.",
     badExample: "<area shape='rect' coords='0,0,100,100' href='page.html'>",
     goodExample: "<area shape='rect' coords='0,0,100,100' href='page.html' alt='Go to Products'>",
+        codeHighlight: "alt",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -87,6 +89,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove invalid ARIA attributes or change the element's role to one that supports them.",
     badExample: "<div role='button' aria-live='polite'>Click me</div>",
     goodExample: "<div role='button' aria-pressed='false'>Toggle</div>",
+        codeHighlight: "aria-",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -108,6 +111,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove the conflicting role or use a different element that matches the intended role.",
     badExample: "<button role='link'>Submit</button>",
     goodExample: "<button>Submit</button>\n<a href='/page'>Go to Page</a>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -131,6 +135,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure aria-label or aria-labelledby is present alongside aria-braillelabel.",
     badExample: "<div aria-braillelabel='XYZ' role='img'></div>",
     goodExample: "<div aria-label='Chart showing sales' aria-braillelabel='XYZ' role='img'></div>",
+        codeHighlight: "aria-braille",
     affectedUsers: ["Braille display users", "Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -155,6 +160,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or aria-labelledby, or ensure the element has visible text content.",
     badExample: "<div role='button' tabindex='0'><i class='icon'></i></div>",
     goodExample: "<div role='button' tabindex='0' aria-label='Close'><i class='icon'></i></div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users", "Speech recognition users"],
     fixDifficulty: "Easy"
   },
@@ -178,6 +184,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Review ARIA specification for conditional attributes and ensure correct usage based on element state.",
     badExample: "<div role='option' aria-selected='true'></div>",
     goodExample: "<div role='option' aria-selected='false'></div>",
+        codeHighlight: "aria-",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -201,6 +208,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Replace deprecated role with current equivalent. Check ARIA 1.2 spec for current roles.",
     badExample: "<div role='directory'>...</div>",
     goodExample: "<ul>...</ul>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -223,6 +231,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or aria-labelledby to describe the dialog's purpose.",
     badExample: "<div role='dialog'>...</div>",
     goodExample: "<div role='dialog' aria-label='Shipping Address Form'>...</div>",
+        codeHighlight: "role=dialog",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -246,6 +255,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove aria-hidden from the body element. Use it sparingly only on specific decorative elements.",
     badExample: "<body aria-hidden='true'>",
     goodExample: "<body>",
+        codeHighlight: "aria-hidden",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -269,6 +279,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove focusable elements from inside aria-hidden containers, or remove aria-hidden from the container.",
     badExample: "<div aria-hidden='true'>\n  <button>Click me</button>\n</div>",
     goodExample: "<div aria-hidden='true'>\n  <span>Decorative icon</span>\n</div>",
+        codeHighlight: "aria-hidden",
     affectedUsers: ["Screen reader users", "Keyboard users"],
     fixDifficulty: "Medium"
   },
@@ -293,6 +304,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label, aria-labelledby, or ensure visible text provides the accessible name.",
     badExample: "<div role='textbox' contenteditable='true'></div>",
     goodExample: "<div role='textbox' contenteditable='true' aria-label='Comments'></div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users", "Speech recognition users"],
     fixDifficulty: "Easy"
   },
@@ -317,6 +329,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or aria-labelledby to describe what the meter measures.",
     badExample: "<div role='meter' aria-valuenow='50' aria-valuemin='0' aria-valuemax='100'></div>",
     goodExample: "<div role='meter' aria-label='Disk usage' aria-valuenow='50' aria-valuemin='0' aria-valuemax='100'></div>",
+        codeHighlight: "role=meter",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -341,6 +354,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or aria-labelledby to describe what progress is being shown.",
     badExample: "<div role='progressbar' aria-valuenow='75'></div>",
     goodExample: "<div role='progressbar' aria-label='Upload progress' aria-valuenow='75'></div>",
+        codeHighlight: "role=progressbar",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -364,6 +378,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove prohibited ARIA attributes from the element. Check ARIA spec for allowed attributes per role.",
     badExample: "<div role='generic' aria-label='Description'>...</div>",
     goodExample: "<div aria-label='Description'>...</div>",
+        codeHighlight: "aria-",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -387,6 +402,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add the required ARIA attribute for the given role. Check ARIA spec for required attributes per role.",
     badExample: "<div role='checkbox' tabindex='0'>Subscribe</div>",
     goodExample: "<div role='checkbox' tabindex='0' aria-checked='false'>Subscribe</div>",
+        codeHighlight: "aria-",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -410,6 +426,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add required child elements with appropriate roles. Check ARIA spec for required children per parent role.",
     badExample: "<div role='listbox'>\n  <div>Option 1</div>\n</div>",
     goodExample: "<div role='listbox'>\n  <div role='option'>Option 1</div>\n</div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -433,6 +450,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Wrap the element in a container with the required parent role. Check ARIA spec for required parent per child role.",
     badExample: "<div role='option'>Option 1</div>",
     goodExample: "<div role='listbox'>\n  <div role='option'>Option 1</div>\n</div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -456,6 +474,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add an explicit role to the element or ensure it has an implicit role before using aria-roledescription.",
     badExample: "<div aria-roledescription='slide'>...</div>",
     goodExample: "<div role='group' aria-roledescription='slide'>...</div>",
+        codeHighlight: "aria-roledescription",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -479,6 +498,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Replace with a valid ARIA role from the ARIA 1.2 specification. Check spelling and case sensitivity.",
     badExample: "<div role='slider-bar'>...</div>",
     goodExample: "<div role='slider'>...</div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -500,6 +520,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove focusable elements from inside role=text or use a different role.",
     badExample: "<div role='text'>\n  <a href='/'>Link</a>\n</div>",
     goodExample: "<div role='text'>Static text content</div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users", "Keyboard users"],
     fixDifficulty: "Medium"
   },
@@ -524,6 +545,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or aria-labelledby to describe the toggle's purpose.",
     badExample: "<div role='switch' aria-checked='false'></div>",
     goodExample: "<div role='switch' aria-checked='false' aria-label='Notifications'></div>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users", "Speech recognition users"],
     fixDifficulty: "Easy"
   },
@@ -547,6 +569,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or ensure the tooltip text provides the accessible name.",
     badExample: "<div role='tooltip'>...</div>",
     goodExample: "<div role='tooltip' aria-label='Help for email field'>Enter a valid email address</div>",
+        codeHighlight: "role=tooltip",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -569,6 +592,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or ensure visible text provides the treeitem name.",
     badExample: "<div role='treeitem'>...</div>",
     goodExample: "<div role='treeitem' aria-label='Documents folder'>...</div>",
+        codeHighlight: "role=treeitem",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -592,6 +616,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Replace with valid ARIA attribute from the ARIA 1.2 specification.",
     badExample: "<div aria-cheked='true'>...</div>",
     goodExample: "<div aria-checked='true'>...</div>",
+        codeHighlight: "aria-",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -639,6 +664,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Provide a transcript or use the track element to add captions to audio content.",
     badExample: "<audio src='podcast.mp3'></audio>",
     goodExample: "<audio src='podcast.mp3'>\n  <track kind='captions' src='captions.vtt' srclang='en' label='English'>\n</audio>",
+        codeHighlight: "track",
     affectedUsers: ["Deaf users", "Hard-of-hearing users"],
     fixDifficulty: "Hard"
   },
@@ -660,6 +686,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Use valid autocomplete values like 'name', 'email', 'tel', 'street-address', etc.",
     badExample: "<input type='text' autocomplete='username'>",
     goodExample: "<input type='text' autocomplete='name'>\n<input type='email' autocomplete='email'>",
+        codeHighlight: "autocomplete",
     affectedUsers: ["Users with cognitive disabilities", "Users with motor disabilities"],
     fixDifficulty: "Easy",
   },
@@ -681,6 +708,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Use CSS classes instead of inline styles for text spacing so users can override them.",
     badExample: "<p style='line-height: 1.2;'>Text</p>",
     goodExample: "<p class='text-content'>Text</p>\n<!-- in CSS: .text-content { line-height: 1.2; } -->",
+        codeHighlight: "style",
     affectedUsers: ["Users with low vision", "Users with dyslexia"],
     fixDifficulty: "Easy",
   },
@@ -704,6 +732,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove the blink element. Use CSS animations with care if attention is needed.",
     badExample: "<blink>Important!</blink>",
     goodExample: "<span class='highlight'>Important!</span>",
+        codeHighlight: "blink",
     affectedUsers: ["Users with photosensitive epilepsy", "Users with attention disorders"],
     fixDifficulty: "Easy"
   },
@@ -728,6 +757,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add visible text inside the button or use aria-label to describe the button's action.",
     badExample: "<button><i class='icon-close'></i></button>",
     goodExample: "<button aria-label='Close dialog'><i class='icon-close'></i></button>\n<button>Submit</button>",
+        codeHighlight: "button",
     affectedUsers: ["Screen reader users", "Speech recognition users"],
     fixDifficulty: "Easy"
   },
@@ -753,6 +783,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add a 'Skip to main content' link at the top of the page that jumps to the main element or use proper landmarks (main, nav).",
     badExample: "<body>\n  <nav>...</nav>\n  <div id='content'>...</div>",
     goodExample: "<body>\n  <a href='#main' class='skip-link'>Skip to main content</a>\n  <nav>...</nav>\n  <main id='main'>...</main>",
+        codeHighlight: "href",
     affectedUsers: ["Keyboard users", "Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -778,6 +809,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Adjust colors to meet WCAG contrast requirements. Use a contrast checker tool. Consider adding a semi-transparent background behind text over images.",
     badExample: "<span style='color: #888888;'>Light gray text on white</span>",
     goodExample: "<span style='color: #595959;'>Dark gray text (4.5:1 contrast)</span>",
+        codeHighlight: "color",
     affectedUsers: ["Low vision users", "Colorblind users"],
     fixDifficulty: "Medium"
   },
@@ -799,6 +831,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "For enhanced accessibility, increase contrast to 7:1 for normal text. Use a contrast checker tool.",
     badExample: "<span style='color: #666;'>Medium gray text (fails AAA)</span>",
     goodExample: "<span style='color: #333;'>Dark text (passes AAA)</span>",
+        codeHighlight: "color",
     affectedUsers: ["Users with low vision"],
     fixDifficulty: "Medium",
   },
@@ -820,6 +853,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove CSS or meta tags that lock orientation. Allow both portrait and landscape.",
     badExample: "@media screen and (orientation: portrait) { body { display: none; } }",
     goodExample: "/* Support both orientations */\n@media screen { /* responsive styles */ }",
+        codeHighlight: "orientation",
     affectedUsers: ["Users with devices mounted in fixed orientations", "Users with motor disabilities"],
     fixDifficulty: "Medium",
   },
@@ -843,6 +877,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure dl only contains properly ordered dt and dd elements, optionally wrapped in div groups.",
     badExample: "<dl>\n  <span>Term</span>\n  <dd>Definition</dd>\n</dl>",
     goodExample: "<dl>\n  <dt>Term</dt>\n  <dd>Definition</dd>\n</dl>",
+        codeHighlight: "dl",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -866,6 +901,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Place dt and dd elements only as direct children of dl elements.",
     badExample: "<div>\n  <dt>Term</dt>\n</div>",
     goodExample: "<dl>\n  <dt>Term</dt>\n  <dd>Definition</dd>\n</dl>",
+        codeHighlight: "dt",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -890,6 +926,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add a descriptive <title> element to the document head that describes the page content and site context.",
     badExample: "<title>Home</title>",
     goodExample: "<title>About Us | My Company</title>",
+        codeHighlight: "title",
     affectedUsers: ["Screen reader users", "Users with cognitive disabilities"],
     fixDifficulty: "Easy"
   },
@@ -911,6 +948,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure each ID is unique. Use different IDs or classes for styling multiple elements.",
     badExample: "<div id='section'>...</div>\n<div id='section'>...</div>",
     goodExample: "<div id='section-1'>...</div>\n<div id='section-2'>...</div>",
+        codeHighlight: "id=",
     affectedUsers: ["Users relying on proper DOM structure"],
     fixDifficulty: "Easy",
   },
@@ -932,6 +970,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure all interactive elements have unique IDs. Check buttons, links, and form elements.",
     badExample: "<button id='btn'>Save</button>\n<button id='btn'>Cancel</button>",
     goodExample: "<button id='save-btn'>Save</button>\n<button id='cancel-btn'>Cancel</button>",
+        codeHighlight: "id=",
     affectedUsers: ["Screen reader users", "Keyboard users"],
     fixDifficulty: "Easy",
   },
@@ -956,6 +995,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure all ID attributes are unique within the page. Remove duplicate IDs.",
     badExample: "<div id='label'>Name</div>\n<input aria-labelledby='label'>\n<div id='label'>Email</div>",
     goodExample: "<div id='name-label'>Name</div>\n<input aria-labelledby='name-label'>\n<div id='email-label'>Email</div>",
+        codeHighlight: "id=",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -978,6 +1018,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add text content to the heading or remove the empty heading element.",
     badExample: "<h2></h2>",
     goodExample: "<h2>Section Title</h2>",
+        codeHighlight: "h1",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1000,6 +1041,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add descriptive text to the table header or use CSS for visual spacing instead of empty th elements.",
     badExample: "<th></th>",
     goodExample: "<th>Product Name</th>",
+        codeHighlight: "th",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1021,6 +1063,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure focusable elements have proper roles and are meant to be interactive.",
     badExample: "<div tabindex='0'>Static text</div>",
     goodExample: "<div tabindex='0' role='button'>Clickable</div>\n<!-- or remove tabindex from non-interactive elements -->",
+        codeHighlight: "tabindex",
     affectedUsers: ["Keyboard users", "Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1042,6 +1085,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Consolidate multiple labels into one, or use aria-labelledby if multiple text elements are needed.",
     badExample: "<label for='email'>Email</label>\n<label for='email'>Required</label>\n<input id='email'>",
     goodExample: "<label for='email'>Email (Required)</label>\n<input id='email'>",
+        codeHighlight: "for",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1063,6 +1107,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove tabindex='-1' from frames that contain interactive content.",
     badExample: "<iframe tabindex='-1' src='form.html'></iframe>",
     goodExample: "<iframe src='form.html' title='Contact Form'></iframe>",
+        codeHighlight: "iframe",
     affectedUsers: ["Keyboard users"],
     fixDifficulty: "Easy",
   },
@@ -1084,6 +1129,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Manually test iframe content for accessibility. Ensure each iframe has a descriptive title attribute.",
     badExample: "<!-- iframe content not scanned -->",
     goodExample: "<iframe src='content.html' title='Product Description'></iframe>",
+        codeHighlight: "iframe",
     affectedUsers: ["All users"],
     fixDifficulty: "Medium",
   },
@@ -1106,6 +1152,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add title attribute or aria-label to describe the frame's content.",
     badExample: "<iframe src='/map.html'></iframe>",
     goodExample: "<iframe src='/map.html' title='Location Map'></iframe>",
+        codeHighlight: "title",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1127,6 +1174,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Give each iframe a unique, descriptive title that distinguishes it from other frames.",
     badExample: "<iframe title='Content' src='page1.html'></iframe>\n<iframe title='Content' src='page2.html'></iframe>",
     goodExample: "<iframe title='Product Details' src='page1.html'></iframe>\n<iframe title='Reviews' src='page2.html'></iframe>",
+        codeHighlight: "title",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy",
   },
@@ -1149,6 +1197,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Restructure headings to follow proper nesting. Use CSS for visual styling instead of heading tags.",
     badExample: "<h1>Title</h1>\n<h3>Section</h3>\n<!-- skipped h2 -->",
     goodExample: "<h1>Title</h1>\n<h2>Section</h2>\n<h3>Subsection</h3>",
+        codeHighlight: "h1",
     affectedUsers: ["Screen reader users", "Users with cognitive disabilities"],
     fixDifficulty: "Medium",
   },
@@ -1191,6 +1240,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add lang attribute to the html element with the appropriate language code (e.g., 'en' for English, 'sv' for Swedish).",
     badExample: "<html>",
     goodExample: "<html lang='en'>\n<html lang='sv'>",
+        codeHighlight: "lang",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1212,6 +1262,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Use a valid BCP 47 language code (e.g., 'en', 'en-US', 'sv', 'fr').",
     badExample: "<html lang='english'>",
     goodExample: "<html lang='en'>",
+        codeHighlight: "lang",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1254,6 +1305,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure links with identical text go to similar destinations, or use different link text to clarify the destination.",
     badExample: "<a href='/product-1'>Learn more</a>\n<a href='/product-2'>Learn more</a>",
     goodExample: "<a href='/product-1'>Learn more about Product A</a>\n<a href='/product-2'>Learn more about Product B</a>",
+        codeHighlight: "href",
     affectedUsers: ["Screen reader users", "Users with cognitive disabilities"],
     fixDifficulty: "Easy",
   },
@@ -1279,6 +1331,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add alt='description' to all <img> elements. Use alt='' for purely decorative images. For complex images, provide detailed descriptions via aria-describedby or adjacent text.",
     badExample: "<img src='logo.png'>",
     goodExample: "<img src='logo.png' alt='Company Logo'>\n<img src='decorative-border.png' alt=''>",
+        codeHighlight: "alt",
     affectedUsers: ["Screen reader users", "Users with cognitive disabilities", "Users with slow internet connections"],
     fixDifficulty: "Easy"
   },
@@ -1322,6 +1375,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add a value attribute with the button text, or use aria-label to describe the button's action.",
     badExample: "<input type='submit'>",
     goodExample: "<input type='submit' value='Send Message'>\n<input type='button' aria-label='Search products'>",
+        codeHighlight: "type=button",
     affectedUsers: ["Screen reader users", "Speech recognition users"],
     fixDifficulty: "Easy"
   },
@@ -1346,6 +1400,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add alt attribute describing the button action, or use aria-label if the image conveys meaning.",
     badExample: "<input type='image' src='search-icon.png'>",
     goodExample: "<input type='image' src='search-icon.png' alt='Search'>",
+        codeHighlight: "alt",
     affectedUsers: ["Screen reader users", "Users when images fail to load"],
     fixDifficulty: "Easy"
   },
@@ -1371,6 +1426,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Wrap the input with a <label> element or use the for attribute to associate the label. Alternatively use aria-label or aria-labelledby.",
     badExample: "<input type='text' placeholder='Name'>",
     goodExample: "<label for='name'>Full Name</label>\n<input type='text' id='name'>\n\n<input type='text' aria-label='Search query'>",
+        codeHighlight: "for",
     affectedUsers: ["Screen reader users", "Users with cognitive disabilities"],
     fixDifficulty: "Easy"
   },
@@ -1394,6 +1450,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure the accessible name includes the visible text of the element.",
     badExample: "<button aria-label='Close'>X</button>",
     goodExample: "<button aria-label='Close dialog'>Close</button>",
+        codeHighlight: "aria-label",
     affectedUsers: ["Speech recognition users", "Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1437,6 +1494,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Move the header element outside of other landmark regions like nav, main, or aside.",
     badExample: "<main>\n  <header>...</header>\n</main>",
     goodExample: "<header>...</header>\n<main>...</main>",
+        codeHighlight: "role=banner",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1458,6 +1516,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Move the aside element outside of the main landmark.",
     badExample: "<main>\n  <aside>Sidebar</aside>\n</main>",
     goodExample: "<main>...</main>\n<aside>Sidebar</aside>",
+        codeHighlight: "role=complementary",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1479,6 +1538,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Move the footer element outside of other landmark regions.",
     badExample: "<main>\n  <footer>...</footer>\n</main>",
     goodExample: "<main>...</main>\n<footer>...</footer>",
+        codeHighlight: "role=contentinfo",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1500,6 +1560,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Move the main element outside of other landmark regions.",
     badExample: "<nav>\n  <main>...</main>\n</nav>",
     goodExample: "<nav>...</nav>\n<main>...</main>",
+        codeHighlight: "role=main",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -1521,6 +1582,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Consolidate multiple header elements into one, or use div elements for additional header-like sections.",
     badExample: "<header>Main header</header>\n<header>Sub header</header>",
     goodExample: "<header>All header content</header>\n<div class='sub-header'>Sub content</div>",
+        codeHighlight: "role=banner",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1542,6 +1604,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Consolidate multiple footer elements into one, or use div elements for additional footer-like sections.",
     badExample: "<footer>Main footer</footer>\n<footer>Secondary footer</footer>",
     goodExample: "<footer>All footer content</footer>\n<div class='sub-footer'>Additional info</div>",
+        codeHighlight: "role=contentinfo",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1563,6 +1626,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Consolidate content into a single main element or use other region roles for secondary content.",
     badExample: "<main>Content 1</main>\n<main>Content 2</main>",
     goodExample: "<main>All main content</main>",
+        codeHighlight: "role=main",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -1585,6 +1649,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Wrap the primary content in a <main> element or add role='main' to the content container.",
     badExample: "<div id='content'>...</div>",
     goodExample: "<main>Primary content</main>\n<!-- or -->\n<div role='main'>Primary content</div>",
+        codeHighlight: "role=main",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1606,6 +1671,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label to distinguish multiple landmarks of the same type.",
     badExample: "<nav>Main nav</nav>\n<nav>Footer nav</nav>",
     goodExample: "<nav aria-label='Main'>...</nav>\n<nav aria-label='Footer'>...</nav>",
+        codeHighlight: "role",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy",
   },
@@ -1628,6 +1694,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add underline, bold, border, or icon to links. Ensure 3:1 contrast ratio between link text and surrounding body text color.",
     badExample: "<p>Visit our <a href='...' style='color: blue;'>website</a> today.</p>",
     goodExample: "<p>Visit our <a href='...' style='color: blue; text-decoration: underline;'>website</a> today.</p>",
+        codeHighlight: "a",
     affectedUsers: ["Colorblind users", "Users with low vision"],
     fixDifficulty: "Easy"
   },
@@ -1650,6 +1717,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure all links have visible text or an aria-label that describes the link destination. Avoid generic text like 'click here'.",
     badExample: "<a href='/about'><img src='arrow.png' alt=''></a>",
     goodExample: "<a href='/about'>About Us</a>\n<a href='/contact' aria-label='Contact Support'><img src='icon.png' alt=''></a>",
+        codeHighlight: "a",
     affectedUsers: ["Screen reader users", "Speech recognition users", "Users with cognitive disabilities"],
     fixDifficulty: "Easy"
   },
@@ -1671,6 +1739,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure list elements contain only li elements. Do not wrap other elements directly in ul/ol.",
     badExample: "<ul>\n  <div><li>Item</li></div>\n</ul>",
     goodExample: "<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>",
+        codeHighlight: "ul",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1692,6 +1761,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Place li elements only as direct children of ul, ol, or menu elements. Do not use li elements outside lists.",
     badExample: "<div>\n  <li>Orphan item</li>\n</div>",
     goodExample: "<ul>\n  <li>Item</li>\n</ul>",
+        codeHighlight: "li",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1713,6 +1783,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove the marquee element. Use CSS animations carefully if movement is needed, with option to pause.",
     badExample: "<marquee>Scrolling text</marquee>",
     goodExample: "<div>Static text content</div>",
+        codeHighlight: "marquee",
     affectedUsers: ["Users with attention disorders", "Users with cognitive disabilities"],
     fixDifficulty: "Easy"
   },
@@ -1734,6 +1805,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove meta refresh. Use server-side redirects or provide a link with warning for timed redirects.",
     badExample: "<meta http-equiv='refresh' content='30; url=/new-page'>",
     goodExample: "<a href='/new-page'>Continue to new page</a>",
+        codeHighlight: "refresh",
     affectedUsers: ["Screen reader users", "Users with cognitive disabilities"],
     fixDifficulty: "Medium"
   },
@@ -1778,6 +1850,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure viewport meta tag allows zooming. Remove user-scalable=no and ensure maximum-scale is at least 2.0.",
     badExample: "<meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'>",
     goodExample: "<meta name='viewport' content='width=device-width, initial-scale=1'>",
+        codeHighlight: "viewport",
     affectedUsers: ["Users with low vision", "Users with cognitive disabilities"],
     fixDifficulty: "Easy"
   },
@@ -1800,6 +1873,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure viewport settings allow 500% zoom. Avoid fixed widths and use responsive design techniques that reflow content.",
     badExample: "<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=2'>",
     goodExample: "<meta name='viewport' content='width=device-width, initial-scale=1'>",
+        codeHighlight: "viewport",
     affectedUsers: ["Users with low vision"],
     fixDifficulty: "Medium",
   },
@@ -1821,6 +1895,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove nesting. Place interactive elements as siblings, not parent-child.",
     badExample: "<button>\n  Click me\n  <button>Nested button</button>\n</button>",
     goodExample: "<button>Click me</button>\n<button>Second button</button>",
+        codeHighlight: "tabindex",
     affectedUsers: ["Keyboard users", "Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -1845,6 +1920,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove autoplay or provide controls to pause/stop the audio. Keep auto-playing audio under 3 seconds.",
     badExample: "<audio src='music.mp3' autoplay></audio>",
     goodExample: "<audio src='music.mp3' controls></audio>",
+        codeHighlight: "autoplay",
     affectedUsers: ["Screen reader users", "Users with attention disorders"],
     fixDifficulty: "Easy"
   },
@@ -1869,6 +1945,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add text content inside the object element or use aria-label to describe the content.",
     badExample: "<object data='chart.svg'></object>",
     goodExample: "<object data='chart.svg'>Sales chart showing Q1 results</object>",
+        codeHighlight: "alt",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1915,6 +1992,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add an h1 element at the start of the main content describing the page.",
     badExample: "<main>\n  <h2>Products</h2>\n</main>",
     goodExample: "<main>\n  <h1>Our Products</h1>\n</main>",
+        codeHighlight: "h1",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy",
   },
@@ -1936,6 +2014,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove aria-label, aria-describedby, tabindex, or other global ARIA attributes from presentational elements.",
     badExample: "<div role='presentation' aria-label='Header'>...</div>",
     goodExample: "<div role='presentation'>...</div>",
+        codeHighlight: "role=presentation",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -1958,6 +2037,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Wrap content in semantic HTML5 elements (header, nav, main, aside, footer) which automatically create landmark regions.",
     badExample: "<div>Content without landmarks</div>",
     goodExample: "<header>...</header>\n<nav>...</nav>\n<main>...</main>\n<footer>...</footer>",
+        codeHighlight: "role=region",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium",
   },
@@ -1980,6 +2060,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label or aria-labelledby to describe the image content.",
     badExample: "<div role='img' style='background-image: url(logo.png)'></div>",
     goodExample: "<div role='img' aria-label='Company Logo' style='background-image: url(logo.png)'></div>",
+        codeHighlight: "role=img",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2001,6 +2082,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Use scope='row' for row headers and scope='col' for column headers.",
     badExample: "<th scope='header'>Name</th>",
     goodExample: "<th scope='col'>Name</th>\n<th scope='row'>John</th>",
+        codeHighlight: "scope",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2022,6 +2104,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add tabindex='0' to the scrollable container to make it focusable.",
     badExample: "<div style='overflow: scroll; height: 200px;'>...</div>",
     goodExample: "<div tabindex='0' style='overflow: scroll; height: 200px;'>...</div>",
+        codeHighlight: "tabindex",
     affectedUsers: ["Keyboard users", "Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2046,6 +2129,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Wrap the select with a label or use the for attribute to associate the label.",
     badExample: "<select>...</select>",
     goodExample: "<label for='country'>Country</label>\n<select id='country'>...</select>",
+        codeHighlight: "select",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2092,6 +2176,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure the skip link target exists and has id matching the href, or add tabindex='-1' to make it focusable.",
     badExample: "<a href='#main'>Skip to main</a>\n<div id='main'>Content</div>",
     goodExample: "<a href='#main'>Skip to main</a>\n<main id='main' tabindex='-1'>Content</main>",
+        codeHighlight: "href",
     affectedUsers: ["Keyboard users", "Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2139,6 +2224,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add aria-label, aria-labelledby, or include a title element inside the SVG to describe the image.",
     badExample: "<svg role='img'><path d='...'/></svg>",
     goodExample: "<svg role='img' aria-label='Shopping cart'><path d='...'/></svg>",
+        codeHighlight: "alt",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2161,6 +2247,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove positive tabindex values. Use tabindex='0' for elements that should be in the natural tab order.",
     badExample: "<button tabindex='5'>Click</button>",
     goodExample: "<button tabindex='0'>Click</button>\n<!-- or -->\n<div tabindex='-1' id='focus-target'>...</div>",
+        codeHighlight: "tabindex",
     affectedUsers: ["Keyboard users", "Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2183,6 +2270,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Remove the summary attribute if caption provides sufficient description, or make them different - use caption for title and summary for detailed description.",
     badExample: "<table summary='Sales data'>\n  <caption>Sales data</caption>",
     goodExample: "<table summary='Quarterly sales figures for all regions'>\n  <caption>Sales Data</caption>",
+        codeHighlight: "table",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy",
   },
@@ -2204,6 +2292,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Replace styled cells or divs used as captions with the actual caption element as the first child of table.",
     badExample: "<table>\n  <tr><td colspan='2'>Sales Table</td></tr>",
     goodExample: "<table>\n  <caption>Sales Table</caption>",
+        codeHighlight: "table",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy",
   },
@@ -2226,6 +2315,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure touch targets are at least 24x24 pixels, or if smaller, ensure 24px spacing between adjacent targets.",
     badExample: "<button style='width: 20px; height: 20px'>X</button>",
     goodExample: "<button style='min-width: 24px; min-height: 24px; padding: 4px'>X</button>",
+        codeHighlight: "min-height",
     affectedUsers: ["Touch device users", "Users with motor disabilities"],
     fixDifficulty: "Easy",
   },
@@ -2248,6 +2338,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Add th elements with scope='col' for column headers and scope='row' for row headers.",
     badExample: "<table>\n  <tr><td></td><td>A</td>...</tr>",
     goodExample: "<table>\n  <tr><th scope='col'>Name</th>...</tr>",
+        codeHighlight: "td",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -2271,6 +2362,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure headers attribute references valid th element IDs that exist in the same table.",
     badExample: "<td headers='nonexistent-id'>Data</td>",
     goodExample: "<th id='name'>Name</th>\n<td headers='name'>John</td>",
+        codeHighlight: "headers",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2295,6 +2387,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Ensure each th element has corresponding td cells that it describes.",
     badExample: "<th>Orphan header</th>",
     goodExample: "<th scope='col'>Name</th>\n<td>John</td>",
+        codeHighlight: "th",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Medium"
   },
@@ -2318,6 +2411,7 @@ export const RULE_ENRICHMENTS = {
     clientFix: "Use valid BCP 47 language codes. Common codes: en, en-US, sv, fr, de, es.",
     badExample: "<span lang='swedish'>Hej</span>",
     goodExample: "<span lang='sv'>Hej</span>",
+        codeHighlight: "lang",
     affectedUsers: ["Screen reader users"],
     fixDifficulty: "Easy"
   },
@@ -2344,5 +2438,520 @@ export const RULE_ENRICHMENTS = {
     goodExample: "<video src='video.mp4' controls>\n  <track kind='captions' src='captions.vtt' srclang='en' label='English'>\n</video>",
     affectedUsers: ["Deaf users", "Hard-of-hearing users"],
     fixDifficulty: "Hard"
+  },
+
+  // ============================================================================
+  // CUSTOM CHECKS - Audit Studio custom accessibility checks
+  // ============================================================================
+
+  /**
+   * Custom: Skipped heading levels (e.g., h1 → h3 without h2)
+   * SC 1.3.1 Info and Relationships
+   */
+  "custom-heading-skip": {
+    auditorTitle: "Skipped heading levels",
+    ruleType: "wcag",
+    auditorNotes: "Heading levels should not be skipped (e.g., going from h2 directly to h4). Skipped levels confuse screen reader users who rely on heading structure to understand page hierarchy.",
+    wcagTechniques: [
+      { id: "G141", title: "Organizing a page using headings", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G141" }
+    ],
+    wcagFailures: [
+      { id: "F2", title: "Failure due to missing headings", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F2" }
+    ],
+    ariaPractices: null,
+    clientFix: "Use proper heading hierarchy. Don't skip levels - if you need an h4, there should be an h3 before it.",
+    badExample: "<h2>Section Title</h2>\n<h4>Subsection</h4>",
+    goodExample: "<h2>Section Title</h2>\n<h3>Subsection</h3>",
+    codeHighlight: "h",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Text uses bullet characters but isn't in a list
+   * SC 1.3.1 Info and Relationships
+   */
+  "custom-pseudo-list": {
+    auditorTitle: "Fake lists using bullet characters",
+    ruleType: "wcag",
+    auditorNotes: "Content uses bullet characters (•, -, *) to look like a list but isn't marked up as a <ul> or <ol>. Screen readers won't announce this as a list to users.",
+    wcagTechniques: [
+      { id: "H48", title: "Using ol, ul and dl for lists", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H48" }
+    ],
+    wcagFailures: [
+      { id: "F2", title: "Failure due to using text formatting for structure", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F2" }
+    ],
+    ariaPractices: null,
+    clientFix: "Use proper <ul> or <ol> elements with <li> items instead of bullet characters.",
+    badExample: "• First item<br>• Second item<br>• Third item",
+    goodExample: "<ul>\n  <li>First item</li>\n  <li>Second item</li>\n  <li>Third item</li>\n</ul>",
+    codeHighlight: "ul",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Multiple landmarks without unique labels
+   * SC 1.3.1 Info and Relationships
+   */
+  "custom-duplicate-landmark": {
+    auditorTitle: "Duplicate landmarks without labels",
+    ruleType: "wcag",
+    auditorNotes: "Multiple landmarks of the same type (e.g., two navigation regions) exist without unique aria-label or aria-labelledby. Screen reader users can't distinguish between them.",
+    wcagTechniques: [
+      { id: "ARIA11", title: "Using ARIA landmarks to identify regions", url: "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Add unique aria-label to each duplicate landmark. Example: aria-label='Main navigation' and aria-label='Footer navigation'.",
+    badExample: "<nav>...</nav>\n<nav>...</nav>",
+    goodExample: "<nav aria-label='Main'>...</nav>\n<nav aria-label='Footer'>...</nav>",
+    codeHighlight: "aria-label",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Orientation locked to portrait or landscape
+   * SC 1.3.4 Orientation
+   */
+  "custom-orientation-rotate-message": {
+    auditorTitle: "Page forces device rotation",
+    ruleType: "wcag",
+    auditorNotes: "Page displays a 'rotate your device' message instead of supporting both orientations. Users with devices mounted in fixed positions cannot access the content.",
+    wcagTechniques: null,
+    wcagFailures: [
+      { id: "F100", title: "Failure due to locking orientation", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F100" }
+    ],
+    ariaPractices: null,
+    clientFix: "Remove orientation restrictions. Support both portrait and landscape orientations with responsive design.",
+    badExample: "<div class='rotate-message'>Please rotate your device</div>",
+    goodExample: "<!-- Responsive layout works in both orientations -->",
+    codeHighlight: "rotate",
+    affectedUsers: ["Users with fixed-mount devices", "Users with limited mobility"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: Content hidden based on orientation
+   * SC 1.3.4 Orientation
+   */
+  "custom-orientation-locked": {
+    auditorTitle: "Content hidden in one orientation",
+    ruleType: "wcag",
+    auditorNotes: "Main content is hidden or inaccessible when device is in one orientation (portrait or landscape). Users should be able to access all content regardless of device position.",
+    wcagTechniques: null,
+    wcagFailures: [
+      { id: "F97", title: "Failure due to locking content to one orientation", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F97" }
+    ],
+    ariaPractices: null,
+    clientFix: "Use responsive design (CSS media queries) to adapt layout, not hide content, for different orientations.",
+    badExample: "@media (orientation: landscape) { .content { display: none; } }",
+    goodExample: "@media (orientation: landscape) { .content { width: 80%; } }",
+    codeHighlight: "orientation",
+    affectedUsers: ["Users with fixed-mount devices", "Mobile users"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: No skip link found
+   * SC 2.4.1 Bypass Blocks
+   */
+  "custom-skip-link-missing": {
+    auditorTitle: "Missing skip navigation link",
+    ruleType: "wcag",
+    auditorNotes: "No skip link or equivalent bypass mechanism detected. Keyboard users must tab through all navigation links before reaching main content on every page.",
+    wcagTechniques: [
+      { id: "G1", title: "Adding a link at the top of each page", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G1" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Add a 'Skip to main content' link as the first focusable element on the page that jumps to the main content area.",
+    badExample: "<!-- Navigation with 50+ links before content -->",
+    goodExample: "<a href='#main' class='skip-link'>Skip to main content</a>\n...\n<main id='main'>",
+    codeHighlight: "skip",
+    affectedUsers: ["Keyboard users", "Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Skip link points to missing target
+   * SC 2.4.1 Bypass Blocks
+   */
+  "custom-skip-link-no-target": {
+    auditorTitle: "Skip link target missing",
+    ruleType: "wcag",
+    auditorNotes: "A skip link exists but its target element (the ID it points to) doesn't exist in the DOM. The link won't work when activated.",
+    wcagTechniques: [
+      { id: "G1", title: "Adding a link at the top of each page", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G1" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Ensure the skip link's href matches an existing element ID. Add tabindex='-1' to the target if it's not a focusable element.",
+    badExample: "<a href='#content'>Skip</a>\n<!-- No element with id='content' -->",
+    goodExample: "<a href='#content'>Skip</a>\n<main id='content' tabindex='-1'>",
+    codeHighlight: "id=",
+    affectedUsers: ["Keyboard users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Skip link target obscured by fixed header
+   * SC 2.4.1 Bypass Blocks
+   */
+  "custom-skip-link-target-obscured": {
+    auditorTitle: "Skip link content hidden by header",
+    ruleType: "wcag",
+    auditorNotes: "The skip link works, but the target content is partially or fully hidden behind a fixed/sticky header when the user jumps to it.",
+    wcagTechniques: [
+      { id: "G1", title: "Adding a link at the top of each page", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G1" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Use CSS scroll-margin-top or padding-top on the target element to account for fixed header height.",
+    badExample: "<main id='content'>...</main>\n<!-- Fixed header covers content -->",
+    goodExample: "<main id='content' style='scroll-margin-top: 80px'>...</main>",
+    codeHighlight: "id=",
+    affectedUsers: ["Keyboard users"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: Content disappears at 320px viewport
+   * SC 1.4.10 Reflow
+   */
+  "custom-reflow-content-lost": {
+    auditorTitle: "Content lost at small viewport",
+    ruleType: "wcag",
+    auditorNotes: "Content becomes inaccessible or disappears when the viewport is resized to 320px wide (mobile width) without zooming. Users who need to zoom may lose access to this content.",
+    wcagTechniques: [
+      { id: "G146", title: "Using liquid layout", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G146" }
+    ],
+    wcagFailures: [
+      { id: "F102", title: "Failure due to content disappearing at reflow", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F102" }
+    ],
+    ariaPractices: null,
+    clientFix: "Use responsive design with flexbox/grid. Ensure content reflows vertically instead of being cut off or hidden.",
+    badExample: "<div class='sidebar' style='width: 400px'>...</div>",
+    goodExample: "<div class='sidebar' style='max-width: 100%'>...</div>",
+    codeHighlight: "width",
+    affectedUsers: ["Low vision users", "Mobile users"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: Page title missing, empty, or generic
+   * SC 2.4.2 Page Titled
+   */
+  "custom-page-title": {
+    auditorTitle: "Page title missing or unhelpful",
+    ruleType: "wcag",
+    auditorNotes: "Page title is missing, empty, generic (like 'Home'), or just a URL. Screen reader users rely on page titles to know what page they're on.",
+    wcagTechniques: [
+      { id: "H25", title: "Providing a title using the title element", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H25" }
+    ],
+    wcagFailures: [
+      { id: "F25", title: "Failure due to missing or non-descriptive title", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F25" }
+    ],
+    ariaPractices: null,
+    clientFix: "Provide a unique, descriptive title for each page that describes its content or purpose.",
+    badExample: "<title>Home</title>\n<title>Page 1</title>",
+    goodExample: "<title>Contact Us - Acme Corporation</title>",
+    codeHighlight: "title",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: HTML lang attribute missing
+   * SC 3.1.1 Language of Page
+   */
+  "custom-lang-missing": {
+    auditorTitle: "Page language not specified",
+    ruleType: "wcag",
+    auditorNotes: "The <html> element is missing a lang attribute. Screen readers can't determine the correct pronunciation rules for the page content.",
+    wcagTechniques: [
+      { id: "H57", title: "Using language attributes on the html element", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H57" }
+    ],
+    wcagFailures: [
+      { id: "F69", title: "Failure due to missing lang attribute", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F69" }
+    ],
+    ariaPractices: null,
+    clientFix: "Add lang attribute to the <html> element with the correct language code (e.g., lang='en' for English).",
+    badExample: "<html>\n  <head>...</head>",
+    goodExample: "<html lang='en'>\n  <head>...</head>",
+    codeHighlight: "lang",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: HTML lang attribute invalid
+   * SC 3.1.1 Language of Page
+   */
+  "custom-lang-invalid": {
+    auditorTitle: "Invalid page language code",
+    ruleType: "wcag",
+    auditorNotes: "The lang attribute has an invalid language code. Screen readers may not be able to pronounce the content correctly.",
+    wcagTechniques: [
+      { id: "H57", title: "Using language attributes on the html element", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H57" }
+    ],
+    wcagFailures: [
+      { id: "F69", title: "Failure due to invalid lang code", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F69" }
+    ],
+    ariaPractices: null,
+    clientFix: "Use valid BCP 47 language codes. Examples: 'en' (English), 'en-US' (US English), 'sv' (Swedish), 'es' (Spanish).",
+    badExample: "<html lang='english'>",
+    goodExample: "<html lang='en'>",
+    codeHighlight: "lang",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Placeholder text has insufficient contrast
+   * SC 1.4.3 Contrast (Minimum)
+   */
+  "custom-placeholder-contrast": {
+    auditorTitle: "Placeholder text too faint",
+    ruleType: "wcag",
+    auditorNotes: "Placeholder text in form fields has contrast ratio below 4.5:1 against the background. Low vision users may not see the hint text.",
+    wcagTechniques: [
+      { id: "G18", title: "Ensuring that a contrast ratio of at least 4.5:1", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G18" }
+    ],
+    wcagFailures: [
+      { id: "F78", title: "Failure due to contrast below threshold", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F78" }
+    ],
+    ariaPractices: null,
+    clientFix: "Darken placeholder color or don't rely solely on placeholders. Use visible labels above form fields instead.",
+    badExample: "<input placeholder='Email' style='color: #ccc'>",
+    goodExample: "<label for='email'>Email</label>\n<input id='email' placeholder='name@example.com'>",
+    codeHighlight: "placeholder",
+    affectedUsers: ["Low vision users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Form field missing autocomplete attribute
+   * SC 1.3.5 Identify Input Purpose
+   */
+  "custom-autocomplete-missing": {
+    auditorTitle: "Form field missing autocomplete",
+    ruleType: "wcag",
+    auditorNotes: "Form field that collects personal information is missing an autocomplete attribute. This prevents browsers from filling in known values for users with cognitive disabilities.",
+    wcagTechniques: [
+      { id: "H98", title: "Using HTML autocomplete attributes", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H98" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Add autocomplete attribute with appropriate value (name, email, tel, address-line1, etc.)",
+    badExample: "<input type='text' name='fullname'>",
+    goodExample: "<input type='text' name='fullname' autocomplete='name'>",
+    codeHighlight: "autocomplete",
+    affectedUsers: ["Users with cognitive disabilities", "Users with motor disabilities"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Link purpose unclear from text alone
+   * SC 2.4.4 Link Purpose (In Context)
+   */
+  "custom-link-purpose-unclear": {
+    auditorTitle: "Link text is not descriptive",
+    ruleType: "wcag",
+    auditorNotes: "Link text like 'click here' or 'read more' doesn't describe the destination. Users navigating by links can't tell where they'll go.",
+    wcagTechniques: [
+      { id: "G91", title: "Providing link text that describes the purpose", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G91" },
+      { id: "H33", title: "Supplementing link text with title attribute", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H33" }
+    ],
+    wcagFailures: [
+      { id: "F63", title: "Failure due to non-descriptive link text", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F63" }
+    ],
+    ariaPractices: null,
+    clientFix: "Rewrite link text to describe the destination. Instead of 'Click here', use 'Download the annual report'.",
+    badExample: "<a href='report.pdf'>Click here</a>",
+    goodExample: "<a href='report.pdf'>Download annual report (PDF)</a>",
+    codeHighlight: "a",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Links rely on color alone to identify
+   * SC 1.4.1 Use of Color
+   */
+  "custom-link-color-only": {
+    auditorTitle: "Links not distinguishable without color",
+    ruleType: "wcag",
+    auditorNotes: "Links are styled with color only and lack underlines or other visual indicators. Colorblind users cannot identify them as links.",
+    wcagTechniques: [
+      { id: "G182", title: "Ensuring contrast for text that convey information", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G182" },
+      { id: "G183", title: "Using contrast for links", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G183" }
+    ],
+    wcagFailures: [
+      { id: "F73", title: "Failure due to links not distinguishable without color", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F73" }
+    ],
+    ariaPractices: null,
+    clientFix: "Add underline to links, or ensure links have a visual indicator besides color (icon, border, etc.)",
+    badExample: "<a href='page.html' style='color: blue; text-decoration: none'>Link</a>",
+    goodExample: "<a href='page.html' style='color: blue; text-decoration: underline'>Link</a>",
+    codeHighlight: "text-decoration",
+    affectedUsers: ["Colorblind users", "Low vision users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Non-text contrast insufficient
+   * SC 1.4.11 Non-text Contrast
+   */
+  "custom-non-text-contrast": {
+    auditorTitle: "UI components lack contrast",
+    ruleType: "wcag",
+    auditorNotes: "Visual UI elements (buttons, form fields, icons) have insufficient contrast against adjacent colors. Users with low vision cannot perceive boundaries.",
+    wcagTechniques: [
+      { id: "G207", title: "Ensuring contrast for visual boundaries", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G207" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Ensure UI components have at least 3:1 contrast ratio with adjacent colors. Add borders to form fields.",
+    badExample: "<button style='background: #ddd; color: #fff'>Submit</button>",
+    goodExample: "<button style='background: #0056b3; color: #fff'>Submit</button>",
+    codeHighlight: "background",
+    affectedUsers: ["Low vision users"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: Clickable target too small
+   * SC 2.5.5 Target Size (Enhanced)
+   */
+  "custom-target-size": {
+    auditorTitle: "Touch target too small",
+    ruleType: "wcag",
+    auditorNotes: "Clickable element is smaller than 44x44 CSS pixels. Users with motor disabilities may have difficulty activating small targets.",
+    wcagTechniques: [
+      { id: "G221", title: "Ensuring target size of at least 44x44 pixels", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G221" }
+    ],
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Increase clickable area to at least 44x44 pixels. Use padding or enlarge the visible target.",
+    badExample: "<button style='width: 20px; height: 20px'>X</button>",
+    goodExample: "<button style='min-width: 44px; min-height: 44px'>Close</button>",
+    codeHighlight: "width",
+    affectedUsers: ["Users with motor disabilities", "Mobile users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Focus indicator not visible
+   * SC 2.4.7 Focus Visible
+   */
+  "custom-focus-not-visible": {
+    auditorTitle: "Focus indicator invisible or hidden",
+    ruleType: "wcag",
+    auditorNotes: "Element receives focus but has no visible focus indicator, or the indicator is styled to be invisible. Keyboard users can't track their position.",
+    wcagTechniques: [
+      { id: "G149", title: "Using user interface components that are highlighted by the user agent", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G149" },
+      { id: "C15", title: "Using CSS to change the presentation of a user interface component when it receives focus", url: "https://www.w3.org/WAI/WCAG22/Techniques/css/C15" }
+    ],
+    wcagFailures: [
+      { id: "F78", title: "Failure due to styling element outline to none", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F78" }
+    ],
+    ariaPractices: null,
+    clientFix: "Ensure focused elements have a visible outline or border. Don't remove outline: none without adding an alternative.",
+    badExample: "button:focus { outline: none }",
+    goodExample: "button:focus { outline: 2px solid #0056b3; outline-offset: 2px }",
+    codeHighlight: "outline",
+    affectedUsers: ["Keyboard users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Focus obscured by sticky/fixed elements
+   * SC 2.4.11 Focus Not Obscured
+   */
+  "custom-focus-obscured": {
+    auditorTitle: "Focused element hidden by sticky header",
+    ruleType: "wcag",
+    auditorNotes: "When an element receives focus, it is partially or fully hidden behind a sticky header, footer, or other fixed overlay. Keyboard users can't see what has focus.",
+    wcagTechniques: null,
+    wcagFailures: null,
+    ariaPractices: null,
+    clientFix: "Use scroll-padding CSS or ensure scrollIntoView accounts for fixed elements. Avoid sticky headers covering focused content.",
+    badExample: "<!-- Fixed header covers focused elements -->\n<header style='position: fixed; height: 80px'>",
+    goodExample: "html { scroll-padding-top: 80px; }",
+    codeHighlight: "scroll",
+    affectedUsers: ["Keyboard users"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: Text spacing lost when styles applied
+   * SC 1.4.12 Text Spacing
+   */
+  "custom-text-spacing-clipped": {
+    auditorTitle: "Text gets cut off with user spacing",
+    ruleType: "wcag",
+    auditorNotes: "When text spacing is increased (line-height, letter-spacing, word-spacing, paragraph spacing), text becomes clipped or overlaps. Users who need more spacing can't read the content.",
+    wcagTechniques: [
+      { id: "C36", title: "Allowing for text spacing without loss of content", url: "https://www.w3.org/WAI/WCAG22/Techniques/css/C36" }
+    ],
+    wcagFailures: [
+      { id: "F104", title: "Failure due to text being clipped", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F104" }
+    ],
+    ariaPractices: null,
+    clientFix: "Use relative units (em, rem) and avoid fixed heights. Ensure containers expand to accommodate increased text spacing.",
+    badExample: "<p style='height: 20px; overflow: hidden'>Text content...</p>",
+    goodExample: "<p style='min-height: 20px'>Text content...</p>",
+    codeHighlight: "height",
+    affectedUsers: ["Low vision users", "Users with dyslexia"],
+    fixDifficulty: "Medium"
+  },
+
+  /**
+   * Custom: Visible label doesn't match accessible name
+   * SC 2.5.3 Label in Name
+   */
+  "custom-label-name-mismatch": {
+    auditorTitle: "Visible label differs from accessible name",
+    ruleType: "wcag",
+    auditorNotes: "The visible text label and the accessible name (what screen readers announce) are different. Voice control users can't activate the control by saying what they see.",
+    wcagTechniques: [
+      { id: "G208", title: "Including the text of the visible label in the accessible name", url: "https://www.w3.org/WAI/WCAG22/Techniques/general/G208" }
+    ],
+    wcagFailures: [
+      { id: "F96", title: "Failure due to accessible name not containing visible text", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F96" }
+    ],
+    ariaPractices: null,
+    clientFix: "The aria-label or aria-labelledby must include the exact visible text. If button says 'Send', aria-label should start with 'Send'.",
+    badExample: "<button aria-label='submit-form'>Send</button>",
+    goodExample: "<button aria-label='Send message'>Send</button>",
+    codeHighlight: "aria-label",
+    affectedUsers: ["Voice control users", "Screen reader users"],
+    fixDifficulty: "Easy"
+  },
+
+  /**
+   * Custom: Image annotations missing alt text
+   * SC 1.1.1 Non-text Content
+   */
+  "custom-image-annotation": {
+    auditorTitle: "Image missing alt text",
+    ruleType: "wcag",
+    auditorNotes: "Image does not have alt text or appropriate ARIA labeling. Screen reader users cannot understand the image content or purpose.",
+    wcagTechniques: [
+      { id: "H37", title: "Using alt attributes on img elements", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H37" },
+      { id: "H67", title: "Using null alt for decorative images", url: "https://www.w3.org/WAI/WCAG22/Techniques/html/H67" }
+    ],
+    wcagFailures: [
+      { id: "F65", title: "Failure due to omitting alt attribute", url: "https://www.w3.org/WAI/WCAG22/Techniques/failures/F65" }
+    ],
+    ariaPractices: null,
+    clientFix: "Add alt text describing the image. Use alt='' for decorative images. Use aria-label for SVGs and background images.",
+    badExample: "<img src='chart.png'>",
+    goodExample: "<img src='chart.png' alt='Sales increased 25% in Q4'>",
+    codeHighlight: "alt",
+    affectedUsers: ["Screen reader users"],
+    fixDifficulty: "Easy"
   }
 };

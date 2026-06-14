@@ -1,4 +1,4 @@
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '@features/auth'
 
 export default function LoginPage() {
   const { signInWithGitHub, signInWithGoogle } = useAuth()
@@ -19,6 +19,7 @@ export default function LoginPage() {
         {/* Sign-in buttons */}
         <div className="space-y-3">
           <button
+            type="button"
             onClick={signInWithGitHub}
             className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
           >
@@ -29,6 +30,7 @@ export default function LoginPage() {
           </button>
 
           <button
+            type="button"
             onClick={signInWithGoogle}
             className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
           >

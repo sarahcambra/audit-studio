@@ -22,10 +22,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing url parameter' })
   }
 
+  // Normalise bare domains (e.g. 'example.com' → 'https://example.com')
+  const normalisedUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`
+
   // Validate URL
   let parsedUrl
   try {
-    parsedUrl = new URL(url)
+    parsedUrl = new URL(normalisedUrl)
   } catch {
     return res.status(400).json({ error: 'Invalid URL' })
   }

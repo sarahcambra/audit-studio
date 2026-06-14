@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Studio — Images missing alt text</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --purple: #7C3AED; --purple-dark: #5B21B6; --purple-light: #EDE9FE; --purple-xlight: #F5F3FF;
+  --bg: #F8F7FC; --white: #FFFFFF; --text: #1E1334; --text-2: #6B7280; --text-3: #9CA3AF;
+  --border: #E9E5F0; --border-2: #F0EDF8;
+  --green: #059669; --green-bg: #ECFDF5; --green-text: #065F46;
+  --amber: #D97706; --amber-bg: #FFFBEB; --amber-text: #92400E;
+  --orange: #EA580C; --orange-bg: #FFF7ED; --orange-text: #9A3412;
+  --red: #DC2626; --red-bg: #FEF2F2; --red-text: #991B1B;
+  --blue: #2563EB; --blue-bg: #EFF6FF; --blue-text: #1E40AF;
+  --gray-bg: #F3F4F6; --gray-text: #374151;
+  --radius: 8px;
+  --shadow: 0 4px 12px rgba(124,58,237,.08), 0 1px 3px rgba(0,0,0,.05);
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 216px; min-width: 216px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding-bottom: 16px; flex-shrink: 0; }
+.sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 18px; font-weight: 700; font-size: 15px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.logo-mark { width: 28px; height: 28px; background: var(--purple); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.logo-mark svg { width: 16px; height: 16px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 12px; margin: 1px 8px; border-radius: 6px; cursor: pointer; color: var(--text-2); font-weight: 500; font-size: 13.5px; transition: background .15s, color .15s; text-decoration: none; user-select: none; }
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--purple-xlight); color: var(--purple); font-weight: 600; }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-sub { padding-left: 38px; font-size: 13px; }
+.nav-sub.active-sub { color: var(--purple); font-weight: 600; background: none; }
+.nav-chevron { margin-left: auto; width: 13px !important; height: 13px !important; }
+.sidebar-footer { margin-top: auto; padding: 12px 18px 0; border-top: 1px solid var(--border); }
+.collapse-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; padding: 6px 0; }
+.nav-section-label { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); padding: 10px 18px 4px; }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+/* TOPBAR */
+.topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 12px; height: 56px; flex-shrink: 0; }
+.topbar-search { flex: 1; max-width: 320px; position: relative; }
+.topbar-search input { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px 7px 34px; font-size: 13.5px; color: var(--text); background: var(--bg); outline: none; font-family: inherit; }
+.topbar-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.topbar-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-3); }
+.topbar-spacer { flex: 1; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.icon-btn { width: 34px; height: 34px; border-radius: 7px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-2); transition: background .15s; }
+.icon-btn:hover { background: var(--bg); }
+.icon-btn svg { width: 18px; height: 18px; }
+.notif-dot { position: absolute; top: 5px; right: 6px; width: 7px; height: 7px; background: var(--red); border-radius: 50%; border: 2px solid white; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; cursor: pointer; }
+.btn-primary { display: inline-flex; align-items: center; gap: 6px; background: var(--purple); color: white; border: none; border-radius: 7px; padding: 7px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; white-space: nowrap; }
+.btn-primary:hover { background: var(--purple-dark); }
+.btn-secondary { display: inline-flex; align-items: center; gap: 6px; background: var(--white); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+.btn-secondary:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-xlight); }
+.btn-secondary svg, .btn-primary svg { width: 14px; height: 14px; }
+
+/* CONTENT AREA */
+.content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ISSUE HEADER */
+.issue-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 16px 24px 0; flex-shrink: 0; }
+.breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-3); margin-bottom: 10px; }
+.breadcrumb a { color: var(--text-2); text-decoration: none; }
+.breadcrumb a:hover { color: var(--purple); }
+.breadcrumb svg { width: 11px; height: 11px; }
+.issue-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.issue-title-left { min-width: 0; }
+.issue-title { font-size: 20px; font-weight: 700; letter-spacing: -.3px; color: var(--text); margin-bottom: 6px; }
+.issue-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sev-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.sev-pill.critical { background: var(--red-bg); color: var(--red-text); }
+.sev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sev-dot.critical { background: var(--red); }
+.wcag-chip { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 5px; font-size: 11.5px; font-weight: 600; }
+.wcag-chip.perceivable { background: #EFF6FF; color: #1E40AF; }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-badge.pending { background: var(--gray-bg); color: var(--gray-text); }
+.status-badge.confirmed { background: var(--red-bg); color: var(--red-text); }
+.status-badge.dismissed { background: var(--green-bg); color: var(--green-text); }
+.status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.issue-title-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* MAIN TABS */
+.issue-tabs { display: flex; align-items: center; gap: 0; }
+.tab-btn { display: flex; align-items: center; gap: 7px; padding: 10px 16px; font-size: 13.5px; font-weight: 500; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); font-weight: 600; }
+.tab-btn svg { width: 14px; height: 14px; }
+.tab-badge { font-size: 10.5px; font-weight: 700; background: var(--red-bg); color: var(--red); border-radius: 10px; padding: 1px 6px; }
+
+/* BODY: main + sidebar */
+.issue-body { flex: 1; display: grid; grid-template-columns: 1fr 300px; overflow: hidden; }
+.issue-main { overflow-y: auto; padding: 20px 24px 40px; }
+.issue-sidebar { overflow-y: auto; border-left: 1px solid var(--border); background: var(--white); padding: 20px 18px 40px; }
+
+/* TAB PANELS */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── ELEMENTS TAB ── */
+.elem-stats { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.elem-stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 7px; border: 1px solid var(--border); background: var(--white); font-size: 12.5px; font-weight: 500; }
+.elem-stat-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.elem-stat-chip.failure { background: var(--red-bg); border-color: #FCA5A5; }
+.elem-stat-chip.failure .dot { background: var(--red); }
+.elem-stat-chip.unreviewed .dot { background: var(--text-3); }
+.elem-stat-chip.dismissed .dot { background: var(--green); }
+.elem-num { font-weight: 700; font-size: 14px; }
+
+.elem-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.elem-search { position: relative; flex: 1; max-width: 300px; }
+.elem-search input { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px 7px 32px; font-size: 13px; outline: none; font-family: inherit; background: var(--white); transition: border-color .15s; }
+.elem-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.elem-search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); }
+.filter-pill { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border); background: var(--white); font-size: 12.5px; font-weight: 500; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; }
+.filter-pill:hover { border-color: var(--purple); color: var(--purple); }
+.filter-pill svg { width: 13px; height: 13px; }
+.toolbar-right { margin-left: auto; display: flex; gap: 6px; }
+
+/* Status filter tabs */
+.status-tabs { display: flex; gap: 3px; margin-bottom: 12px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+.status-tab { padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 500; color: var(--text-2); cursor: pointer; transition: background .15s, color .15s; border: 1px solid transparent; user-select: none; display: flex; align-items: center; gap: 5px; }
+.status-tab:hover { background: var(--bg); color: var(--text); }
+.status-tab.active { background: var(--purple-xlight); color: var(--purple); border-color: var(--purple-light); font-weight: 600; }
+.stab-count { font-size: 10.5px; font-weight: 700; background: var(--bg); color: var(--text-2); padding: 1px 5px; border-radius: 8px; }
+.status-tab.active .stab-count { background: var(--purple-light); color: var(--purple); }
+
+/* Bulk bar */
+.bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 14px; background: var(--purple-xlight); border: 1px solid var(--purple-light); border-radius: 7px; margin-bottom: 8px; font-size: 13px; color: var(--purple); font-weight: 600; }
+.bulk-bar.visible { display: flex; }
+.bulk-action { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; }
+.bulk-action:hover { border-color: var(--purple); color: var(--purple); }
+
+/* Full elements table */
+.elem-table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.elem-table-hd { display: grid; grid-template-columns: 36px 36px 1fr 130px 130px 110px 160px; align-items: center; padding: 0 14px; background: #FDFCFF; border-bottom: 1px solid var(--border); }
+.elem-table-hd > span { display: block; padding: 9px 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); white-space: nowrap; }
+.elem-full-row { display: grid; grid-template-columns: 36px 36px 1fr 130px 130px 110px 160px; align-items: center; padding: 0 14px; border-bottom: 1px solid var(--border-2); transition: background .1s; cursor: pointer; }
+.elem-full-row:last-child { border-bottom: none; }
+.elem-full-row:hover { background: var(--purple-xlight); }
+.elem-full-row.expanded { background: var(--purple-xlight); }
+.elem-full-row > * { padding: 10px 6px; }
+.elem-full-row > *:first-child { padding-left: 0; }
+.cb { width: 15px; height: 15px; accent-color: var(--purple); cursor: pointer; }
+.expand-chev { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-3); transition: transform .2s; }
+.elem-full-row.expanded .expand-chev { transform: rotate(90deg); color: var(--purple); }
+.expand-chev svg { width: 13px; height: 13px; }
+.elem-code-cell { font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; color: var(--text); background: var(--bg); padding: 4px 8px !important; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.elem-page-cell { font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+.elem-type-cell { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.elem-status-cell { }
+.elem-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+.elem-badge.failure { background: var(--red-bg); color: var(--red-text); }
+.elem-badge.unreviewed { background: var(--gray-bg); color: var(--gray-text); }
+.elem-badge.dismissed { background: var(--green-bg); color: var(--green-text); }
+.elem-badge.confirmed { background: var(--red-bg); color: var(--red-text); }
+.elem-actions-cell { display: flex; gap: 5px; }
+.elem-full-row:hover .elem-actions-cell { opacity: 1; }
+.ea-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 5px; cursor: pointer; font-family: inherit; transition: all .15s; border: 1.5px solid; white-space: nowrap; }
+.ea-btn.confirm { background: var(--green-bg); color: var(--green-text); border-color: #6EE7B7; }
+.ea-btn.confirm:hover { background: #D1FAE5; }
+.ea-btn.dismiss { background: var(--gray-bg); color: var(--gray-text); border-color: #D1D5DB; }
+.ea-btn.dismiss:hover { background: #E5E7EB; }
+.ea-btn.view { background: var(--purple-xlight); color: var(--purple); border-color: var(--purple-light); }
+
+/* Expanded element row */
+.elem-expand-row { display: none; background: #F9FAFB; border-bottom: 1px solid var(--border-2); }
+.elem-expand-row.open { display: block; }
+.elem-expand-inner { padding: 14px 20px 14px 90px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.elem-exp-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 4px; }
+.elem-exp-code { font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; background: #1E1334; color: #C4B5FD; padding: 10px 14px; border-radius: 6px; overflow-x: auto; white-space: pre; }
+.elem-exp-screenshot { height: 120px; background: var(--bg); border: 1px dashed var(--border); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: var(--text-3); cursor: pointer; transition: background .15s; }
+.elem-exp-screenshot:hover { background: var(--purple-xlight); }
+.elem-exp-screenshot svg { width: 24px; height: 24px; opacity: .3; }
+.elem-exp-actions { display: flex; gap: 8px; margin-top: 12px; grid-column: 1/3; padding-top: 10px; border-top: 1px solid var(--border-2); }
+.elem-dec-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; border: 1.5px solid; }
+.elem-dec-btn.failure { background: var(--red-bg); color: var(--red-text); border-color: #FCA5A5; }
+.elem-dec-btn.failure:hover { background: #FEE2E2; }
+.elem-dec-btn.pass { background: var(--green-bg); color: var(--green-text); border-color: #6EE7B7; }
+.elem-dec-btn.pass:hover { background: #D1FAE5; }
+.elem-dec-btn.manual { background: var(--amber-bg); color: var(--amber-text); border-color: #FDE68A; }
+.elem-note-input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 12.5px; font-family: inherit; outline: none; color: var(--text); }
+.elem-note-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+
+/* ── EVIDENCE TAB ── */
+.evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.ev-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.ev-card-hd { padding: 10px 14px; border-bottom: 1px solid var(--border-2); background: #FDFCFF; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); display: flex; align-items: center; justify-content: space-between; }
+.ev-card-hd-left { display: flex; align-items: center; gap: 6px; }
+.ev-card-hd svg { width: 12px; height: 12px; }
+.ev-shot-area { height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; color: var(--text-3); transition: background .15s; }
+.ev-shot-area:hover { background: var(--bg); }
+.ev-shot-area svg { width: 36px; height: 36px; opacity: .2; }
+.ev-shot-lbl { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.ev-shot-hint { font-size: 12px; }
+.ev-shot-pill { display: inline-flex; align-items: center; gap: 5px; background: var(--purple-xlight); color: var(--purple); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; margin-top: 4px; }
+.ev-shot-pill svg { width: 12px; height: 12px; }
+.recapture-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 5px; border: 1px solid var(--border); background: var(--white); color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; }
+.recapture-btn:hover { border-color: var(--purple); color: var(--purple); }
+.recapture-btn svg { width: 11px; height: 11px; }
+.ev-code { font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; background: #1E1334; color: #C4B5FD; padding: 14px 16px; overflow-x: auto; white-space: pre; min-height: 80px; }
+.ev-desc { padding: 14px; font-size: 13px; color: var(--text); line-height: 1.7; }
+.ev-full { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+.ev-section { padding: 14px 16px; border-bottom: 1px solid var(--border-2); }
+.ev-section:last-child { border-bottom: none; }
+.ev-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 6px; }
+.ev-remediation { background: var(--green-bg); border-left: 3px solid var(--green); padding: 10px 14px; border-radius: 6px; font-size: 13px; color: var(--text); line-height: 1.6; }
+.code-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.code-block { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.code-lbl { font-size: 11px; font-weight: 700; padding: 5px 12px; display: flex; align-items: center; gap: 5px; }
+.code-lbl.before-lbl { background: #3F1010; color: #FCA5A5; }
+.code-lbl.after-lbl { background: #052E16; color: #6EE7B7; }
+.code-pre { background: #1E1334; color: #C4B5FD; font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; padding: 10px 14px; white-space: pre; overflow-x: auto; margin: 0; }
+.wcag-ref-group { margin-bottom: 10px; }
+.wcag-ref-group:last-child { margin-bottom: 0; }
+.wcag-ref-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 4px; }
+.wcag-ref-link { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--purple); text-decoration: none; font-weight: 500; }
+.wcag-ref-link:hover { text-decoration: underline; }
+.wcag-ref-link svg { width: 11px; height: 11px; }
+
+/* ── HISTORY TAB ── */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+.timeline-item { position: relative; margin-bottom: 20px; }
+.timeline-item:last-child { margin-bottom: 0; }
+.tl-dot { position: absolute; left: -25px; top: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: var(--white); z-index: 1; display: flex; align-items: center; justify-content: center; }
+.tl-dot.purple { border-color: var(--purple); background: var(--purple); }
+.tl-dot.green { border-color: var(--green); background: var(--green); }
+.tl-dot.amber { border-color: var(--amber); background: var(--amber); }
+.tl-dot.gray { border-color: var(--text-3); background: var(--text-3); }
+.tl-dot.red { border-color: var(--red); background: var(--red); }
+.tl-dot svg { width: 8px; height: 8px; color: white; }
+.tl-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tl-actor { font-weight: 600; font-size: 13.5px; color: var(--text); }
+.tl-action { font-size: 13.5px; color: var(--text-2); }
+.tl-time { font-size: 11.5px; color: var(--text-3); margin-left: auto; }
+.tl-body { background: var(--white); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; font-size: 13px; color: var(--text-2); line-height: 1.6; }
+.tl-decision-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+.tl-decision-badge.failure { background: var(--red-bg); color: var(--red-text); }
+.tl-decision-badge.dismissed { background: var(--green-bg); color: var(--green-text); }
+.tl-decision-badge.review { background: var(--amber-bg); color: var(--amber-text); }
+
+/* ── COMMENTS TAB ── */
+.comments-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.comment { display: flex; gap: 10px; }
+.comment-av { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; }
+.comment-body { flex: 1; min-width: 0; }
+.comment-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.comment-author { font-weight: 600; font-size: 13.5px; }
+.comment-role { font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.comment-role.auditor { background: var(--purple-light); color: var(--purple-dark); }
+.comment-role.dev { background: var(--blue-bg); color: var(--blue-text); }
+.comment-time { font-size: 11.5px; color: var(--text-3); margin-left: auto; }
+.comment-text { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--text); line-height: 1.6; }
+.comment-text code { font-family: 'SF Mono','Fira Code',monospace; background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; color: var(--purple); }
+.comment-actions { display: flex; gap: 8px; margin-top: 5px; }
+.comment-action-btn { font-size: 12px; color: var(--text-3); cursor: pointer; background: none; border: none; font-family: inherit; transition: color .15s; }
+.comment-action-btn:hover { color: var(--purple); }
+.compose-area { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.compose-toolbar { display: flex; gap: 2px; padding: 8px 10px; border-bottom: 1px solid var(--border-2); }
+.compose-tool { width: 28px; height: 28px; border-radius: 5px; border: none; background: transparent; cursor: pointer; color: var(--text-2); display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.compose-tool:hover { background: var(--bg); }
+.compose-tool svg { width: 14px; height: 14px; }
+.compose-input { width: 100%; border: none; outline: none; padding: 12px 14px; font-size: 13px; font-family: inherit; color: var(--text); resize: none; min-height: 80px; }
+.compose-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--border-2); }
+.compose-hint { font-size: 11.5px; color: var(--text-3); }
+
+/* ── RAW DATA TAB ── */
+.raw-json { font-family: 'SF Mono','Fira Code',monospace; font-size: 12px; background: #1E1334; color: #C4B5FD; padding: 16px 18px; border-radius: 8px; overflow-x: auto; white-space: pre; line-height: 1.7; }
+.json-key { color: #93C5FD; }
+.json-str { color: #86EFAC; }
+.json-num { color: #FCA5A5; }
+.json-bool { color: #FDE68A; }
+.json-null { color: #94A3B8; }
+.raw-section-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.raw-section-title span { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+
+/* ── SIDEBAR ── */
+.sidebar-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-2); }
+.sidebar-section:last-child { border-bottom: none; margin-bottom: 0; }
+.sidebar-section-title { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+
+/* Decision card */
+.decision-card { background: var(--purple-xlight); border: 2px solid var(--purple-light); border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+.dec-title { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--purple); display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.dec-subtitle { font-size: 12.5px; color: var(--text-2); margin-bottom: 12px; }
+.dec-current { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--white); border: 1px solid var(--border); border-radius: 7px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+.dec-current svg { width: 14px; height: 14px; color: var(--text-3); }
+.dec-btns { display: flex; flex-direction: column; gap: 6px; }
+.dec-btn { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; border: 1.5px solid; width: 100%; text-align: left; }
+.dec-btn.failure { background: var(--red-bg); color: var(--red-text); border-color: #FCA5A5; }
+.dec-btn.failure:hover { background: #FEE2E2; }
+.dec-btn.pass { background: var(--green-bg); color: var(--green-text); border-color: #6EE7B7; }
+.dec-btn.pass:hover { background: #D1FAE5; }
+.dec-btn.manual { background: var(--amber-bg); color: var(--amber-text); border-color: #FDE68A; }
+.dec-btn.manual:hover { background: #FEF3C7; }
+.dec-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Metadata rows */
+.meta-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border-2); font-size: 13px; }
+.meta-row:last-child { border-bottom: none; }
+.meta-key { color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.meta-key svg { width: 13px; height: 13px; }
+.meta-val { font-weight: 500; color: var(--text); text-align: right; }
+.meta-val.link { color: var(--purple); cursor: pointer; }
+.meta-val.link:hover { text-decoration: underline; }
+.meta-val a { color: var(--purple); text-decoration: none; }
+.meta-val a:hover { text-decoration: underline; }
+
+/* Assignee */
+.assignee-row { display: flex; align-items: center; gap: 8px; }
+.assignee-av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+.assign-btn { font-size: 12px; color: var(--purple); font-weight: 500; background: none; border: 1px dashed var(--purple-light); border-radius: 5px; padding: 3px 8px; cursor: pointer; font-family: inherit; transition: all .15s; }
+.assign-btn:hover { background: var(--purple-xlight); }
+
+/* Related issues */
+.related-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: background .15s; font-size: 13px; border: 1px solid var(--border); background: var(--white); margin-bottom: 6px; }
+.related-item:last-child { margin-bottom: 0; }
+.related-item:hover { background: var(--purple-xlight); border-color: var(--purple-light); }
+.related-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.related-dot.critical { background: var(--red); }
+.related-dot.serious { background: var(--orange); }
+.related-name { flex: 1; font-weight: 500; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.related-sc { font-size: 11px; font-weight: 600; padding: 1px 5px; border-radius: 4px; background: var(--bg); color: var(--text-2); flex-shrink: 0; }
+
+/* Effort tag */
+.effort-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.effort-tag.low { background: var(--green-bg); color: var(--green-text); }
+.effort-tag.medium { background: var(--amber-bg); color: var(--amber-text); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="white"><path d="M3 8L8 3L13 8L8 13Z" opacity=".85"/><circle cx="8" cy="8" r="2.5"/></svg></div>
+    Audit Studio
+  </div>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+    Dashboard
+  </a>
+  <a href="#" class="nav-item active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M3 8h14M8 8v8"/></svg>
+    Audits
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <a href="#" class="nav-item nav-sub">All audits</a>
+  <a href="Audit Detail Improved.html" class="nav-item nav-sub">Wiki — wikipedia.org</a>
+  <a href="#" class="nav-item nav-sub active-sub">↳ Issue #1</a>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14l6-8 4 5 2-3 4 6H2z"/></svg>
+    Reports
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <div class="nav-section-label" style="margin-top:8px">Resources</div>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a2 2 0 012-2h10a1 1 0 011 1v13"/><path d="M4 19h13M4 19a2 2 0 01-2-2v-1h4v1a2 2 0 01-2 2z"/></svg>
+    Knowledge base
+  </a>
+  <div class="sidebar-footer">
+    <div class="collapse-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 5l-5 5 5 5"/></svg>
+      Collapse
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-search">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M20 20l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search audits…" />
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="btn-primary">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+        New Audit
+      </button>
+      <div style="position:relative">
+        <button class="icon-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2a6 6 0 00-6 6c0 2.387-.697 4.216-1.5 5.5h15c-.803-1.284-1.5-3.113-1.5-5.5a6 6 0 00-6-6z"/><path d="M10 18a2 2 0 002-2H8a2 2 0 002 2z"/></svg></button>
+        <div class="notif-dot"></div>
+      </div>
+      <div class="avatar">SL</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- ISSUE HEADER -->
+    <div class="issue-header">
+      <div class="breadcrumb">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/></svg>
+        <a href="#">Home</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+        <a href="#">Audits</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+        <a href="Audit Detail Improved.html">Wiki</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+        <a href="Audit Detail Improved.html#triage">Triage</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+        <span>Images missing alt text</span>
+      </div>
+      <div class="issue-title-row">
+        <div class="issue-title-left">
+          <div class="issue-title">Images missing alternative text</div>
+          <div class="issue-badges">
+            <span class="sev-pill critical"><span class="sev-dot critical"></span>Critical</span>
+            <span class="wcag-chip perceivable">SC 1.1.1 · Non-text Content</span>
+            <span class="status-badge pending">Untriaged</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-2)"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Detected 9 Jun 2026</span>
+          </div>
+        </div>
+        <div class="issue-title-actions">
+          <button class="btn-secondary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="3" r="2"/><circle cx="3" cy="8" r="2"/><circle cx="11" cy="13" r="2"/><path d="M5 7l4-3M5 9l4 3"/></svg>
+            Share issue
+          </button>
+          <button class="btn-secondary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="1" width="10" height="12" rx="1.5"/><path d="M5 5h6M5 7h6M5 9h4"/></svg>
+            Export
+          </button>
+          <button class="icon-btn" title="More options">
+            <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="8" cy="13" r="1.3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="issue-tabs">
+        <button class="tab-btn active" onclick="switchTab('elements')" id="tab-elements">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+          All Elements
+          <span class="tab-badge">12</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('evidence')" id="tab-evidence">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="5" cy="7" r="1.5"/><path d="M1 11l4-4 3 3 3-2 4 4"/></svg>
+          Evidence & Fix
+        </button>
+        <button class="tab-btn" onclick="switchTab('history')" id="tab-history">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+          Audit Trail
+        </button>
+        <button class="tab-btn" onclick="switchTab('comments')" id="tab-comments">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h4l2 2 2-2h4a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>
+          Comments
+          <span class="tab-badge" style="background:var(--blue-bg);color:var(--blue)">3</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('raw')" id="tab-raw">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12"/></svg>
+          Raw Data
+        </button>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="issue-body">
+      <!-- MAIN CONTENT -->
+      <div class="issue-main">
+
+        <!-- ── ELEMENTS TAB ── -->
+        <div class="tab-panel active" id="panel-elements">
+          <!-- Stats -->
+          <div class="elem-stats">
+            <div class="elem-stat-chip failure"><span class="dot"></span><span class="elem-num">10</span> Confirmed failures</div>
+            <div class="elem-stat-chip unreviewed"><span class="dot"></span><span class="elem-num">2</span> Unreviewed</div>
+            <div class="elem-stat-chip dismissed"><span class="dot"></span><span class="elem-num">0</span> Dismissed</div>
+            <div class="elem-stat-chip"><span style="font-size:13px;font-weight:700">12</span> total elements</div>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="elem-toolbar">
+            <div class="elem-search">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M20 20l-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search by selector or snippet…" id="elem-search-input" oninput="filterElements()" />
+            </div>
+            <button class="filter-pill">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 8h6M7 12h2"/></svg>
+              Page
+            </button>
+            <button class="filter-pill">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8l5-5 5 5M5 12l5 5 5-5"/></svg>
+              Sort: Status
+            </button>
+            <div class="toolbar-right">
+              <button class="btn-secondary" style="font-size:12.5px">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3M8 2v8M5 5l3-3 3 3"/></svg>
+                Export elements
+              </button>
+            </div>
+          </div>
+
+          <!-- Status tabs -->
+          <div class="status-tabs">
+            <span style="font-size:12px;font-weight:600;color:var(--text-3);margin-right:4px">Show:</span>
+            <div class="status-tab active" data-filter="all" onclick="setElemFilter(this,'all')">All <span class="stab-count" id="stab-all">12</span></div>
+            <div class="status-tab" data-filter="failure" onclick="setElemFilter(this,'failure')">Failures <span class="stab-count" id="stab-failure" style="background:var(--red-bg);color:var(--red)">10</span></div>
+            <div class="status-tab" data-filter="unreviewed" onclick="setElemFilter(this,'unreviewed')">Unreviewed <span class="stab-count" id="stab-unreviewed">2</span></div>
+            <div class="status-tab" data-filter="dismissed" onclick="setElemFilter(this,'dismissed')">Dismissed <span class="stab-count" id="stab-dismissed">0</span></div>
+          </div>
+
+          <!-- Bulk bar -->
+          <div class="bulk-bar" id="elem-bulk-bar">
+            <svg viewBox="0 0 16 16" fill="currentColor" style="width:15px;height:15px"><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
+            <span id="elem-bulk-count">0 selected</span>
+            <button class="bulk-action"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M3 8l4 4 6-6"/></svg>Confirm all</button>
+            <button class="bulk-action">Dismiss all</button>
+            <button class="bulk-action">Needs Review</button>
+          </div>
+
+          <!-- Table -->
+          <div class="elem-table-wrap">
+            <div class="elem-table-hd">
+              <span><input type="checkbox" class="cb" id="elem-cb-all" onchange="elemToggleAll(this)"></span>
+              <span></span>
+              <span>Element</span>
+              <span>Page</span>
+              <span>Type</span>
+              <span>Status</span>
+              <span>Action</span>
+            </div>
+            <div id="elem-table-body"></div>
+          </div>
+        </div>
+
+        <!-- ── EVIDENCE TAB ── -->
+        <div class="tab-panel" id="panel-evidence">
+          <!-- Screenshot + code side by side -->
+          <div class="evidence-grid">
+            <div class="ev-card">
+              <div class="ev-card-hd">
+                <div class="ev-card-hd-left"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="5" cy="7" r="1.5"/><path d="M1 11l4-4 3 3 3-2 4 4"/></svg>Screenshot / Evidence</div>
+                <button class="recapture-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8a4 4 0 108-.001"/><path d="M12 4l-1 2h2l-1-2z"/></svg>Re-capture</button>
+              </div>
+              <div class="ev-shot-area">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
+                <span class="ev-shot-lbl">No screenshot available</span>
+                <span class="ev-shot-hint">Run scan with screenshots enabled</span>
+                <span class="ev-shot-pill"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2v8M5 5l3-3 3 3M3 12v2h10v-2"/></svg>Upload manually</span>
+              </div>
+            </div>
+            <div class="ev-card">
+              <div class="ev-card-hd">
+                <div class="ev-card-hd-left"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12"/></svg>Offending Element (first instance)</div>
+              </div>
+              <pre class="ev-code">&lt;img src="/wiki/logo.png"
+  class="site-logo"&gt;</pre>
+              <div class="ev-desc">Images must have text alternatives to convey meaning to screen reader users. 12 images on this page have no <code>alt</code> attribute or have an empty string that hides informative content.</div>
+            </div>
+          </div>
+
+          <!-- Full details sections -->
+          <div class="ev-full">
+            <div class="ev-section">
+              <div class="ev-section-label">Remediation guidance</div>
+              <div class="ev-remediation">Add a descriptive <code>alt</code> attribute to all informative images. For purely decorative images, use <code>alt=""</code> to hide them from assistive technology. Never omit the attribute entirely.</div>
+            </div>
+            <div class="ev-section">
+              <div class="ev-section-label">Before / After</div>
+              <div class="code-split">
+                <div class="code-block">
+                  <div class="code-lbl before-lbl"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l8 8M10 2l-8 8"/></svg>Before</div>
+                  <pre class="code-pre">&lt;img src="/wiki/logo.png"
+  class="site-logo"&gt;</pre>
+                </div>
+                <div class="code-block">
+                  <div class="code-lbl after-lbl"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l4 4 6-7"/></svg>After</div>
+                  <pre class="code-pre">&lt;img src="/wiki/logo.png"
+  class="site-logo"
+  alt="Wikipedia"&gt;</pre>
+                </div>
+              </div>
+            </div>
+            <div class="ev-section">
+              <div class="ev-section-label">WCAG References</div>
+              <div class="wcag-ref-group">
+                <div class="wcag-ref-label">Success Criterion</div>
+                <a class="wcag-ref-link" href="https://www.w3.org/WAI/WCAG22/Understanding/non-text-content" target="_blank">SC 1.1.1 — Non-text Content <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+              </div>
+              <div class="wcag-ref-group">
+                <div class="wcag-ref-label">W3C Techniques</div>
+                <a class="wcag-ref-link" href="https://www.w3.org/WAI/WCAG22/Techniques/html/H37" target="_blank">H37: Using alt attributes on img elements <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+              </div>
+              <div class="wcag-ref-group">
+                <div class="wcag-ref-label">Common Failures</div>
+                <a class="wcag-ref-link" href="https://www.w3.org/WAI/WCAG22/Techniques/failures/F65" target="_blank">F65: Failure due to omitting the alt attribute <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+              </div>
+              <div class="wcag-ref-group">
+                <div class="wcag-ref-label">ARIA Authoring Practices</div>
+                <a class="wcag-ref-link" href="https://www.w3.org/WAI/ARIA/apg/" target="_blank">APG: Accessible images pattern <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── HISTORY TAB ── -->
+        <div class="tab-panel" id="panel-history">
+          <div style="margin-bottom:16px">
+            <div style="font-size:16px;font-weight:700;margin-bottom:2px">Audit Trail</div>
+            <div style="font-size:13px;color:var(--text-2)">Full history of decisions and changes for this issue</div>
+          </div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="tl-dot amber"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Auto-scan</span>
+                <span class="tl-action">detected this issue and set status to <strong>Needs Review</strong></span>
+                <span class="tl-time">9 Jun 2026, 14:30</span>
+              </div>
+              <div class="tl-body">Scan #4 completed. Rule <code>image-alt</code> triggered on 12 elements across Homepage. Confidence: high.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot purple"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Sofia Lima</span>
+                <span class="tl-action">opened this issue in Full Details</span>
+                <span class="tl-time">10 Jun 2026, 10:14</span>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot purple"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Sofia Lima</span>
+                <span class="tl-action">triaged elements 1–8 as <span class="tl-decision-badge failure">Confirmed Failure</span></span>
+                <span class="tl-time">10 Jun 2026, 10:28</span>
+              </div>
+              <div class="tl-body">8 informative images confirmed as WCAG failures. Elements 9–10 left for review — decorative context unclear.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot gray"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Sofia Lima</span>
+                <span class="tl-action">added a comment</span>
+                <span class="tl-time">10 Jun 2026, 10:31</span>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot gray"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Marcus Reyes</span>
+                <span class="tl-action">replied with a comment</span>
+                <span class="tl-time">10 Jun 2026, 14:02</span>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot amber"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Sofia Lima</span>
+                <span class="tl-action">triaged element 11 as <span class="tl-decision-badge dismissed">Dismissed</span></span>
+                <span class="tl-time">11 Jun 2026, 09:15</span>
+              </div>
+              <div class="tl-body"><code>&lt;img src="/deco.svg" aria-hidden="true"&gt;</code> — decorative image, correctly hidden from AT.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot purple"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Sofia Lima</span>
+                <span class="tl-action">triaged element 12 as <span class="tl-decision-badge dismissed">Dismissed</span></span>
+                <span class="tl-time">11 Jun 2026, 09:18</span>
+              </div>
+              <div class="tl-body"><code>&lt;img src="/bg.jpg" role="presentation"&gt;</code> — correctly uses role="presentation" to suppress AT exposure.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot red"><svg viewBox="0 0 8 8" fill="white"><circle cx="4" cy="4" r="3"/></svg></div>
+              <div class="tl-header">
+                <span class="tl-actor">Sofia Lima</span>
+                <span class="tl-action">confirmed rule-level status as <span class="tl-decision-badge failure">Confirmed Failure</span></span>
+                <span class="tl-time">11 Jun 2026, 09:20</span>
+              </div>
+              <div class="tl-body">10 of 12 elements are confirmed WCAG 1.1.1 failures. Issue escalated for developer remediation.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── COMMENTS TAB ── -->
+        <div class="tab-panel" id="panel-comments">
+          <div style="margin-bottom:16px">
+            <div style="font-size:16px;font-weight:700;margin-bottom:2px">Comments</div>
+            <div style="font-size:13px;color:var(--text-2)">Collaboration thread between auditors and the development team</div>
+          </div>
+          <div class="comments-list">
+            <div class="comment">
+              <div class="comment-av" style="background:#7C3AED">SL</div>
+              <div class="comment-body">
+                <div class="comment-hd">
+                  <span class="comment-author">Sofia Lima</span>
+                  <span class="comment-role auditor">Auditor</span>
+                  <span class="comment-time">10 Jun 2026, 10:31</span>
+                </div>
+                <div class="comment-text">12 images on the homepage are missing alt text. I've triaged 10 as confirmed failures — informative images that screen reader users cannot understand.<br><br>Two are decorative (<code>&lt;img role="presentation"&gt;</code> and <code>aria-hidden="true"&gt;</code>) and I've dismissed those.<br><br>The 10 failures need alt text added. Priority: the site logo, hero image, and article thumbnails have the highest visibility.</div>
+                <div class="comment-actions">
+                  <button class="comment-action-btn">👍 2</button>
+                  <button class="comment-action-btn">Reply</button>
+                </div>
+              </div>
+            </div>
+            <div class="comment">
+              <div class="comment-av" style="background:#0EA5E9">MR</div>
+              <div class="comment-body">
+                <div class="comment-hd">
+                  <span class="comment-author">Marcus Reyes</span>
+                  <span class="comment-role dev">Developer</span>
+                  <span class="comment-time">10 Jun 2026, 14:02</span>
+                </div>
+                <div class="comment-text">Thanks Sofia. I can fix the static images quickly — the logo and hero are in our CMS templates. The article thumbnails are dynamically generated from content entries, so we'll need a content editor to add alt text to each article.<br><br>Rough estimate: static images fixed this sprint, article thumbnails will need a content audit. Can you confirm which article images are highest priority?</div>
+                <div class="comment-actions">
+                  <button class="comment-action-btn">Reply</button>
+                </div>
+              </div>
+            </div>
+            <div class="comment">
+              <div class="comment-av" style="background:#7C3AED">SL</div>
+              <div class="comment-body">
+                <div class="comment-hd">
+                  <span class="comment-author">Sofia Lima</span>
+                  <span class="comment-role auditor">Auditor</span>
+                  <span class="comment-time">11 Jun 2026, 09:22</span>
+                </div>
+                <div class="comment-text">Agreed on the split. For article thumbnails — any image used as a link or that conveys subject matter (e.g. article cover) must have alt text. Pure decorative ones within article cards can use <code>alt=""</code>.<br><br>I'll re-scan after the static fixes land. Let me know when the PR is merged.</div>
+                <div class="comment-actions">
+                  <button class="comment-action-btn">Reply</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compose -->
+          <div class="compose-area">
+            <div class="compose-toolbar">
+              <button class="compose-tool" title="Bold"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2h4.5a3.5 3.5 0 012.7 5.7A3.5 3.5 0 019 14H4V2zm2 5h2.5a1.5 1.5 0 000-3H6v3zm0 2v3h3a1.5 1.5 0 000-3H6z"/></svg></button>
+              <button class="compose-tool" title="Italic"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M7 2h5v2H9.5l-2 8H9v2H4v-2h2.5l2-8H7V2z"/></svg></button>
+              <button class="compose-tool" title="Code"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4"/></svg></button>
+              <button class="compose-tool" title="Link"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8a3 3 0 004.243 0l2-2a3 3 0 00-4.243-4.243l-1 1"/><path d="M10 8a3 3 0 00-4.243 0l-2 2a3 3 0 004.243 4.243l1-1"/></svg></button>
+            </div>
+            <textarea class="compose-input" placeholder="Add a comment — @mention team members, attach screenshots, or paste code…"></textarea>
+            <div class="compose-footer">
+              <span class="compose-hint">Markdown supported · Ctrl+Enter to submit</span>
+              <button class="btn-primary" style="font-size:13px;padding:6px 14px">Comment</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RAW DATA TAB ── -->
+        <div class="tab-panel" id="panel-raw">
+          <div style="margin-bottom:16px">
+            <div style="font-size:16px;font-weight:700;margin-bottom:2px">Raw Scan Data</div>
+            <div style="font-size:13px;color:var(--text-2)">Full JSON output from the scanner — for developers and integrations</div>
+          </div>
+          <div class="raw-section-title">Triage item <span>with enriched audit data</span></div>
+          <pre class="raw-json"><span class="json-key">"id"</span>: <span class="json-str">"03baf61d-e778-4180-b1bd-1cad8eda2595"</span>,
+<span class="json-key">"audit_id"</span>: <span class="json-str">"afece17c-c9f9-4cd7-866e-8fd8e2732d60"</span>,
+<span class="json-key">"rule_id"</span>: <span class="json-str">"image-alt"</span>,
+<span class="json-key">"wcag_sc"</span>: <span class="json-str">"1.1.1"</span>,
+<span class="json-key">"impact"</span>: <span class="json-str">"critical"</span>,
+<span class="json-key">"page_name"</span>: <span class="json-str">"Homepage"</span>,
+<span class="json-key">"issue_type"</span>: <span class="json-str">"needs review"</span>,
+<span class="json-key">"decision"</span>: <span class="json-null">null</span>,
+<span class="json-key">"dismissal_reason"</span>: <span class="json-null">null</span>,
+<span class="json-key">"node_count"</span>: <span class="json-num">12</span>,
+<span class="json-key">"sc_ids"</span>: [<span class="json-str">"1.1.1"</span>],
+<span class="json-key">"tags"</span>: [
+  <span class="json-str">"cat.text-alternatives"</span>,
+  <span class="json-str">"wcag2a"</span>,
+  <span class="json-str">"wcag111"</span>,
+  <span class="json-str">"EN-301-549"</span>,
+  <span class="json-str">"EN-9.1.1.1"</span>,
+  <span class="json-str">"RGAA4"</span>
+],
+<span class="json-key">"element_snippet"</span>: <span class="json-str">"&lt;img src=\"/wiki/logo.png\" class=\"site-logo\"&gt;"</span>,
+<span class="json-key">"screenshot_url"</span>: <span class="json-null">null</span>,
+<span class="json-key">"selector"</span>: <span class="json-str">".site-logo"</span>,
+<span class="json-key">"created_at"</span>: <span class="json-str">"2026-06-09T14:30:22Z"</span>,
+<span class="json-key">"updated_at"</span>: <span class="json-str">"2026-06-11T09:20:05Z"</span></pre>
+        </div>
+
+      </div><!-- /issue-main -->
+
+      <!-- SIDEBAR -->
+      <div class="issue-sidebar">
+
+        <!-- Decision card -->
+        <div class="decision-card">
+          <div class="dec-title"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4"/></svg>Rule-level Decision</div>
+          <div class="dec-subtitle">Overall verdict for this issue across all elements</div>
+          <div class="dec-current">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg>
+            Currently: <strong style="margin-left:3px">Untriaged</strong>
+          </div>
+          <div class="dec-btns">
+            <button class="dec-btn failure" onclick="setRuleDecision('failure', this)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L1 14h14L8 2z"/></svg>Confirmed Failure
+            </button>
+            <button class="dec-btn pass" onclick="setRuleDecision('pass', this)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l4 4 6-6"/></svg>Not a Failure
+            </button>
+            <button class="dec-btn manual" onclick="setRuleDecision('manual', this)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg>Needs Manual Check
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Issue Details</div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L1 14h14L8 2z"/></svg>Severity</span><span class="meta-val"><span class="sev-pill critical" style="font-size:12px"><span class="sev-dot critical"></span>Critical</span></span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 9h4"/></svg>Standard</span><span class="meta-val">WCAG 2.2 AA</span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/></svg>SC</span><span class="meta-val">1.1.1 Non-text Content</span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2l4 4-8 8H2v-4L10 2z"/></svg>Effort</span><span class="meta-val"><span class="effort-tag low">Low</span></span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="10" rx="1.5"/><path d="M6 15h4M8 12v3"/></svg>Scope</span><span class="meta-val">Homepage</span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M2 14s1-2.5 6-2.5 6 2.5 6 2.5"/></svg>Who affected</span><span class="meta-val">Screen reader users</span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>Detected</span><span class="meta-val">9 Jun 2026</span></div>
+          <div class="meta-row"><span class="meta-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Last scan</span><span class="meta-val">9 Jun 2026</span></div>
+        </div>
+
+        <!-- Assignee -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Assignee</div>
+          <div class="assignee-row">
+            <button class="assign-btn">+ Assign auditor</button>
+          </div>
+        </div>
+
+        <!-- Element summary -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Element Breakdown</div>
+          <div style="background:var(--bg);border-radius:7px;padding:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+              <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;display:inline-block"></span>Failures</div>
+              <strong style="color:var(--red)">10</strong>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div style="width:83%;height:100%;background:var(--red);border-radius:3px"></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+              <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--text-3);flex-shrink:0;display:inline-block"></span>Unreviewed</div>
+              <strong>2</strong>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+              <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;display:inline-block"></span>Dismissed</div>
+              <strong style="color:var(--green)">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Related issues -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Related Issues — Same page</div>
+          <div class="related-item"><span class="related-dot serious"></span><span class="related-name">Insufficient color contrast</span><span class="related-sc">1.4.3</span></div>
+          <div class="related-item"><span class="related-dot critical"></span><span class="related-name">Form inputs missing labels</span><span class="related-sc">1.3.1</span></div>
+          <div class="related-item"><span class="related-dot serious"></span><span class="related-name">Focus indicator not visible</span><span class="related-sc">2.4.7</span></div>
+        </div>
+
+      </div><!-- /sidebar -->
+    </div><!-- /body -->
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ── ELEMENT DATA ──────────────────────────────────────────────────
+const elements = [
+  { id:1, snippet:'&lt;img src="/wiki/logo.png" class="site-logo"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:2, snippet:'&lt;img src="/hero.jpg" class="hero-img"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:3, snippet:'&lt;img src="/banner.png" id="promo-banner"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:4, snippet:'&lt;img src="/icon.svg" class="nav-icon"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:5, snippet:'&lt;img src="/thumb-1.jpg" class="article-thumb"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:6, snippet:'&lt;img src="/thumb-2.jpg" class="article-thumb"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:7, snippet:'&lt;img src="/thumb-3.jpg" class="article-thumb"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:8, snippet:'&lt;img src="/avatar.png" class="user-avatar"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:9, snippet:'&lt;img src="/card.jpg" class="card-image"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:10, snippet:'&lt;img src="/map.png" class="map-img"&gt;', page:'Homepage', type:'img', status:'failure' },
+  { id:11, snippet:'&lt;img src="/bg.jpg" role="presentation"&gt;', page:'Homepage', type:'img', status:'unreviewed' },
+  { id:12, snippet:'&lt;img src="/deco.svg" aria-hidden="true"&gt;', page:'Homepage', type:'img', status:'unreviewed' }
+];
+
+let elemFilter = 'all';
+let elemSearch = '';
+
+function renderElements() {
+  const rows = elements.filter(e => {
+    const matchFilter = elemFilter === 'all' || e.status === elemFilter;
+    const search = elemSearch.toLowerCase();
+    const matchSearch = !search || e.snippet.toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+  const body = document.getElementById('elem-table-body');
+  body.innerHTML = rows.map(e => `
+    <div>
+      <div class="elem-full-row" id="erow-${e.id}" onclick="toggleElemExpand(${e.id})">
+        <div><input type="checkbox" class="cb elem-row-cb" onclick="event.stopPropagation()" onchange="updateElemBulk()"></div>
+        <div class="expand-chev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg></div>
+        <div class="elem-code-cell" title="${e.snippet}">${e.snippet}</div>
+        <div class="elem-page-cell">${e.page}</div>
+        <div class="elem-type-cell">&lt;${e.type}&gt;</div>
+        <div class="elem-status-cell"><span class="elem-badge ${e.status}">${statusLabel(e.status)}</span></div>
+        <div class="elem-actions-cell">
+          <button class="ea-btn confirm" onclick="setElemStatus(${e.id},'failure',event)">Confirm</button>
+          <button class="ea-btn dismiss" onclick="setElemStatus(${e.id},'dismissed',event)">Dismiss</button>
+        </div>
+      </div>
+      <div class="elem-expand-row" id="eexp-${e.id}">
+        <div class="elem-expand-inner">
+          <div>
+            <div class="elem-exp-label">Element HTML</div>
+            <pre class="elem-exp-code">${e.snippet}</pre>
+          </div>
+          <div>
+            <div class="elem-exp-label">Screenshot of this element</div>
+            <div class="elem-exp-screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
+              <span style="font-size:12px;color:var(--text-2)">No screenshot</span>
+              <span style="font-size:11px;color:var(--text-3)">Click to upload</span>
+            </div>
+          </div>
+          <div class="elem-exp-actions">
+            <button class="elem-dec-btn failure" onclick="setElemStatus(${e.id},'failure',event)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="width:13px;height:13px"><path d="M8 2L1 14h14L8 2z"/></svg>Confirmed Failure</button>
+            <button class="elem-dec-btn pass" onclick="setElemStatus(${e.id},'dismissed',event)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="width:13px;height:13px"><path d="M3 8l4 4 6-6"/></svg>Not a Failure</button>
+            <button class="elem-dec-btn manual" onclick="setElemStatus(${e.id},'review',event)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="width:13px;height:13px"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/></svg>Manual Check</button>
+            <input type="text" class="elem-note-input" placeholder="Add a note about this element…" onclick="event.stopPropagation()">
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+  updateStatusCounts();
+}
+
+function statusLabel(s) {
+  return { failure:'Failure', unreviewed:'Unreviewed', dismissed:'Dismissed', review:'Needs Review' }[s] || s;
+}
+
+function toggleElemExpand(id) {
+  const row = document.getElementById('erow-'+id);
+  const exp = document.getElementById('eexp-'+id);
+  row.classList.toggle('expanded');
+  exp.classList.toggle('open');
+}
+
+function setElemStatus(id, status, e) {
+  e.stopPropagation();
+  const el = elements.find(x => x.id === id);
+  if (el) el.status = status;
+  renderElements();
+}
+
+function setElemFilter(tab, filter) {
+  document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  elemFilter = filter;
+  renderElements();
+}
+
+function filterElements() {
+  elemSearch = document.getElementById('elem-search-input').value;
+  renderElements();
+}
+
+function elemToggleAll(cb) {
+  document.querySelectorAll('.elem-row-cb').forEach(c => c.checked = cb.checked);
+  updateElemBulk();
+}
+
+function updateElemBulk() {
+  const count = document.querySelectorAll('.elem-row-cb:checked').length;
+  const bar = document.getElementById('elem-bulk-bar');
+  bar.classList.toggle('visible', count > 0);
+  document.getElementById('elem-bulk-count').textContent = count + ' selected';
+}
+
+function updateStatusCounts() {
+  const counts = {
+    all: elements.length,
+    failure: elements.filter(e=>e.status==='failure').length,
+    unreviewed: elements.filter(e=>e.status==='unreviewed').length,
+    dismissed: elements.filter(e=>e.status==='dismissed').length
+  };
+  Object.entries(counts).forEach(([k,v]) => {
+    const el = document.getElementById('stab-'+k);
+    if (el) el.textContent = v;
+  });
+  // Update sidebar
+  const fail = counts.failure;
+  const unrev = counts.unreviewed;
+  document.querySelectorAll('.elem-stat-chip')[0].querySelector('.elem-num').textContent = fail;
+  document.querySelectorAll('.elem-stat-chip')[1].querySelector('.elem-num').textContent = unrev;
+  document.querySelectorAll('.elem-stat-chip')[2].querySelector('.elem-num').textContent = counts.dismissed;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ── RULE DECISION ─────────────────────────────────────────────────
+function setRuleDecision(decision, btn) {
+  const labels = { failure: 'Confirmed Failure', pass: 'Not a Failure', manual: 'Needs Manual Check' };
+  const card = document.querySelector('.dec-current');
+  card.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M3 8l4 4 6-6"/></svg>Decision: <strong style="margin-left:3px">${labels[decision]}</strong>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+renderElements();
+</script>
+</body>
+</html>

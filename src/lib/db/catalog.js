@@ -1,4 +1,4 @@
-import { supabase } from '../supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Fetch catalog items for a user (their own + global defaults).

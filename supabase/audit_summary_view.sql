@@ -64,6 +64,15 @@ SELECT
       AND ti.decision IS NULL
   ) AS best_practice_count,
 
+  -- Untriaged WCAG failures with critical/serious impact (blocking the pipeline)
+  (
+    SELECT COUNT(*) FROM public.triage_items ti
+    WHERE ti.audit_id = a.id
+      AND ti.decision IS NULL
+      AND ti.issue_type IN ('failure', 'failure, needs review')
+      AND ti.impact IN ('critical', 'serious')
+  ) AS blocking_count,
+
   -- Total scan jobs for this audit
   (
     SELECT COUNT(*) FROM public.scan_jobs sj

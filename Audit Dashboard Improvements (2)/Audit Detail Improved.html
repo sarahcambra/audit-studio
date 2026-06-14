@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Studio — Wiki Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --purple: #7C3AED; --purple-dark: #5B21B6; --purple-light: #EDE9FE; --purple-xlight: #F5F3FF;
+  --bg: #F8F7FC; --white: #FFFFFF; --text: #1E1334; --text-2: #6B7280; --text-3: #9CA3AF;
+  --border: #E9E5F0; --border-2: #F0EDF8;
+  --green: #059669; --green-bg: #ECFDF5; --green-text: #065F46;
+  --amber: #D97706; --amber-bg: #FFFBEB; --amber-text: #92400E;
+  --orange: #EA580C; --orange-bg: #FFF7ED; --orange-text: #9A3412;
+  --red: #DC2626; --red-bg: #FEF2F2; --red-text: #991B1B;
+  --blue: #2563EB; --blue-bg: #EFF6FF; --blue-text: #1E40AF;
+  --gray-bg: #F3F4F6; --gray-text: #374151;
+  --radius: 8px; --radius-sm: 5px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow: 0 4px 12px rgba(124,58,237,.08), 0 1px 3px rgba(0,0,0,.05);
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 216px; min-width: 216px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding-bottom: 16px; }
+.sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 18px; font-weight: 700; font-size: 15px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.logo-mark { width: 28px; height: 28px; background: var(--purple); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.logo-mark svg { width: 16px; height: 16px; }
+.nav-section-label { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); padding: 10px 18px 4px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 12px; margin: 1px 8px; border-radius: 6px; cursor: pointer; color: var(--text-2); font-weight: 500; font-size: 13.5px; transition: background .15s, color .15s; text-decoration: none; user-select: none; }
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--purple-xlight); color: var(--purple); font-weight: 600; }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-sub { padding-left: 38px; font-size: 13px; }
+.nav-sub.active-sub { color: var(--purple); font-weight: 600; background: none; }
+.nav-chevron { margin-left: auto; width: 13px !important; height: 13px !important; }
+.sidebar-footer { margin-top: auto; padding: 12px 18px 0; border-top: 1px solid var(--border); }
+.collapse-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; padding: 6px 0; }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+/* TOPBAR */
+.topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 12px; height: 56px; flex-shrink: 0; }
+.topbar-search { flex: 1; max-width: 320px; position: relative; }
+.topbar-search input { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px 7px 34px; font-size: 13.5px; color: var(--text); background: var(--bg); outline: none; font-family: inherit; }
+.topbar-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.topbar-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-3); }
+.topbar-spacer { flex: 1; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.icon-btn { width: 34px; height: 34px; border-radius: 7px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-2); transition: background .15s; }
+.icon-btn:hover { background: var(--bg); }
+.icon-btn svg { width: 18px; height: 18px; }
+.notif-wrap { position: relative; }
+.notif-dot { position: absolute; top: 5px; right: 6px; width: 7px; height: 7px; background: var(--red); border-radius: 50%; border: 2px solid white; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; cursor: pointer; }
+.btn-primary { display: flex; align-items: center; gap: 6px; background: var(--purple); color: white; border: none; border-radius: 7px; padding: 7px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; white-space: nowrap; }
+.btn-primary:hover { background: var(--purple-dark); }
+.btn-primary svg { width: 14px; height: 14px; }
+.btn-secondary { display: flex; align-items: center; gap: 6px; background: var(--white); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; white-space: nowrap; }
+.btn-secondary:hover { background: var(--bg); border-color: var(--purple); color: var(--purple); }
+.btn-secondary svg { width: 14px; height: 14px; }
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+/* PAGE HEADER */
+.page-header-wrap { background: var(--white); border-bottom: 1px solid var(--border); padding: 16px 28px 0; }
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-3); margin-bottom: 10px; }
+.breadcrumb a { color: var(--text-2); text-decoration: none; }
+.breadcrumb a:hover { color: var(--purple); }
+.breadcrumb svg { width: 12px; height: 12px; }
+.page-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.page-title-group { min-width: 0; }
+.page-title { font-size: 22px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 10px; }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-badge.active { background: var(--green-bg); color: var(--green-text); }
+.status-badge.active::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.page-url { font-size: 13px; color: var(--text-2); display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+.page-url a { color: var(--purple); text-decoration: none; }
+.page-url a:hover { text-decoration: underline; }
+.page-url svg { width: 12px; height: 12px; color: var(--text-3); }
+.page-header-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-top: 2px; }
+.meta-chip { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; font-size: 12.5px; color: var(--text-2); white-space: nowrap; cursor: pointer; transition: border-color .15s; }
+.meta-chip:hover { border-color: var(--purple); color: var(--text); }
+.meta-chip svg { width: 13px; height: 13px; }
+.meta-chip .score-num { font-weight: 700; color: var(--amber); }
+.score-ring-sm { width: 24px; height: 24px; }
+
+/* TABS */
+.tab-nav { display: flex; align-items: center; gap: 0; border-bottom: none; }
+.tab-btn { display: flex; align-items: center; gap: 7px; padding: 10px 16px; font-size: 13.5px; font-weight: 500; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); font-weight: 600; }
+.tab-btn svg { width: 15px; height: 15px; }
+.tab-badge { font-size: 10.5px; font-weight: 700; background: var(--red-bg); color: var(--red); border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center; }
+.tab-badge.amber { background: var(--amber-bg); color: var(--amber); }
+
+/* TAB PANELS */
+.tab-panel { display: none; padding: 24px 28px 40px; }
+.tab-panel.active { display: block; }
+
+/* ── OVERVIEW ──────────────────────────────── */
+.overview-top { display: grid; grid-template-columns: 260px 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.score-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.score-ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.score-center { position: absolute; text-align: center; }
+.score-big { font-size: 32px; font-weight: 800; color: var(--amber); letter-spacing: -1px; }
+.score-label { font-size: 11px; font-weight: 600; color: var(--text-3); margin-top: -2px; }
+.score-card-title { font-size: 13px; font-weight: 600; color: var(--text-2); text-align: center; }
+.score-card-sub { font-size: 12px; color: var(--text-3); text-align: center; }
+.wcag-badge-lg { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4338CA; }
+
+.kpi-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; cursor: pointer; transition: border-color .15s, transform .1s; }
+.kpi-card:hover { border-color: var(--purple); transform: translateY(-1px); box-shadow: var(--shadow); }
+.kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+.kpi-value { font-size: 30px; font-weight: 800; letter-spacing: -.5px; color: var(--text); }
+.kpi-value.red { color: var(--red); }
+.kpi-value.amber { color: var(--amber); }
+.kpi-icon { float: right; }
+.kpi-icon span { display: flex; width: 34px; height: 34px; border-radius: 8px; align-items: center; justify-content: center; }
+.kpi-meta { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+.severity-breakdown-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; grid-column: 2 / 4; }
+.sev-card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.sev-bar { height: 8px; border-radius: 4px; display: flex; overflow: hidden; gap: 2px; margin-bottom: 12px; }
+.sev-bar-seg { height: 100%; border-radius: 2px; transition: width .5s; }
+.sev-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.sev-stat { text-align: center; padding: 10px 8px; border-radius: 6px; cursor: pointer; transition: background .15s; }
+.sev-stat:hover { background: var(--bg); }
+.sev-stat-num { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+.sev-stat-label { font-size: 11px; font-weight: 600; margin-top: 2px; }
+.sev-stat.critical .sev-stat-num { color: var(--red); }
+.sev-stat.critical .sev-stat-label { color: var(--red-text); }
+.sev-stat.serious .sev-stat-num { color: var(--orange); }
+.sev-stat.serious .sev-stat-label { color: var(--orange-text); }
+.sev-stat.moderate .sev-stat-num { color: var(--amber); }
+.sev-stat.moderate .sev-stat-label { color: var(--amber-text); }
+.sev-stat.minor .sev-stat-num { color: var(--blue); }
+.sev-stat.minor .sev-stat-label { color: var(--blue-text); }
+
+.overview-mid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.detail-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); }
+.detail-card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.detail-card-title { font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.detail-card-title svg { color: var(--purple); }
+.detail-row { display: flex; align-items: center; padding: 11px 18px; border-bottom: 1px solid var(--border-2); gap: 12px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-key { font-size: 12.5px; color: var(--text-2); display: flex; align-items: center; gap: 7px; min-width: 90px; flex-shrink: 0; }
+.detail-key svg { width: 14px; height: 14px; }
+.detail-val { font-size: 13px; font-weight: 500; color: var(--text); margin-left: auto; text-align: right; }
+.detail-val a { color: var(--purple); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+.detail-val a:hover { text-decoration: underline; }
+.detail-val.muted { color: var(--text-3); font-weight: 400; }
+.assignee-row { display: flex; align-items: center; gap: 6px; }
+.assignee-av-sm { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+
+.pipeline-track { padding: 16px 18px; }
+.pipeline-title { font-size: 12px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+.pipeline-steps { display: flex; align-items: center; gap: 0; }
+.pipeline-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+.pipeline-step::before { content: ''; position: absolute; top: 14px; left: 50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+.pipeline-step:last-child::before { display: none; }
+.pipeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; position: relative; z-index: 1; border: 2px solid var(--border); background: var(--white); color: var(--text-3); transition: all .2s; }
+.pipeline-dot.done { background: var(--purple); border-color: var(--purple); color: white; }
+.pipeline-dot.current { background: white; border-color: var(--purple); color: var(--purple); box-shadow: 0 0 0 4px var(--purple-light); }
+.pipeline-step-label { font-size: 11px; font-weight: 500; margin-top: 6px; color: var(--text-3); }
+.pipeline-step-label.done { color: var(--purple); font-weight: 600; }
+.pipeline-step-label.current { color: var(--purple); font-weight: 700; }
+
+.activity-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); }
+.activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border-2); }
+.activity-item:last-child { border-bottom: none; }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); margin-top: 5px; flex-shrink: 0; }
+.activity-dot.green { background: var(--green); }
+.activity-dot.amber { background: var(--amber); }
+.activity-dot.gray { background: var(--text-3); }
+.activity-text { font-size: 13px; color: var(--text); }
+.activity-time { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.activity-bold { font-weight: 600; }
+
+/* ── SCAN ──────────────────────────────────── */
+.scan-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.scan-summary-chips { display: flex; gap: 10px; }
+.scan-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; font-size: 12.5px; font-weight: 500; background: var(--white); border: 1px solid var(--border); color: var(--text-2); }
+.scan-chip svg { width: 13px; height: 13px; }
+.scan-chip.success { background: var(--green-bg); border-color: #A7F3D0; color: var(--green-text); }
+.scan-chip.warning { background: var(--amber-bg); border-color: #FDE68A; color: var(--amber-text); }
+
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
+.card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.card-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.card-subtitle { font-size: 12.5px; color: var(--text-2); }
+
+.scan-sub-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 18px; }
+.scan-sub-tab { padding: 9px 14px; font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; display: flex; align-items: center; gap: 6px; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.scan-sub-tab:hover { color: var(--text); }
+.scan-sub-tab.active { color: var(--purple); border-bottom-color: var(--purple); font-weight: 600; }
+.scan-sub-tab svg { width: 14px; height: 14px; }
+
+.scope-table { width: 100%; border-collapse: collapse; }
+.scope-table th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); border-bottom: 1px solid var(--border); background: #FDFCFF; }
+.scope-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-2); vertical-align: middle; font-size: 13.5px; }
+.scope-table tr:last-child td { border-bottom: none; }
+.scope-table tr:hover td { background: var(--purple-xlight); }
+.page-name-cell { font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.page-name-cell svg { color: var(--text-3); }
+.url-text { color: var(--text-3); font-size: 12.5px; font-family: 'SF Mono', 'Fira Code', monospace; }
+.issue-chips { display: flex; gap: 4px; }
+.issue-chip { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+.issue-chip.critical { background: var(--red-bg); color: var(--red); }
+.issue-chip.serious { background: var(--orange-bg); color: var(--orange); }
+.issue-chip.moderate { background: var(--amber-bg); color: var(--amber); }
+.issue-chip.minor { background: var(--blue-bg); color: var(--blue); }
+.issue-chip.clean { background: var(--green-bg); color: var(--green); }
+.scan-btn { display: flex; align-items: center; gap: 5px; background: var(--purple); color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.scan-btn:hover { background: var(--purple-dark); }
+.scan-btn svg { width: 12px; height: 12px; }
+.add-page-btn { display: flex; align-items: center; gap: 6px; padding: 12px 16px; font-size: 13px; color: var(--purple); font-weight: 500; cursor: pointer; border-top: 1px dashed var(--border); transition: background .15s; }
+.add-page-btn:hover { background: var(--purple-xlight); }
+.add-page-btn svg { width: 14px; height: 14px; }
+
+.history-table { width: 100%; border-collapse: collapse; }
+.history-table th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); border-bottom: 1px solid var(--border); background: #FDFCFF; }
+.history-table td { padding: 11px 16px; border-bottom: 1px solid var(--border-2); font-size: 13.5px; vertical-align: middle; }
+.history-table tr:last-child td { border-bottom: none; }
+.result-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 5px; }
+.result-badge.failure { background: var(--red-bg); color: var(--red); }
+.result-badge.warning { background: var(--amber-bg); color: var(--amber); }
+.result-badge.clean { background: var(--green-bg); color: var(--green); }
+.view-link { color: var(--purple); font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.view-link:hover { text-decoration: underline; }
+.view-link svg { width: 13px; height: 13px; }
+.delta { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.delta.up { background: var(--red-bg); color: var(--red); }
+.delta.down { background: var(--green-bg); color: var(--green); }
+.delta.same { background: var(--gray-bg); color: var(--gray-text); }
+
+/* ── TRIAGE ────────────────────────────────── */
+.triage-severity-bar { display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; background: var(--white); }
+.triage-sev-seg { flex: 1; padding: 12px 16px; cursor: pointer; transition: background .15s; border-right: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.triage-sev-seg:last-child { border-right: none; }
+.triage-sev-seg:hover { background: var(--bg); }
+.triage-sev-seg.active-seg { background: var(--purple-xlight); }
+.triage-sev-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.triage-sev-num { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+.triage-sev-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.triage-sev-seg.critical .triage-sev-dot { background: var(--red); }
+.triage-sev-seg.critical .triage-sev-num { color: var(--red); }
+.triage-sev-seg.critical .triage-sev-lbl { color: var(--red-text); }
+.triage-sev-seg.serious .triage-sev-dot { background: var(--orange); }
+.triage-sev-seg.serious .triage-sev-num { color: var(--orange); }
+.triage-sev-seg.serious .triage-sev-lbl { color: var(--orange-text); }
+.triage-sev-seg.moderate .triage-sev-dot { background: var(--amber); }
+.triage-sev-seg.moderate .triage-sev-num { color: var(--amber); }
+.triage-sev-seg.moderate .triage-sev-lbl { color: var(--amber-text); }
+.triage-sev-seg.minor .triage-sev-dot { background: var(--blue); }
+.triage-sev-seg.minor .triage-sev-num { color: var(--blue); }
+.triage-sev-seg.minor .triage-sev-lbl { color: var(--blue-text); }
+
+.triage-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.triage-search { position: relative; flex: 1; max-width: 280px; }
+.triage-search input { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px 7px 32px; font-size: 13px; outline: none; font-family: inherit; background: var(--white); transition: border-color .15s, box-shadow .15s; }
+.triage-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.triage-search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); }
+.filter-chip-btn { display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--white); border-radius: 7px; padding: 7px 12px; font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; font-family: inherit; transition: border-color .15s, color .15s; }
+.filter-chip-btn:hover { border-color: var(--purple); color: var(--text); }
+.filter-chip-btn svg { width: 13px; height: 13px; }
+.triage-right { margin-left: auto; display: flex; gap: 8px; }
+
+/* Filter status chips */
+.status-chips { display: flex; gap: 4px; margin-bottom: 0; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; align-items: center; }
+.status-chip { padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; transition: background .15s, color .15s; border: 1px solid transparent; user-select: none; display: flex; align-items: center; gap: 6px; }
+.status-chip:hover { background: var(--bg); color: var(--text); }
+.status-chip.active { background: var(--purple-xlight); color: var(--purple); border-color: var(--purple-light); font-weight: 600; }
+.chip-count { font-size: 11px; font-weight: 700; background: var(--bg); color: var(--text-2); border-radius: 10px; padding: 1px 6px; }
+.status-chip.active .chip-count { background: var(--purple-light); color: var(--purple); }
+
+.bulk-bar { display: none; align-items: center; gap: 10px; padding: 10px 16px; background: var(--purple-xlight); border: 1px solid var(--purple-light); border-radius: 7px; margin-bottom: 10px; font-size: 13px; color: var(--purple); font-weight: 600; }
+.bulk-bar.visible { display: flex; }
+.bulk-bar svg { width: 15px; height: 15px; }
+.bulk-action-btn { display: flex; align-items: center; gap: 5px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; font-weight: 500; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; }
+.bulk-action-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+/* Triage grid list */
+.triage-list-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.triage-row-grid { display: grid; grid-template-columns: 36px 22px 120px 1fr 120px 76px 120px 150px; align-items: center; padding: 0 14px; }
+.triage-list-header { background: #FDFCFF; border-bottom: 1px solid var(--border); }
+.triage-list-header > span { display: block; padding: 10px 6px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); white-space: nowrap; cursor: pointer; user-select: none; }
+.triage-list-header > span:hover { color: var(--text); }
+.triage-list-header > span.sort-active { color: var(--purple); }
+.issue-row { border-bottom: 1px solid var(--border-2); }
+.issue-row:last-child { border-bottom: none; }
+.issue-row-main { display: grid; grid-template-columns: 36px 22px 120px 1fr 120px 76px 120px 150px; align-items: center; padding: 10px 14px; cursor: pointer; transition: background .1s; }
+.issue-row-main > * { padding: 0 5px; }
+.issue-row-main > *:first-child { padding-left: 0; }
+.issue-row-main > *:last-child { padding-right: 0; }
+.issue-row-main:hover { background: var(--purple-xlight); }
+.issue-row.expanded .issue-row-main { background: var(--purple-xlight); }
+.expand-btn { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--text-3); flex-shrink: 0; transition: transform .2s; }
+.issue-row.expanded .expand-btn { transform: rotate(90deg); color: var(--purple); }
+.expand-btn svg { width: 14px; height: 14px; }
+.cb { width: 15px; height: 15px; accent-color: var(--purple); cursor: pointer; }
+.sev-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.sev-pill.critical { background: var(--red-bg); color: var(--red-text); }
+.sev-pill.serious { background: var(--orange-bg); color: var(--orange-text); }
+.sev-pill.moderate { background: var(--amber-bg); color: var(--amber-text); }
+.sev-pill.minor { background: var(--blue-bg); color: var(--blue-text); }
+.sev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sev-dot.critical { background: var(--red); }
+.sev-dot.serious { background: var(--orange); }
+.sev-dot.moderate { background: var(--amber); }
+.sev-dot.minor { background: var(--blue); }
+.finding-cell { flex: 1; min-width: 0; }
+.finding-title { font-weight: 600; font-size: 13.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.finding-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.wcag-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.wcag-chip.perceivable { background: #EFF6FF; color: #1E40AF; }
+.wcag-chip.operable { background: #FFF7ED; color: #9A3412; }
+.wcag-chip.understandable { background: var(--green-bg); color: var(--green-text); }
+.wcag-chip.robust { background: var(--purple-light); color: var(--purple-dark); }
+.wcag-chip.bp { background: var(--gray-bg); color: var(--gray-text); }
+.detect-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; background: var(--border-2); color: var(--text-2); }
+.scope-cell { font-size: 13px; color: var(--text-2); white-space: nowrap; min-width: 100px; }
+.affected-cell { font-size: 13px; color: var(--text-2); white-space: nowrap; text-align: center; min-width: 70px; }
+.status-cell { min-width: 90px; }
+.triage-status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+.triage-status.untriaged { color: var(--text-3); }
+.triage-status.confirmed { color: var(--red); }
+.triage-status.review { color: var(--amber); }
+.triage-status.dismissed { color: var(--green); }
+.quick-actions { display: flex; align-items: center; gap: 3px; min-width: 120px; }
+.issue-row-main:hover .quick-actions { }
+.qa-btn { padding: 4px 9px; border-radius: 5px; border: 1px solid var(--border); background: var(--white); font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+.qa-btn.confirm { color: var(--green); border-color: #A7F3D0; }
+.qa-btn.confirm:hover { background: var(--green-bg); }
+.qa-btn.dismiss { color: var(--text-2); }
+.qa-btn.dismiss:hover { background: var(--bg); }
+.qa-btn.more { padding: 4px 7px; color: var(--text-2); }
+.qa-btn.more:hover { background: var(--bg); }
+
+/* Expanded row panel — lean triage mode */
+.issue-expand { display: none; background: #F9FAFB; border-top: 1px solid var(--border); }
+.issue-row.expanded .issue-expand { display: block; }
+.iep { padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* Screenshot — dominant */
+.iep-screenshot-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.iep-screenshot-hd { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border-2); background: #FDFCFF; }
+.iep-screenshot-hd-left { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); }
+.iep-screenshot-hd-left svg { width: 12px; height: 12px; }
+.iep-recapture-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 5px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; }
+.iep-recapture-btn:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-xlight); }
+.iep-recapture-btn svg { width: 12px; height: 12px; }
+.iep-screenshot-body { display: grid; grid-template-columns: 1fr 220px; }
+.iep-shot-main { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; color: var(--text-3); border-right: 1px solid var(--border-2); transition: background .15s; }
+.iep-shot-main:hover { background: var(--bg); }
+.iep-shot-main svg { width: 32px; height: 32px; opacity: .25; }
+.iep-shot-main-lbl { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.iep-shot-main-hint { font-size: 11.5px; color: var(--text-3); }
+.iep-shot-upload-hint { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11.5px; color: var(--purple); font-weight: 500; background: var(--purple-xlight); padding: 4px 10px; border-radius: 20px; }
+.iep-shot-upload-hint svg { width: 11px; height: 11px; }
+.iep-shot-context { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-top: none; }
+.iep-fl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 3px; }
+.iep-fv { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.4; }
+.iep-divider { height: 1px; background: var(--border-2); }
+/* Auditor Decision — hero */
+.iep-decision { background: var(--white); border: 2px solid var(--purple-light); border-radius: 8px; padding: 14px 16px; }
+.iep-dec-hd { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--purple); display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.iep-dec-sub { font-size: 13px; color: var(--text-2); margin-bottom: 12px; }
+.iep-dec-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.iep-dec-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; border: 1.5px solid; }
+.iep-dec-btn.iep-failure { background: var(--red-bg); color: var(--red-text); border-color: #FCA5A5; }
+.iep-dec-btn.iep-failure:hover { background: #FEE2E2; }
+.iep-dec-btn.iep-pass { background: var(--green-bg); color: var(--green-text); border-color: #6EE7B7; }
+.iep-dec-btn.iep-pass:hover { background: #D1FAE5; }
+.iep-dec-btn.iep-manual { background: var(--amber-bg); color: var(--amber-text); border-color: #FDE68A; }
+.iep-dec-btn.iep-manual:hover { background: #FEF3C7; }
+/* Details: How to Fix + WCAG side by side, Elements full width below */
+.iep-details-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.iep-coll { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.iep-coll-hd { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .15s; }
+.iep-coll-hd:hover { background: var(--bg); }
+.iep-coll-title { font-size: 13px; font-weight: 600; flex: 1; display: flex; align-items: center; gap: 7px; }
+.iep-coll-sub { font-size: 11.5px; color: var(--text-3); font-weight: 400; }
+.iep-chev { width: 15px; height: 15px; color: var(--text-3); transition: transform .2s; flex-shrink: 0; }
+.iep-coll.iep-open .iep-chev { transform: rotate(180deg); }
+.iep-coll-body { display: none; padding: 14px 16px; border-top: 1px solid var(--border-2); }
+.iep-coll.iep-open .iep-coll-body { display: block; }
+/* WCAG ref links */
+.wcag-ref-group { margin-bottom: 10px; }
+.wcag-ref-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 4px; }
+.wcag-ref-link { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--purple); text-decoration: none; font-weight: 500; }
+.wcag-ref-link:hover { text-decoration: underline; }
+.wcag-ref-link svg { width: 11px; height: 11px; }
+/* Affected elements empty state */
+.iep-empty { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 24px 16px; color: var(--text-3); text-align: center; }
+.iep-empty svg { width: 26px; height: 26px; opacity: .3; }
+.iep-empty-title { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.iep-empty-sub { font-size: 12px; }
+/* Code evidence section */
+.iep-code-evidence { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.iep-code-ev-hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border-2); background: #FDFCFF; }
+.iep-code-ev-hd-left { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); }
+.iep-code-ev-hd-left svg { width: 12px; height: 12px; }
+.iep-code-ev-meta { font-size: 11.5px; color: var(--text-3); }
+.iep-code-evidence .element-code { border-radius: 0; margin: 0; }
+/* Per-element tabs + list */
+.elem-tab { padding: 7px 12px; font-size: 12.5px; font-weight: 500; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+.elem-tab:hover { color: var(--text); }
+.elem-tab.active { color: var(--purple); border-bottom-color: var(--purple); font-weight: 600; }
+.elem-count { font-size: 10.5px; font-weight: 700; background: var(--bg); color: var(--text-2); padding: 1px 5px; border-radius: 8px; }
+.elem-count.fail { background: var(--red-bg); color: var(--red); }
+.elem-tab.active .elem-count { background: var(--purple-light); color: var(--purple); }
+.elem-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border-2); font-size: 12.5px; transition: background .1s; cursor: pointer; }
+.elem-row:last-child { border-bottom: none; }
+.elem-row:hover { background: var(--purple-xlight); }
+.elem-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.elem-status-dot.failure { background: var(--red); }
+.elem-status-dot.unreviewed { background: var(--text-3); }
+.elem-status-dot.dismissed { background: var(--green); }
+.elem-code-snip { font-family: 'SF Mono','Fira Code',monospace; font-size: 11.5px; color: var(--text); background: var(--bg); padding: 2px 7px; border-radius: 4px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.elem-badge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.elem-badge.failure { background: var(--red-bg); color: var(--red); }
+.elem-badge.unreviewed { background: var(--gray-bg); color: var(--gray-text); }
+.elem-badge.dismissed { background: var(--green-bg); color: var(--green-text); }
+.elem-triage-btn { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border); background: var(--white); color: var(--text-2); cursor: pointer; font-family: inherit; opacity: 0; transition: opacity .15s, border-color .15s; }
+.elem-row:hover .elem-triage-btn { }
+.elem-row:hover .elem-actions { }
+.element-code { font-family: 'SF Mono','Fira Code','Consolas',monospace; font-size: 12px; background: #1E1334; color: #C4B5FD; padding: 10px 14px; border-radius: 6px; overflow-x: auto; white-space: nowrap; }
+.expand-remediation { font-size: 13px; color: var(--text); line-height: 1.6; background: var(--green-bg); padding: 10px 14px; border-radius: 6px; border-left: 3px solid var(--green); }
+.iep-code-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.iep-code-block { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.iep-code-lbl { font-size: 11px; font-weight: 700; padding: 5px 12px; display: flex; align-items: center; gap: 5px; }
+.iep-code-lbl.before-lbl { background: #3F1010; color: #FCA5A5; }
+.iep-code-lbl.after-lbl { background: #052E16; color: #6EE7B7; }
+.iep-code-pre { background: #1E1334; color: #C4B5FD; font-family: 'SF Mono','Fira Code','Consolas',monospace; font-size: 12px; padding: 10px 14px; white-space: pre; overflow-x: auto; margin: 0; }
+.iep-decision { background: var(--white); border: 2px solid var(--purple-light); border-radius: 8px; padding: 14px 16px; }
+.iep-dec-hd { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--purple); display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.iep-dec-sub { font-size: 13px; color: var(--text-2); margin-bottom: 12px; }
+.iep-dec-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.iep-dec-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; border: 1.5px solid; }
+.iep-dec-btn.iep-failure { background: var(--red-bg); color: var(--red-text); border-color: #FCA5A5; }
+.iep-dec-btn.iep-failure:hover { background: #FEE2E2; }
+.iep-dec-btn.iep-pass { background: var(--green-bg); color: var(--green-text); border-color: #6EE7B7; }
+.iep-dec-btn.iep-pass:hover { background: #D1FAE5; }
+.iep-dec-btn.iep-manual { background: var(--amber-bg); color: var(--amber-text); border-color: #FDE68A; }
+.iep-dec-btn.iep-manual:hover { background: #FEF3C7; }
+.iep-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 2px; }
+.iep-assign-btn { display: inline-flex; align-items: center; gap: 5px; background: none; border: 1px solid var(--border); border-radius: 7px; font-size: 12.5px; color: var(--text-2); cursor: pointer; font-family: inherit; padding: 6px 12px; transition: all .15s; }
+.iep-assign-btn:hover { border-color: var(--purple); color: var(--purple); }
+.iep-open-full { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 7px; background: var(--purple); color: white; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s; }
+.iep-open-full:hover { background: var(--purple-dark); }
+.effort-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.effort-tag.low { background: var(--green-bg); color: var(--green-text); }
+.effort-tag.medium { background: var(--amber-bg); color: var(--amber-text); }
+.effort-tag.high { background: var(--red-bg); color: var(--red-text); }
+
+/* ── MANUAL CHECKS ─────────────────────────── */
+.principle-section { margin-bottom: 16px; }
+.principle-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; }
+.principle-title { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.principle-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.progress-ring-sm { font-size: 12px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.checks-list { background: var(--white); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden; }
+.check-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border-2); transition: background .1s; cursor: pointer; }
+.check-item:last-child { border-bottom: none; }
+.check-item:hover { background: var(--purple-xlight); }
+.check-mark { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
+.check-mark.pass { border-color: var(--green); background: var(--green); }
+.check-mark.fail { border-color: var(--red); background: var(--red); }
+.check-mark.na { border-color: var(--text-3); background: var(--gray-bg); }
+.check-mark svg { width: 11px; height: 11px; color: white; }
+.check-sc { font-size: 11.5px; font-weight: 700; color: var(--text-2); width: 48px; flex-shrink: 0; }
+.check-name { font-size: 13.5px; font-weight: 500; color: var(--text); flex: 1; }
+.check-level { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: var(--bg); color: var(--text-2); }
+.check-result { font-size: 12px; font-weight: 600; }
+.check-result.pass { color: var(--green); }
+.check-result.fail { color: var(--red); }
+.check-result.na { color: var(--text-3); }
+
+/* ── REPORT ────────────────────────────────── */
+.report-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+.report-option { background: var(--white); border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: all .15s; text-align: center; }
+.report-option:hover { border-color: var(--purple); transform: translateY(-1px); box-shadow: var(--shadow); }
+.report-option.selected { border-color: var(--purple); background: var(--purple-xlight); }
+.report-option svg { width: 32px; height: 32px; color: var(--purple); margin: 0 auto 10px; display: block; }
+.report-option-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.report-option-desc { font-size: 12.5px; color: var(--text-2); }
+.report-preview { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; text-align: center; }
+.report-preview-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.report-preview-sub { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
+.report-actions-row { display: flex; gap: 10px; justify-content: center; }
+
+/* shared utility */
+.section-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.section-sub { font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
+.empty-row { text-align: center; padding: 32px; color: var(--text-3); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="white"><path d="M3 8L8 3L13 8L8 13Z" opacity=".85"/><circle cx="8" cy="8" r="2.5"/></svg></div>
+    Audit Studio
+  </div>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+    Dashboard
+  </a>
+  <a href="#" class="nav-item active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M3 8h14M8 8v8"/></svg>
+    Audits
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <a href="#" class="nav-item nav-sub active-sub">All audits</a>
+  <a href="#" class="nav-item nav-sub">New audit</a>
+  <a href="#" class="nav-item nav-sub">By project</a>
+  <a href="#" class="nav-item nav-sub">Archived</a>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14l6-8 4 5 2-3 4 6H2z"/></svg>
+    Reports
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <div class="nav-section-label" style="margin-top:8px">Resources</div>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a2 2 0 012-2h10a1 1 0 011 1v13"/><path d="M4 19h13M4 19a2 2 0 01-2-2v-1h4v1a2 2 0 01-2 2z"/></svg>
+    Knowledge base
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 6v5l3 2"/></svg>
+    Settings
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <div class="sidebar-footer">
+    <div class="collapse-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 5l-5 5 5 5"/></svg>
+      Collapse
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-search">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M20 20l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search audits…" />
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="btn-primary">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+        Audit
+      </button>
+      <div class="notif-wrap">
+        <button class="icon-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2a6 6 0 00-6 6c0 2.387-.697 4.216-1.5 5.5h15c-.803-1.284-1.5-3.113-1.5-5.5a6 6 0 00-6-6z"/><path d="M10 18a2 2 0 002-2H8a2 2 0 002 2z"/></svg></button>
+        <div class="notif-dot"></div>
+      </div>
+      <button class="icon-btn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><rect x="12" y="12" width="6" height="6" rx="1"/></svg></button>
+      <div class="avatar">SL</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- PAGE HEADER -->
+    <div class="page-header-wrap">
+      <div class="breadcrumb">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L2 7v7h4v-4h4v4h4V7L8 2z"/></svg>
+        <a href="#">Home</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+        <a href="#">Audits</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+        <span>wiki</span>
+      </div>
+      <div class="page-header-row">
+        <div class="page-title-group">
+          <div class="page-title">
+            wiki
+            <span class="status-badge active">Active</span>
+            <span class="wcag-badge-lg">WCAG 2.2 AA</span>
+          </div>
+          <div class="page-url">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 2c-2 2-2 8 0 12M8 2c2 2 2 8 0 12M2 8h12"/></svg>
+            <a href="https://wikipedia.org" target="_blank">wikipedia.org</a>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-3"/></svg>
+          </div>
+        </div>
+        <div class="page-header-meta">
+          <!-- Conformance score chip -->
+          <div class="meta-chip" onclick="switchTab('overview')" title="View conformance score">
+            <svg class="score-ring-sm" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="#E9E5F0" stroke-width="3"/>
+              <circle cx="12" cy="12" r="9" fill="none" stroke="#D97706" stroke-width="3" stroke-dasharray="56.5" stroke-dashoffset="15.4" stroke-linecap="round" transform="rotate(-90 12 12)"/>
+            </svg>
+            <span class="score-num">73%</span>
+            <span style="font-size:12px;color:var(--text-3)">score</span>
+          </div>
+          <!-- Due date chip -->
+          <div class="meta-chip">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+            <span style="color:var(--amber);font-weight:600;font-size:12.5px">Jun 28</span>
+          </div>
+          <!-- Assignee chip -->
+          <div class="meta-chip">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14s1-3 6-3 6 3 6 3"/></svg>
+            Unassigned
+          </div>
+          <!-- Actions -->
+          <button class="btn-secondary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3M8 2v8M5 5l3-3 3 3"/></svg>
+            Export
+          </button>
+          <button class="btn-secondary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="3" r="2"/><circle cx="3" cy="8" r="2"/><circle cx="11" cy="13" r="2"/><path d="M5 7l4-3M5 9l4 3"/></svg>
+            Share
+          </button>
+          <!-- Refresh -->
+          <button class="icon-btn" title="Re-run scan">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a6 6 0 106-.5"/><path d="M4 6v4H8"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- TAB NAV -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14l4-6 3 4 2-3 3 5H2z"/></svg>
+          Overview
+        </button>
+        <button class="tab-btn" onclick="switchTab('scan')" id="tab-scan">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="10" rx="1.5"/><path d="M6 15h4M8 12v3M5 6l2 2 4-3"/></svg>
+          Scan
+        </button>
+        <button class="tab-btn" onclick="switchTab('triage')" id="tab-triage">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M4 8h8M6 12h4"/></svg>
+          Triage
+          <span class="tab-badge amber" id="triage-badge">10</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('manual')" id="tab-manual">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M6 8l2 2 3-3"/></svg>
+          Manual Checks
+          <span class="tab-badge" id="manual-badge">4</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('report')" id="tab-report">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M10 2v4h4M5 9h6M5 11h4"/></svg>
+          Report
+        </button>
+      </div>
+    </div>
+
+    <!-- ── OVERVIEW ── -->
+    <div class="tab-panel active" id="panel-overview">
+      <!-- Top row: score + severity breakdown -->
+      <div style="display:grid; grid-template-columns:220px 1fr; gap:16px; margin-bottom:16px">
+        <!-- Conformance score -->
+        <div class="score-card">
+          <div style="font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;align-self:flex-start;width:100%">Conformance Score</div>
+          <div class="score-ring-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="var(--border)" stroke-width="10"/>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#D97706" stroke-width="10"
+                stroke-dasharray="301.6" stroke-dashoffset="81.4"
+                stroke-linecap="round" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="score-center">
+              <div class="score-big">73%</div>
+              <div class="score-label">Partial</div>
+            </div>
+          </div>
+          <div class="score-card-sub" style="font-size:12px;color:var(--text-3);text-align:center;line-height:1.5">12 open issues across 1 page. Fix critical issues first.</div>
+        </div>
+
+        <!-- Severity breakdown -->
+        <div class="detail-card">
+          <div class="detail-card-header">
+            <div class="detail-card-title">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L1 14h14L8 2z"/></svg>
+              Issues by Severity
+            </div>
+            <button class="btn-secondary" onclick="switchTab('triage')" style="font-size:12px;padding:5px 10px">View in Triage →</button>
+          </div>
+          <div style="padding:16px 20px">
+            <div class="sev-bar" style="margin-bottom:14px">
+              <div class="sev-bar-seg" style="background:var(--red);width:25%"></div>
+              <div class="sev-bar-seg" style="background:var(--orange);width:25%"></div>
+              <div class="sev-bar-seg" style="background:var(--amber);width:33%"></div>
+              <div class="sev-bar-seg" style="background:var(--blue);width:17%"></div>
+            </div>
+            <div class="sev-stats">
+              <div class="sev-stat critical" onclick="filterTriageBySev('critical')">
+                <div class="sev-stat-num">3</div>
+                <div class="sev-stat-label">Critical</div>
+              </div>
+              <div class="sev-stat serious" onclick="filterTriageBySev('serious')">
+                <div class="sev-stat-num">3</div>
+                <div class="sev-stat-label">Serious</div>
+              </div>
+              <div class="sev-stat moderate" onclick="filterTriageBySev('moderate')">
+                <div class="sev-stat-num">4</div>
+                <div class="sev-stat-label">Moderate</div>
+              </div>
+              <div class="sev-stat minor" onclick="filterTriageBySev('minor')">
+                <div class="sev-stat-num">2</div>
+                <div class="sev-stat-label">Minor</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+        <div class="kpi-card" onclick="switchTab('triage')">
+          <div class="kpi-label">Untriaged <div class="kpi-icon" style="display:inline-block;float:right"><span style="background:var(--amber-bg);color:var(--amber)"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v4"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg></span></div></div>
+          <div class="kpi-value amber">10</div>
+          <div class="kpi-meta">↑ requires classification</div>
+        </div>
+        <div class="kpi-card" style="border-left:3px solid var(--red)">
+          <div class="kpi-label">Confirmed Failures <div class="kpi-icon" style="display:inline-block;float:right"><span style="background:var(--red-bg);color:var(--red)"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L1 14h14L8 2z"/></svg></span></div></div>
+          <div class="kpi-value red">5</div>
+          <div class="kpi-meta">2 critical blocking</div>
+        </div>
+        <div class="kpi-card" onclick="switchTab('scan')">
+          <div class="kpi-label">Scans Run <div class="kpi-icon" style="display:inline-block;float:right"><span style="background:var(--purple-light);color:var(--purple)"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8a5 5 0 0110 0"/><path d="M8 3V1M8 15v-2M1 8H3M13 8h2"/></svg></span></div></div>
+          <div class="kpi-value">4</div>
+          <div class="kpi-meta">Last: 2 days ago</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Scope Items <div class="kpi-icon" style="display:inline-block;float:right"><span style="background:var(--green-bg);color:var(--green)"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="10" rx="1.5"/><path d="M6 15h4M8 12v3"/></svg></span></div></div>
+          <div class="kpi-value">1</div>
+          <div class="kpi-meta">1 page in scope</div>
+        </div>
+      </div>
+
+      <!-- Mid row: Audit Details + Pipeline + Scope -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Audit Details -->
+        <div class="detail-card">
+          <div class="detail-card-header">
+            <div class="detail-card-title">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 11h4M5 5h6"/></svg>
+              Audit Details
+            </div>
+            <span class="status-badge active">Active</span>
+          </div>
+          <div class="detail-row"><span class="detail-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 2c-2 2-2 8 0 12M8 2c2 2 2 8 0 12M2 8h12"/></svg>Website</span><span class="detail-val"><a href="#">wikipedia.org <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:11px;height:11px;display:inline"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-3"/></svg></a></span></div>
+          <div class="detail-row"><span class="detail-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14s1-3 6-3 6 3 6 3"/></svg>Auditor</span><span class="detail-val"><button style="background:var(--purple-xlight);color:var(--purple);border:1px dashed var(--purple-light);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Assign</button></span></div>
+          <div class="detail-row"><span class="detail-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>Started</span><span class="detail-val">30 May 2026</span></div>
+          <div class="detail-row"><span class="detail-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>Due date</span><span class="detail-val" style="color:var(--amber);font-weight:600">28 Jun 2026</span></div>
+          <div class="detail-row"><span class="detail-key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3v4l3 2"/></svg>Standard</span><span class="detail-val"><span style="background:#EEF2FF;color:#4338CA;padding:3px 8px;border-radius:5px;font-size:12px;font-weight:700">WCAG 2.2 AA</span></span></div>
+          <!-- Pipeline progress -->
+          <div class="pipeline-track">
+            <div class="pipeline-title">Audit Progress</div>
+            <div class="pipeline-steps">
+              <div class="pipeline-step">
+                <div class="pipeline-dot done"><svg viewBox="0 0 12 12" fill="white" width="12" height="12"><path d="M2 6l3 3 5-5"/></svg></div>
+                <div class="pipeline-step-label done">Scan</div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-dot current" style="font-size:10px;font-weight:800">2</div>
+                <div class="pipeline-step-label current">Triage</div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-dot">3</div>
+                <div class="pipeline-step-label">Review</div>
+              </div>
+              <div class="pipeline-step">
+                <div class="pipeline-dot">4</div>
+                <div class="pipeline-step-label">Done</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Scope + Activity -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- Scope -->
+          <div class="detail-card">
+            <div class="detail-card-header">
+              <div class="detail-card-title">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+                Audit Scope
+              </div>
+              <span style="font-size:12px;font-weight:600;background:var(--purple-light);color:var(--purple);padding:3px 8px;border-radius:12px">1 Page</span>
+            </div>
+            <table class="scope-table">
+              <thead><tr><th>Name</th><th>Type</th><th>Issues</th><th>URL</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="page-name-cell"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>Homepage</div></td>
+                  <td><span style="background:var(--blue-bg);color:var(--blue-text);font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:4px">Page</span></td>
+                  <td><div class="issue-chips"><span class="issue-chip critical">3</span><span class="issue-chip serious">3</span><span class="issue-chip moderate">4</span></div></td>
+                  <td class="url-text">wikipedia.org</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="add-page-btn">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+              Add page to scope
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="activity-card detail-card">
+            <div class="detail-card-header">
+              <div class="detail-card-title">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+                Recent Activity
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot amber"></div>
+              <div><div class="activity-text"><span class="activity-bold">3 issues</span> moved to Needs Review</div><div class="activity-time">Today, 11:42am · by system</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot"></div>
+              <div><div class="activity-text">Scan <span class="activity-bold">Scan #4</span> completed — 1 violation found</div><div class="activity-time">2 days ago · auto-scan</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot green"></div>
+              <div><div class="activity-text">Issue <span class="activity-bold">Language not set</span> confirmed</div><div class="activity-time">3 days ago</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot gray"></div>
+              <div><div class="activity-text">Audit created and scope defined</div><div class="activity-time">30 May 2026</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCAN ── -->
+    <div class="tab-panel" id="panel-scan">
+      <div class="scan-header-row">
+        <div>
+          <div class="section-title">Scan & Scope</div>
+          <div class="section-sub">Configure scope, run scans, and review scan history</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="scan-summary-chips">
+            <div class="scan-chip success"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8l2 2 4-4"/><circle cx="8" cy="8" r="6"/></svg>4 scans run</div>
+            <div class="scan-chip warning"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg>Last scan: 2 days ago</div>
+          </div>
+          <button class="btn-primary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8a5 5 0 0110 0"/><path d="M8 3V1M8 15v-2M1 8H3M13 8h2"/></svg>
+            Run New Scan
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="scan-sub-tabs">
+          <button class="scan-sub-tab active" onclick="scanTab(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="10" rx="1.5"/><path d="M6 15h4M8 12v3"/></svg>
+            Pages (1)
+          </button>
+          <button class="scan-sub-tab" onclick="scanTab(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="10" height="8" rx="1"/><path d="M6 2h4M6 14h4"/></svg>
+            Components (0)
+          </button>
+          <button class="scan-sub-tab" onclick="scanTab(this)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h3l2-4 2 8 2-4h3"/></svg>
+            Flows (0)
+          </button>
+        </div>
+        <table class="scope-table">
+          <thead>
+            <tr>
+              <th>Page Name</th>
+              <th>URL</th>
+              <th>Last Scanned</th>
+              <th>Issues Found</th>
+              <th>Coverage</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="page-name-cell"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>Homepage</div></td>
+              <td class="url-text">https://wikipedia.org</td>
+              <td style="font-size:13px;color:var(--text-2)">9 Jun 2026, 14:30</td>
+              <td>
+                <div class="issue-chips">
+                  <span class="issue-chip critical">3 critical</span>
+                  <span class="issue-chip serious">3 serious</span>
+                  <span class="issue-chip moderate">4 mod</span>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;height:5px;background:var(--border);border-radius:3px;min-width:60px"><div style="width:72%;height:100%;background:var(--purple);border-radius:3px"></div></div>
+                  <span style="font-size:12px;color:var(--text-2);font-weight:600">72%</span>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <button class="scan-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="width:12px;height:12px"><path d="M3 8a5 5 0 0110 0"/><path d="M8 3V1"/></svg>Re-scan</button>
+                  <button class="icon-btn" style="width:28px;height:28px"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M3 3h10v10H3zM8 6v4M6 8h4"/></svg></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="add-page-btn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+          Add page to scope
+        </div>
+      </div>
+
+      <!-- Scan History -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Scan History</div>
+            <div class="card-subtitle">4 completed scans</div>
+          </div>
+          <button class="btn-secondary" style="font-size:12.5px">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3M8 2v8M5 5l3-3 3 3"/></svg>
+            Export history
+          </button>
+        </div>
+        <table class="history-table">
+          <thead><tr><th>Scan</th><th>Type</th><th>Date & Time</th><th>Issues Found</th><th>vs Previous</th><th>Result</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:600">Scan #4 — Homepage</td>
+              <td><span style="background:var(--purple-light);color:var(--purple-dark);font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:4px">Auto</span></td>
+              <td style="font-size:13px;color:var(--text-2)">9 Jun 2026, 14:30</td>
+              <td><div class="issue-chips"><span class="issue-chip critical">3</span><span class="issue-chip serious">3</span><span class="issue-chip moderate">4</span><span class="issue-chip minor">2</span></div></td>
+              <td><span class="delta same">= same</span></td>
+              <td><span class="result-badge warning"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2L1 14h14L8 2z"/></svg>12 violations</span></td>
+              <td><a class="view-link">View <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg></a></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600">Scan #3 — Homepage</td>
+              <td><span style="background:var(--gray-bg);color:var(--gray-text);font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:4px">Manual</span></td>
+              <td style="font-size:13px;color:var(--text-2)">5 Jun 2026, 10:14</td>
+              <td><div class="issue-chips"><span class="issue-chip critical">3</span><span class="issue-chip serious">3</span><span class="issue-chip moderate">4</span><span class="issue-chip minor">2</span></div></td>
+              <td><span class="delta down">↓ 2 fixed</span></td>
+              <td><span class="result-badge warning">12 violations</span></td>
+              <td><a class="view-link">View <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg></a></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600">Scan #2 — Homepage</td>
+              <td><span style="background:var(--purple-light);color:var(--purple-dark);font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:4px">Auto</span></td>
+              <td style="font-size:13px;color:var(--text-2)">31 May 2026, 09:00</td>
+              <td><div class="issue-chips"><span class="issue-chip critical">3</span><span class="issue-chip serious">4</span><span class="issue-chip moderate">5</span><span class="issue-chip minor">2</span></div></td>
+              <td><span class="delta up">↑ 3 new</span></td>
+              <td><span class="result-badge failure">14 violations</span></td>
+              <td><a class="view-link">View <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg></a></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600">Scan #1 — Homepage</td>
+              <td><span style="background:var(--gray-bg);color:var(--gray-text);font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:4px">Manual</span></td>
+              <td style="font-size:13px;color:var(--text-2)">30 May 2026, 14:02</td>
+              <td><div class="issue-chips"><span class="issue-chip critical">2</span><span class="issue-chip serious">3</span><span class="issue-chip moderate">6</span></div></td>
+              <td><span class="delta same">—</span></td>
+              <td><span class="result-badge failure">11 violations</span></td>
+              <td><a class="view-link">View <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TRIAGE ── -->
+    <div class="tab-panel" id="panel-triage">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div class="section-title">Triage Issues</div>
+          <div class="section-sub">Review, classify and action accessibility violations</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3M8 2v8M5 5l3-3 3 3"/></svg>Export issues</button>
+        </div>
+      </div>
+
+      <!-- Severity summary bar (clickable) -->
+      <div class="triage-severity-bar">
+        <div class="triage-sev-seg critical" onclick="filterTriageSev('critical',this)">
+          <div><div class="triage-sev-num">3</div><div class="triage-sev-lbl">Critical</div></div>
+          <div style="margin-left:auto;font-size:11px;color:var(--text-3)">Must fix</div>
+        </div>
+        <div class="triage-sev-seg serious" onclick="filterTriageSev('serious',this)">
+          <div><div class="triage-sev-num">3</div><div class="triage-sev-lbl">Serious</div></div>
+          <div style="margin-left:auto;font-size:11px;color:var(--text-3)">Fix soon</div>
+        </div>
+        <div class="triage-sev-seg moderate" onclick="filterTriageSev('moderate',this)">
+          <div><div class="triage-sev-num">4</div><div class="triage-sev-lbl">Moderate</div></div>
+          <div style="margin-left:auto;font-size:11px;color:var(--text-3)">Plan fix</div>
+        </div>
+        <div class="triage-sev-seg minor" onclick="filterTriageSev('minor',this)">
+          <div><div class="triage-sev-num">2</div><div class="triage-sev-lbl">Minor</div></div>
+          <div style="margin-left:auto;font-size:11px;color:var(--text-3)">Backlog</div>
+        </div>
+        <div class="triage-sev-seg" style="flex:none;padding:12px 16px;cursor:default" onclick="filterTriageSev('all',this)">
+          <div><div class="triage-sev-num" style="color:var(--text)">12</div><div class="triage-sev-lbl" style="color:var(--text-2)">Total</div></div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="triage-toolbar">
+        <div class="triage-search">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M20 20l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search issues…" id="triage-search-input" oninput="filterTriageSearch()" />
+        </div>
+        <button class="filter-chip-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 8h6M7 12h2"/></svg>
+          Scope
+        </button>
+        <button class="filter-chip-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 8h6M7 12h2"/></svg>
+          WCAG Principle
+        </button>
+        <button class="filter-chip-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8l5-5 5 5M5 12l5 5 5-5"/></svg>
+          Sort: Severity
+        </button>
+        <div class="triage-right">
+          <button class="btn-secondary" style="font-size:12.5px" onclick="toggleGroupBy()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="10" height="3" rx="1"/><rect x="1" y="12" width="12" height="3" rx="1"/></svg>
+            Group by SC
+          </button>
+        </div>
+      </div>
+
+      <!-- Status filter chips -->
+      <div class="status-chips">
+        <span style="font-size:12px;font-weight:600;color:var(--text-3);margin-right:4px">Show:</span>
+        <div class="status-chip active" data-status="all" onclick="setTriageStatus(this,'all')">All <span class="chip-count" id="cnt-all">12</span></div>
+        <div class="status-chip" data-status="pending" onclick="setTriageStatus(this,'pending')">Pending <span class="chip-count" id="cnt-pending">10</span></div>
+        <div class="status-chip" data-status="confirmed" onclick="setTriageStatus(this,'confirmed')">Confirmed <span class="chip-count" id="cnt-confirmed">2</span></div>
+        <div class="status-chip" data-status="review" onclick="setTriageStatus(this,'review')">Needs Review <span class="chip-count" id="cnt-review">0</span></div>
+        <div class="status-chip" data-status="dismissed" onclick="setTriageStatus(this,'dismissed')">Dismissed <span class="chip-count" id="cnt-dismissed">0</span></div>
+      </div>
+
+      <!-- Bulk action bar -->
+      <div class="bulk-bar" id="bulk-bar">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
+        <span id="bulk-count">0 selected</span>
+        <button class="bulk-action-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M3 8l4 4 6-6"/></svg>Confirm all</button>
+        <button class="bulk-action-btn">Needs Review</button>
+        <button class="bulk-action-btn">Dismiss all</button>
+        <button class="bulk-action-btn" style="margin-left:auto">Assign to me</button>
+      </div>
+
+      <!-- Triage list -->
+      <div class="triage-list-wrap">
+        <div class="triage-row-grid triage-list-header">
+          <span><input type="checkbox" class="cb" id="triage-cb-all" onchange="triageToggleAll(this)"></span>
+          <span></span>
+          <span class="sort-active">Severity ↑</span>
+          <span>Finding</span>
+          <span>Scope</span>
+          <span style="text-align:center">Affected</span>
+          <span>Status</span>
+          <span>Quick Action</span>
+        </div>
+        <div id="triage-tbody"></div>
+      </div>
+    </div>
+
+    <!-- ── MANUAL CHECKS ── -->
+    <div class="tab-panel" id="panel-manual">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div class="section-title">Manual Checks</div>
+          <div class="section-sub">WCAG 2.2 AA criteria requiring human verification — 4 outstanding</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:7px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div><span style="font-weight:600;color:var(--green)">8 passed</span>
+            <div style="width:1px;height:14px;background:var(--border)"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--red)"></div><span style="font-weight:600;color:var(--red)">4 failed</span>
+            <div style="width:1px;height:14px;background:var(--border)"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--text-3)"></div><span style="color:var(--text-2)">3 N/A</span>
+          </div>
+        </div>
+      </div>
+      <!-- Perceivable -->
+      <div class="principle-section">
+        <div class="principle-header">
+          <div class="principle-title"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue);display:inline-block"></span>1. Perceivable</div>
+          <div class="progress-ring-sm">
+            <div style="width:80px;height:6px;background:var(--border);border-radius:3px"><div style="width:60%;height:100%;background:var(--green);border-radius:3px"></div></div>
+            3/5 passed
+          </div>
+        </div>
+        <div class="checks-list">
+          <div class="check-item"><div class="check-mark pass"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">1.1.1</span><span class="check-name">Non-text Content — text alternatives for images</span><span class="check-level">A</span><span class="check-result pass" style="margin-left:auto">Pass</span></div>
+          <div class="check-item"><div class="check-mark fail"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">1.3.3</span><span class="check-name">Sensory Characteristics — instructions not relying solely on shape/color</span><span class="check-level">A</span><span class="check-result fail" style="margin-left:auto">Fail</span></div>
+          <div class="check-item"><div class="check-mark pass"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">1.4.1</span><span class="check-name">Use of Color — color not the only means of conveying info</span><span class="check-level">A</span><span class="check-result pass" style="margin-left:auto">Pass</span></div>
+          <div class="check-item"><div class="check-mark fail"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">1.4.4</span><span class="check-name">Resize Text — text can be resized up to 200% without loss of content</span><span class="check-level">AA</span><span class="check-result fail" style="margin-left:auto">Fail</span></div>
+          <div class="check-item"><div class="check-mark na"><svg viewBox="0 0 12 12"><path d="M6 3v6M3 6h6" stroke="var(--text-3)" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">1.2.5</span><span class="check-name">Audio Description — for video content</span><span class="check-level">AA</span><span class="check-result na" style="margin-left:auto">N/A</span></div>
+        </div>
+      </div>
+      <!-- Operable -->
+      <div class="principle-section">
+        <div class="principle-header">
+          <div class="principle-title"><span style="width:8px;height:8px;border-radius:50%;background:var(--orange);display:inline-block"></span>2. Operable</div>
+          <div class="progress-ring-sm">
+            <div style="width:80px;height:6px;background:var(--border);border-radius:3px"><div style="width:40%;height:100%;background:var(--amber);border-radius:3px"></div></div>
+            2/5 passed
+          </div>
+        </div>
+        <div class="checks-list">
+          <div class="check-item"><div class="check-mark pass"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">2.1.1</span><span class="check-name">Keyboard — all functionality available via keyboard</span><span class="check-level">A</span><span class="check-result pass" style="margin-left:auto">Pass</span></div>
+          <div class="check-item"><div class="check-mark fail"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">2.4.3</span><span class="check-name">Focus Order — logical focus sequence through the page</span><span class="check-level">A</span><span class="check-result fail" style="margin-left:auto">Fail</span></div>
+          <div class="check-item"><div class="check-mark pass"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">2.4.6</span><span class="check-name">Headings and Labels — descriptive headings and labels</span><span class="check-level">AA</span><span class="check-result pass" style="margin-left:auto">Pass</span></div>
+          <div class="check-item"><div class="check-mark fail"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="white" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">2.5.3</span><span class="check-name">Label in Name — visible label included in accessible name</span><span class="check-level">A</span><span class="check-result fail" style="margin-left:auto">Fail</span></div>
+          <div class="check-item"><div class="check-mark na"><svg viewBox="0 0 12 12"><path d="M6 3v6M3 6h6" stroke="var(--text-3)" stroke-width="1.5" fill="none"/></svg></div><span class="check-sc">2.3.1</span><span class="check-name">Three Flashes — no content flashes more than 3 times per second</span><span class="check-level">A</span><span class="check-result na" style="margin-left:auto">N/A</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REPORT ── -->
+    <div class="tab-panel" id="panel-report">
+      <div class="section-title" style="margin-bottom:4px">Generate Report</div>
+      <div class="section-sub">Create a shareable accessibility report for stakeholders</div>
+      <div class="report-options">
+        <div class="report-option selected" onclick="selectReport(this)">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="4" width="28" height="32" rx="3"/><path d="M12 14h16M12 19h16M12 24h10"/></svg>
+          <div class="report-option-title">Full Audit Report</div>
+          <div class="report-option-desc">All issues, methodology, scope and remediation guidance</div>
+        </div>
+        <div class="report-option" onclick="selectReport(this)">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="10" width="32" height="22" rx="3"/><path d="M12 20h4M20 20h8M12 25h12"/><path d="M10 10V8a2 2 0 012-2h16a2 2 0 012 2v2"/></svg>
+          <div class="report-option-title">Executive Summary</div>
+          <div class="report-option-desc">High-level overview with score, key risks and priorities</div>
+        </div>
+        <div class="report-option" onclick="selectReport(this)">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="32" height="32" rx="3"/><path d="M13 13h14v6H13zM13 23h14v2H13zM13 28h8v2h-8"/><circle cx="30" cy="28" r="6"/><path d="M27 28l2 2 4-4"/></svg>
+          <div class="report-option-title">VPAT / ACR</div>
+          <div class="report-option-desc">Voluntary Product Accessibility Template (Section 508 / EN 301 549)</div>
+        </div>
+      </div>
+      <div class="report-preview">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:var(--green-bg);color:var(--green-text);padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:16px">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l4 4 6-6"/><circle cx="8" cy="8" r="6"/></svg>
+          Ready to generate
+        </div>
+        <div class="report-preview-title">Full Audit Report — Wiki (wikipedia.org)</div>
+        <div class="report-preview-sub" style="margin-bottom:8px">WCAG 2.2 AA · Started 30 May 2026 · Score 73% · 12 open issues</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+          <button class="btn-primary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3M8 2v8M5 5l3-3 3 3"/></svg>
+            Download PDF
+          </button>
+          <button class="btn-secondary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="3" r="2"/><circle cx="3" cy="8" r="2"/><circle cx="11" cy="13" r="2"/><path d="M5 7l4-3M5 9l4 3"/></svg>
+            Share link
+          </button>
+          <button class="btn-secondary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6h6M5 9h4"/></svg>
+            Copy HTML
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ISSUES DATA ──────────────────────────────────────────────────
+const issues = [
+  { id:1, sev:'critical', finding:'Images missing alternative text', criterion:'1.1.1', criterionName:'Non-text Content', principle:'perceivable', result:'failure', status:'pending', scope:'Homepage', affected:12, effort:'low', detectedBy:'auto', element:'&lt;img src="/wiki/logo.png" class="site-logo"&gt;', description:'Images must have text alternatives to convey meaning to screen reader users. 12 images on this page have no alt attribute.', remediation:'Add a descriptive alt attribute. For decorative images, use alt="" to hide them from assistive technology.' },
+  { id:2, sev:'critical', finding:'Form input missing accessible label', criterion:'1.3.1', criterionName:'Info and Relationships', principle:'perceivable', result:'failure', status:'pending', scope:'Homepage', affected:3, effort:'low', detectedBy:'auto', element:'&lt;input type="search" placeholder="Search Wikipedia"&gt;', description:'Form inputs must have programmatically associated labels. Placeholder text is not a substitute for a real label.', remediation:'Add a &lt;label&gt; element with a for attribute, or use aria-label / aria-labelledby on the input.' },
+  { id:3, sev:'critical', finding:'Keyboard trap detected in modal', criterion:'2.1.2', criterionName:'No Keyboard Trap', principle:'operable', result:'failure', status:'pending', scope:'Homepage', affected:1, effort:'medium', detectedBy:'manual', element:'&lt;div class="modal" role="dialog" aria-modal="true"&gt;', description:'Keyboard focus becomes trapped inside the modal dialog and cannot be escaped using standard key presses (Tab, Shift+Tab, Escape).', remediation:'Ensure Esc closes the modal, focus is cycled within while open, and returned to the trigger element on close.' },
+  { id:4, sev:'serious', finding:'Insufficient color contrast ratio', criterion:'1.4.3', criterionName:'Contrast (Minimum)', principle:'perceivable', result:'needs_review', status:'pending', scope:'Homepage', affected:47, effort:'medium', detectedBy:'auto', element:'&lt;span class="nav-link" style="color:#9CA3AF"&gt;Navigation item&lt;/span&gt;', description:'Color contrast ratio is 2.8:1. The minimum required for normal text is 4.5:1 (WCAG 2.2 AA). 47 instances detected.', remediation:'Darken the text color to achieve at least 4.5:1 contrast. Use a contrast checker tool to verify.' },
+  { id:5, sev:'serious', finding:'Focus indicator not visible on interaction', criterion:'2.4.7', criterionName:'Focus Visible', principle:'operable', result:'needs_review', status:'pending', scope:'Homepage', affected:8, effort:'low', detectedBy:'auto', element:'&lt;a href="/wiki/Main_Page" class="wiki-link"&gt;Read more&lt;/a&gt;', description:'Interactive elements have CSS outline:none applied, removing the visible focus indicator for keyboard users.', remediation:'Remove outline:none or replace with a custom high-contrast focus style. A visible :focus indicator is required.' },
+  { id:6, sev:'serious', finding:'Link purpose unclear from context', criterion:'2.4.4', criterionName:'Link Purpose (In Context)', principle:'operable', result:'needs_review', status:'pending', scope:'Homepage', affected:23, effort:'low', detectedBy:'auto', element:'&lt;a href="/wiki/p/12834"&gt;Read more&lt;/a&gt;', description:'23 links use generic text ("Read more", "Click here") without context. Screen reader users navigating by links cannot determine their purpose.', remediation:'Use descriptive link text, or add aria-label="Read more about [topic]" to provide context.' },
+  { id:7, sev:'moderate', finding:'Heading levels skip from H2 to H4', criterion:'1.3.1', criterionName:'Info and Relationships', principle:'perceivable', result:'failure', status:'pending', scope:'Homepage', affected:4, effort:'low', detectedBy:'auto', element:'&lt;h4 class="section-title"&gt;Featured article&lt;/h4&gt;', description:'Heading levels are skipped (H2 → H4), breaking the document outline. Screen reader users use headings to navigate the page.', remediation:'Use headings in sequential order (h1 → h2 → h3...) without skipping levels.' },
+  { id:8, sev:'moderate', finding:'Page title is not descriptive', criterion:'2.4.2', criterionName:'Page Titled', principle:'operable', result:'needs_review', status:'pending', scope:'Homepage', affected:1, effort:'low', detectedBy:'auto', element:'&lt;title&gt;Wikipedia&lt;/title&gt;', description:'The page title "Wikipedia" is too generic and does not describe the page content or distinguish it from other pages.', remediation:'Use a title that describes the page purpose, e.g. "Wikipedia — The Free Encyclopedia".' },
+  { id:9, sev:'moderate', finding:'Page language not declared', criterion:'3.1.1', criterionName:'Language of Page', principle:'understandable', result:'failure', status:'confirmed', scope:'Homepage', affected:1, effort:'low', detectedBy:'auto', element:'&lt;html&gt;', description:'The HTML element has no lang attribute. Screen readers cannot select the correct language for text-to-speech synthesis.', remediation:'Add lang="en" (or appropriate language code) to the &lt;html&gt; element.' },
+  { id:10, sev:'moderate', finding:'Skip navigation link missing', criterion:'2.4.1', criterionName:'Bypass Blocks', principle:'operable', result:'bp', status:'confirmed', scope:'Homepage', affected:1, effort:'low', detectedBy:'manual', element:'&lt;body&gt;', description:'No skip navigation mechanism is provided. Keyboard users must navigate through all header links on every page load.', remediation:'Add a visually-hidden "Skip to main content" link as the first focusable element. Make it visible on focus.' },
+  { id:11, sev:'minor', finding:'Redundant title attribute on link', criterion:'2.4.4', criterionName:'Link Purpose (In Context)', principle:'operable', result:'needs_review', status:'pending', scope:'Homepage', affected:6, effort:'low', detectedBy:'auto', element:'&lt;a href="/wiki/Main" title="Main Page"&gt;Main Page&lt;/a&gt;', description:'The title attribute duplicates the link text exactly, causing screen readers to announce the same text twice.', remediation:'Remove redundant title attributes, or only use title when adding additional context not conveyed in the link text.' },
+  { id:12, sev:'minor', finding:'Missing ARIA landmark regions', criterion:'4.1.2', criterionName:'Name, Role, Value', principle:'robust', result:'needs_review', status:'pending', scope:'Homepage', affected:1, effort:'medium', detectedBy:'manual', element:'&lt;div class="header-nav"&gt;', description:'Navigation regions are not identified with ARIA landmark roles or semantic HTML5 elements, making page navigation harder for screen reader users.', remediation:'Use semantic HTML (&lt;nav&gt;, &lt;main&gt;, &lt;header&gt;, &lt;footer&gt;) or add role="navigation" etc. to structural wrappers.' }
+];
+
+const principleMap = { perceivable:'perceivable', operable:'operable', understandable:'understandable', robust:'robust' };
+const principleLabel = { perceivable:'Perceivable 1.x', operable:'Operable 2.x', understandable:'Understandable 3.x', robust:'Robust 4.x' };
+
+let currentTriageFilter = 'all';
+let currentTriageSev = 'all';
+let currentTriageSearch = '';
+
+function getTriageRows() {
+  return issues.filter(iss => {
+    const matchStatus = currentTriageFilter === 'all' || iss.status === currentTriageFilter;
+    const matchSev = currentTriageSev === 'all' || iss.sev === currentTriageSev;
+    const search = currentTriageSearch.toLowerCase();
+    const matchSearch = !search || iss.finding.toLowerCase().includes(search) || iss.criterion.includes(search);
+    return matchStatus && matchSev && matchSearch;
+  });
+}
+
+function renderTriage() {
+  const rows = getTriageRows();
+  const tbody = document.getElementById('triage-tbody');
+  if (!rows.length) { tbody.innerHTML = `<div class="empty-row">No issues match the current filters.</div>`; return; }
+  tbody.innerHTML = rows.map(iss => `
+    <div class="issue-row" id="row-${iss.id}">
+      <div class="issue-row-main" onclick="toggleExpand(${iss.id}, event)">
+        <div><input type="checkbox" class="cb triage-cb" onclick="event.stopPropagation()" onchange="updateBulk()"></div>
+        <div class="expand-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg></div>
+        <div><span class="sev-pill ${iss.sev}"><span class="sev-dot ${iss.sev}"></span>${cap(iss.sev)}</span></div>
+        <div class="finding-cell">
+          <div class="finding-title">${iss.finding}</div>
+          <div class="finding-meta">
+            <span class="wcag-chip ${iss.principle}">SC ${iss.criterion} · ${iss.criterionName}</span>
+            <span class="detect-chip">${iss.detectedBy === 'auto' ? '⚡ Auto' : '👁 Manual'}</span>
+          </div>
+        </div>
+        <div class="scope-cell">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:middle;margin-right:3px"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 5h6M5 8h4"/></svg>${iss.scope}
+        </div>
+        <div style="text-align:center"><strong>${iss.affected}</strong><br><span style="font-size:11px">el.</span></div>
+        <div>
+          <span class="triage-status ${iss.status}">${statusLabel(iss.status)}</span>
+        </div>
+        <div class="quick-actions">
+          <button class="qa-btn confirm" onclick="quickAction(${iss.id},'confirmed',event)">Confirm</button>
+          <button class="qa-btn dismiss" onclick="quickAction(${iss.id},'dismissed',event)">Dismiss</button>
+          <button class="qa-btn more">···</button>
+        </div>
+      </div>
+      <div class="issue-expand" onclick="event.stopPropagation()">
+        <div class="iep">
+
+          <!-- Row 1: Screenshot + context sidebar -->
+          <div class="iep-screenshot-wrap">
+            <div class="iep-screenshot-hd">
+              <div class="iep-screenshot-hd-left">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="5" cy="7" r="1.5"/><path d="M1 11l4-4 3 3 3-2 4 4"/></svg>
+                Screenshot / Evidence
+              </div>
+              <button class="iep-recapture-btn">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8a4 4 0 108-.001"/><path d="M12 4l-1 2h2l-1-2z"/></svg>
+                Re-capture
+              </button>
+            </div>
+            <div class="iep-screenshot-body">
+              <div class="iep-shot-main">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
+                <span class="iep-shot-main-lbl">No screenshot available</span>
+                <span class="iep-shot-main-hint">Enable screenshots in scan settings to see elements in context</span>
+                <span class="iep-shot-upload-hint"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2v8M5 5l3-3 3 3M3 12v2h10v-2"/></svg>Upload manually</span>
+              </div>
+              <div class="iep-shot-context">
+                <div><div class="iep-fl">Who is affected</div><div class="iep-fv">${issUsers(iss)}</div></div>
+                <div class="iep-divider"></div>
+                <div><div class="iep-fl">Location</div><div class="iep-fv">${iss.scope}</div></div>
+                <div class="iep-divider"></div>
+                <div><div class="iep-fl">Elements found</div><div class="iep-fv">${iss.affected}</div></div>
+                <div class="iep-divider"></div>
+                <div><div class="iep-fl">Detection</div><div class="iep-fv">${iss.detectedBy === 'auto' ? 'Auto scan' : 'Manual'}</div></div>
+                <div class="iep-divider"></div>
+                <div><div class="iep-fl">Fix effort</div><div><span class="effort-tag ${iss.effort}">${cap(iss.effort)}</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Code snippet — technical evidence -->
+          <div class="iep-code-evidence">
+            <div class="iep-code-ev-hd">
+              <div class="iep-code-ev-hd-left">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12"/></svg>
+                Offending Element
+              </div>
+              <span class="iep-code-ev-meta">CSS selector &amp; HTML — use this to locate the element in code</span>
+            </div>
+            <div class="element-code">${escHtml(iss.element)}</div>
+          </div>
+
+          <!-- Row 3: Auditor Decision — primary action -->
+          <div class="iep-decision">
+            <div class="iep-dec-hd">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4"/></svg>
+              Auditor Decision
+            </div>
+            <div class="iep-dec-sub">Based on the screenshot and element above, classify this issue:</div>
+            <div class="iep-dec-btns">
+              <button class="iep-dec-btn iep-failure" onclick="quickAction(${iss.id},'confirmed',event)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L1 14h14L8 2z"/></svg>Confirmed Failure
+              </button>
+              <button class="iep-dec-btn iep-pass" onclick="quickAction(${iss.id},'dismissed',event)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l4 4 6-6"/></svg>Not a Failure
+              </button>
+              <button class="iep-dec-btn iep-manual" onclick="quickAction(${iss.id},'review',event)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg>Needs Manual Check
+              </button>
+              <button class="iep-assign-btn" onclick="event.stopPropagation()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M2 14s1-2.5 6-2.5 6 2.5 6 2.5"/></svg>Assign to me
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 4: How to Fix + WCAG side by side -->
+          <div class="iep-details-row">
+
+            <!-- How to Fix -->
+            <div class="iep-coll" id="fix-${iss.id}">
+              <div class="iep-coll-hd" onclick="toggleColl('fix-${iss.id}')">
+                <div class="iep-coll-title">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2l4 4-8 8H2v-4L10 2z"/></svg>
+                  How to Fix <span class="iep-coll-sub">&nbsp;${cap(iss.effort)} effort</span>
+                </div>
+                <svg class="iep-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+              </div>
+              <div class="iep-coll-body">
+                <div class="expand-remediation" style="margin-bottom:12px">${iss.remediation}</div>
+                <div class="iep-code-split">
+                  <div class="iep-code-block">
+                    <div class="iep-code-lbl before-lbl"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l8 8M10 2l-8 8"/></svg>Before</div>
+                    <pre class="iep-code-pre">${escHtml(issBefore(iss))}</pre>
+                  </div>
+                  <div class="iep-code-block">
+                    <div class="iep-code-lbl after-lbl"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l4 4 6-7"/></svg>After</div>
+                    <pre class="iep-code-pre">${escHtml(issAfter(iss))}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WCAG References -->
+            <div class="iep-coll" id="wcag-${iss.id}">
+              <div class="iep-coll-hd" onclick="toggleColl('wcag-${iss.id}')">
+                <div class="iep-coll-title">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
+                  WCAG References <span class="wcag-chip ${iss.principle}" style="font-size:10.5px;margin-left:2px">SC ${iss.criterion}</span>
+                </div>
+                <svg class="iep-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+              </div>
+              <div class="iep-coll-body">
+                <div class="wcag-ref-group">
+                  <div class="wcag-ref-label">Success Criterion</div>
+                  <a class="wcag-ref-link" href="https://www.w3.org/WAI/WCAG22/Understanding/" target="_blank">SC ${iss.criterion} — ${iss.criterionName} <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+                </div>
+                <div class="wcag-ref-group">
+                  <div class="wcag-ref-label">W3C Techniques</div>
+                  <a class="wcag-ref-link" href="https://www.w3.org/WAI/WCAG22/Techniques/" target="_blank">${issWcagTech(iss)} <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+                </div>
+                <div class="wcag-ref-group">
+                  <div class="wcag-ref-label">Common Failures</div>
+                  <a class="wcag-ref-link" href="https://www.w3.org/WAI/WCAG22/Techniques/#failures" target="_blank">${issWcagFailure(iss)} <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3h3v3M6 10l7-7M7 4H4a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V9"/></svg></a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Row 5: All Affected Elements — full width -->
+          <div class="iep-coll" id="elems-${iss.id}">
+            <div class="iep-coll-hd" onclick="toggleColl('elems-${iss.id}')">
+              <div class="iep-coll-title">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+                All Affected Elements
+                <span style="display:inline-flex;gap:4px;align-items:center;margin-left:2px">
+                  <span style="background:var(--red-bg);color:var(--red);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px">${Math.ceil(iss.affected*.83)} failures</span>
+                  <span style="background:var(--gray-bg);color:var(--gray-text);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px">${Math.floor(iss.affected*.17)} unreviewed</span>
+                </span>
+              </div>
+              <svg class="iep-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+            </div>
+            <div class="iep-coll-body" style="padding:0">
+              <!-- Filter tabs -->
+              <div style="display:flex;gap:0;border-bottom:1px solid var(--border-2);padding:0 12px;background:var(--bg)">
+                <button class="elem-tab active" data-issid="${iss.id}" data-filter="all" onclick="elemTab(this)">All <span class="elem-count">${iss.affected}</span></button>
+                <button class="elem-tab" data-issid="${iss.id}" data-filter="failure" onclick="elemTab(this)">Failures <span class="elem-count fail">${Math.ceil(iss.affected*.83)}</span></button>
+                <button class="elem-tab" data-issid="${iss.id}" data-filter="unreviewed" onclick="elemTab(this)">Unreviewed <span class="elem-count">${Math.floor(iss.affected*.17)}</span></button>
+                <button class="elem-tab" data-issid="${iss.id}" data-filter="dismissed" onclick="elemTab(this)">Dismissed <span class="elem-count">0</span></button>
+              </div>
+              <!-- Column headers -->
+              <div style="display:grid;grid-template-columns:24px 1fr 120px 100px 140px;gap:0;padding:6px 14px;background:#FDFCFF;border-bottom:1px solid var(--border-2)">
+                <span></span>
+                <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3)">Element</span>
+                <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3)">Location</span>
+                <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3)">Status</span>
+                <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3)">Action</span>
+              </div>
+              <!-- Element rows -->
+              <div class="elem-list" id="elemlist-${iss.id}">${issElemRowsFull(iss)}</div>
+              ${iss.affected > 4 ? `<div style="padding:10px 14px;border-top:1px solid var(--border-2);background:var(--bg)"><button onclick="window.location='Audit Issue Full Detail.html'" style="font-size:12.5px;color:var(--purple);font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>Open Full Details to triage all ${iss.affected} elements individually</button></div>` : ''}
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="iep-footer">
+            <button class="iep-assign-btn" onclick="event.stopPropagation()">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12"/></svg>
+              Raw Scan Data
+            </button>
+            <button class="iep-open-full" onclick="window.location='Audit Issue Full Detail.html'">
+              Open Full Details
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function issElemRowsFull(iss) {
+  const total = iss.affected;
+  const failures = Math.ceil(total * .83);
+  const snippets = [
+    `&lt;img src="/logo.png" class="site-logo"&gt;`,
+    `&lt;img src="/hero.jpg" class="hero-img"&gt;`,
+    `&lt;img src="/banner.png" id="promo-banner"&gt;`,
+    `&lt;img src="/icon.svg" class="nav-icon"&gt;`,
+    `&lt;img src="/thumb.jpg" class="article-thumb"&gt;`,
+    `&lt;img src="/avatar.png" class="user-avatar"&gt;`,
+    `&lt;img src="/card.jpg" class="card-image"&gt;`,
+    `&lt;img src="/bg.jpg" role="presentation"&gt;`,
+    `&lt;img src="/map.png" class="map-img"&gt;`,
+    `&lt;img src="/logo2.svg" class="partner-logo"&gt;`,
+    `&lt;img src="/icon2.png" class="footer-icon"&gt;`,
+    `&lt;img src="/deco.svg" aria-hidden="true"&gt;`
+  ];
+  const shown = Math.min(total, 4);
+  let html = '';
+  for (let i = 0; i < shown; i++) {
+    const st = i < failures ? 'failure' : 'unreviewed';
+    const label = st === 'failure' ? 'Failure' : 'Unreviewed';
+    html += `<div class="elem-row" style="display:grid;grid-template-columns:24px 1fr 120px 100px 140px;align-items:center;gap:0;padding:9px 14px">
+      <span class="elem-status-dot ${st}" style="margin:0 auto"></span>
+      <span class="elem-code-snip">${snippets[i] || escHtml(iss.element)}</span>
+      <span style="font-size:12.5px;color:var(--text-2)">${iss.scope}</span>
+      <span class="elem-badge ${st}">${label}</span>
+      <div style="display:flex;gap:5px" class="elem-actions">
+        <button onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;border:1.5px solid #6EE7B7;background:var(--green-bg);color:var(--green-text);cursor:pointer;font-family:inherit">Confirm</button>
+        <button onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--white);color:var(--text-2);cursor:pointer;font-family:inherit">Dismiss</button>
+      </div>
+    </div>`;
+  }
+  return html;
+}
+function issElemRows(iss) { return issElemRowsFull(iss); }
+function elemTab(el) {
+  const issId = el.dataset.issid;
+  el.closest('.iep-coll-body').querySelectorAll('.elem-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+function issWcagTech(iss) {
+  const m = {'1.1.1':'H37: Using alt on img elements','1.3.1':'H71: Using fieldset/legend','2.1.2':'G21: Ensuring no keyboard traps','1.4.3':'G18: Ensuring contrast ratio','2.4.7':'G149: Focus indicator visible','2.4.4':'H30: Descriptive link text','2.4.2':'G88: Descriptive page titles','3.1.1':'H57: lang attribute on html','2.4.1':'G1: Skip navigation link','4.1.2':'ARIA14: aria-label on elements'};
+  return m[iss.criterion] || 'View W3C Techniques';
+}
+function issWcagFailure(iss) {
+  const m = {'1.1.1':'F65: Missing alt attribute','1.3.1':'F68: Missing label association','2.1.2':'F10: Dialogs that cannot be closed','1.4.3':'F83: Insufficient contrast ratio','2.4.7':'F78: Styling focus indicator away','2.4.4':'F63: Only image used for link','2.4.2':'F25: No page title','3.1.1':'F88: Missing lang attribute','2.4.1':'F55: No bypass mechanism','4.1.2':'F96: Missing accessible name'};
+  return m[iss.criterion] || 'View Common Failures';
+}
+function issUsers(iss) {
+  const m = {'1.1.1':'Screen reader users','1.3.1':'Screen reader users','2.1.2':'Keyboard-only users','1.4.3':'Low vision users','2.4.7':'Keyboard-only users','2.4.4':'Screen reader users','2.4.2':'All users','3.1.1':'Screen reader users','2.4.1':'Keyboard-only users','4.1.2':'Assistive technology users'};
+  return m[iss.criterion] || 'Assistive technology users';
+}
+function issBefore(iss) {
+  const m = {
+    1:'<img src="/wiki/logo.png"\n  class="site-logo">',
+    2:'<input type="search"\n  placeholder="Search Wikipedia">',
+    3:'<div class="modal" role="dialog">\n  <!-- no focus trap -->\n</div>',
+    4:'<span class="nav-link"\n  style="color:#9CA3AF">\n  Navigation item\n</span>',
+    5:'<a href="/wiki/page"\n  style="outline:none">\n  Read more\n</a>',
+    6:'<a href="/wiki/p/12834">\n  Read more\n</a>',
+    7:'<h2>Main topic</h2>\n<h4>Sub-section</h4>',
+    8:'<title>Wikipedia</title>',
+    9:'<html>',
+    10:'<body>\n  <nav>...</nav>\n  <main>...</main>',
+    11:'<a href="/wiki/Main"\n  title="Main Page">\n  Main Page\n</a>',
+    12:'<div class="header-nav">\n  <ul>...</ul>\n</div>'
+  };
+  return m[iss.id] || iss.element;
+}
+function issAfter(iss) {
+  const m = {
+    1:'<img src="/wiki/logo.png"\n  class="site-logo"\n  alt="Wikipedia">',
+    2:'<label for="search">Search</label>\n<input type="search" id="search"\n  placeholder="Search Wikipedia">',
+    3:'<div class="modal" role="dialog"\n  aria-modal="true"\n  aria-labelledby="modal-title">\n  <!-- focus cycles within, Esc closes -->\n</div>',
+    4:'<span class="nav-link"\n  style="color:#374151">\n  Navigation item\n</span>',
+    5:'<a href="/wiki/page"\n  class="wiki-link">\n  Read more\n</a>',
+    6:'<a href="/wiki/p/12834"\n  aria-label="Read more about WCAG">\n  Read more\n</a>',
+    7:'<h2>Main topic</h2>\n<h3>Sub-section</h3>',
+    8:'<title>Wikipedia \u2014 The Free Encyclopedia</title>',
+    9:'<html lang="en">',
+    10:'<body>\n  <a href="#main" class="skip-link">\n    Skip to main content\n  </a>\n  <nav>...</nav>',
+    11:'<a href="/wiki/Main">\n  Main Page\n</a>',
+    12:'<nav aria-label="Main navigation">\n  <ul>...</ul>\n</nav>'
+  };
+  return m[iss.id] || '// Fixed';
+}
+function toggleColl(id) {
+  document.getElementById(id).classList.toggle('iep-open');
+}
+function toggleExpand(id, e) {
+  if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON') return;
+  const row = document.getElementById('row-'+id);
+  row.classList.toggle('expanded');
+}
+
+function quickAction(id, action, e) {
+  e.stopPropagation();
+  const iss = issues.find(i => i.id === id);
+  if (!iss) return;
+  iss.status = action;
+  renderTriage();
+  updateBulkCounts();
+}
+
+function setTriageStatus(el, status) {
+  document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentTriageFilter = status;
+  renderTriage();
+}
+
+function filterTriageSev(sev, el) {
+  document.querySelectorAll('.triage-sev-seg').forEach(s => s.classList.remove('active-seg'));
+  if (sev !== 'all') el.classList.add('active-seg');
+  currentTriageSev = sev === currentTriageSev ? 'all' : sev;
+  renderTriage();
+}
+
+function filterTriageBySev(sev) {
+  switchTab('triage');
+  currentTriageSev = sev;
+  renderTriage();
+}
+
+function filterTriageSearch() {
+  currentTriageSearch = document.getElementById('triage-search-input').value;
+  renderTriage();
+}
+
+function triageToggleAll(cb) {
+  document.querySelectorAll('.triage-cb').forEach(c => c.checked = cb.checked);
+  updateBulk();
+}
+
+function updateBulk() {
+  const checked = document.querySelectorAll('.triage-cb:checked').length;
+  const bar = document.getElementById('bulk-bar');
+  bar.classList.toggle('visible', checked > 0);
+  document.getElementById('bulk-count').textContent = checked + ' selected';
+}
+
+function updateBulkCounts() {
+  const counts = { all: issues.length, pending: issues.filter(i=>i.status==='pending').length, confirmed: issues.filter(i=>i.status==='confirmed').length, review: issues.filter(i=>i.status==='review').length, dismissed: issues.filter(i=>i.status==='dismissed').length };
+  Object.entries(counts).forEach(([k,v]) => { const el = document.getElementById('cnt-'+k); if(el) el.textContent = v; });
+  const badge = document.getElementById('triage-badge');
+  if(badge) badge.textContent = counts.pending;
+}
+
+function toggleGroupBy() { /* placeholder */ }
+
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+function scanTab(el) {
+  document.querySelectorAll('.scan-sub-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectReport(el) {
+  document.querySelectorAll('.report-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function cap(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function statusLabel(s) {
+  return { pending:'Untriaged', confirmed:'✓ Confirmed', review:'⚠ Review', dismissed:'— Dismissed' }[s] || s;
+}
+
+// Init
+renderTriage();
+updateBulkCounts();
+</script>
+</body>
+</html>

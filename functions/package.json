@@ -1,0 +1,22 @@
+{
+  "name": "audit-studio-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions v2 — API layer for Audit Studio",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "firebase-functions": "^7.2.5",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

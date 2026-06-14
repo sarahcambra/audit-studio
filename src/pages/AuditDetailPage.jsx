@@ -1,29 +1,31 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import {
-  Badge, Breadcrumb, BreadcrumbItem, Button, Dropdown, DropdownDivider, DropdownItem,
+  Breadcrumb, BreadcrumbItem, Button, Dropdown, DropdownDivider, DropdownItem,
   Pagination, Select, Spinner, Tabs, Textarea,
-  Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow,
   TextInput, theme,
 } from 'flowbite-react'
 import {
   AlertTriangle, BarChart3, CheckCircle2,
-  ArrowLeft, ChevronRight, Home,
+  ArrowLeft, ChevronRight, ChevronDown, Home,
   Clock, FileSearch,
   RefreshCw, Search, ClipboardList,
+  Globe, ExternalLink, Calendar, Users,
 } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
-import { useAuth } from '../context/AuthContext'
-import { getAudit } from '../lib/db/audits'
-import { getManualChecks, saveManualCheckVerdict } from '../lib/db/manualChecks'
-import { getScanJobs } from '../lib/db/scans'
-import ScanPanel from '../components/scan/ScanPanel'
-import ErrorBoundary from '../components/ErrorBoundary'
-import { customTheme } from '../theme'
-import { PRINCIPLES, getPrinciple } from '../lib/wcagScData'
-import IssueDetailDrawer from '../components/triage/IssueDetailDrawer'
-import TriageTab from '../components/triage/TriageTab'
-import OverviewTab, { WcagBadge, StatusBadge, DecisionBadge } from '../components/audit/OverviewTab'
+import { useAuth } from '@features/auth'
+import { getAudit } from '@lib/db/audits'
+import { getManualChecks, saveManualCheckVerdict } from '@lib/db/manualChecks'
+import { getTriageItems } from '@lib/db/triage'
+import { getScanJobs } from '@lib/db/scans'
+import ScanPanel from '@features/scan/components/ScanPanel'
+import { ErrorBoundary, DataTable, Badge } from '@shared/ui'
+import { customTheme } from '@config/theme.js'
+import { PRINCIPLES, getPrinciple, getScLevel } from '@lib/wcagScData'
+import IssueDetailDrawer from '@features/triage/components/IssueDetailDrawer'
+import TriageTab from '@features/triage/components/TriageTab'
+import OverviewTab from '@features/audit/components/AuditDetail/OverviewTab'
+import { generateAndOpenReport } from '@features/report'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,14 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('en-SE', {
     day: '2-digit', month: 'short', year: 'numeric',
   })
+}
+
+function fmtScore(audit) {
+  const c = audit.critical_count ?? 0
+  const s = audit.serious_count ?? 0
+  const m = audit.moderate_count ?? 0
+  const n = audit.minor_count ?? 0
+  return Math.max(0, Math.min(100, Math.round(100 - (c * 12 + s * 6 + m * 2 + n * 1))))
 }
 
 const PER_PAGE = 15
@@ -127,17 +137,16 @@ const SOURCE_LABELS = {
 // ─── Manual Checks Tab ────────────────────────────────────────────────────────
 
 function ManualChecksTab({ auditId }) {
-  const [checks, setChecks]           = useState([])
+  const [checks, setChecks] = useState([])
   const [triageItems, setTriageItems] = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState(null)
-  const [search, setSearch]           = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
   const [verdictFilter, setVerdictFilter] = useState('all')
-  const [sourceFilter, setSourceFilter]   = useState('all')
-  const [expandedSC, setExpandedSC]   = useState(null)
-  const [savingId, setSavingId]       = useState(null)
+  const [sourceFilter, setSourceFilter] = useState('all')
+  const [savingId, setSavingId] = useState(null)
   // Local edits: { [checkId]: { verdict, notes } }
-  const [localEdits, setLocalEdits]   = useState({})
+  const [localEdits, setLocalEdits] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -157,44 +166,38 @@ function ManualChecksTab({ auditId }) {
   }, [auditId])
 
   // ── Filtering ───────────────────────────────────────────────────────────────
-  const filtered = checks.filter(c => {
-    const q = search.toLowerCase()
-    if (q && !c.sc_id?.toLowerCase().includes(q) && !c.sc_name?.toLowerCase().includes(q)) return false
-    if (verdictFilter !== 'all') {
-      const v = c.verdict ?? 'untriaged'
-      if (v !== verdictFilter) return false
-    }
-    if (sourceFilter !== 'all' && c.source !== sourceFilter) return false
-    return true
-  })
+  const filtered = useMemo(() => {
+    return checks.filter(c => {
+      const q = search.toLowerCase()
+      if (q && !c.sc_id?.toLowerCase().includes(q) && !c.sc_name?.toLowerCase().includes(q)) return false
+      if (verdictFilter !== 'all') {
+        const v = c.verdict ?? 'untriaged'
+        if (v !== verdictFilter) return false
+      }
+      if (sourceFilter !== 'all' && c.source !== sourceFilter) return false
+      return true
+    })
+  }, [checks, search, verdictFilter, sourceFilter])
 
   // ── Summary counts ──────────────────────────────────────────────────────────
-  const counts = checks.reduce((acc, c) => {
-    const v = c.verdict ?? 'untriaged'
-    acc[v] = (acc[v] ?? 0) + 1
-    return acc
-  }, {})
-
-  // ── Group by principle ──────────────────────────────────────────────────────
-  const byPrinciple = useMemo(() => {
-    const groups = {}
-    for (const check of filtered) {
-      const p = getPrinciple(check.sc_id)
-      if (!groups[p]) groups[p] = []
-      groups[p].push(check)
-    }
-    return groups
-  }, [filtered])
+  const counts = useMemo(() => {
+    return checks.reduce((acc, c) => {
+      const v = c.verdict ?? 'untriaged'
+      acc[v] = (acc[v] ?? 0) + 1
+      return acc
+    }, {})
+  }, [checks])
 
   // ── Evidence for a given SC from triage_items ───────────────────────────────
-  const evidenceForSC = (scId) =>
-    triageItems.filter(ti => (ti.sc_ids || []).includes(scId))
+  const evidenceForSC = useCallback((scId) =>
+    triageItems.filter(ti => (ti.sc_ids || []).includes(scId)),
+  [triageItems])
 
   // ── Save verdict ────────────────────────────────────────────────────────────
   const handleSave = async (check) => {
     const edits = localEdits[check.id] ?? {}
     const verdict = edits.verdict ?? check.verdict ?? null
-    const notes   = edits.notes   ?? check.auditor_notes ?? null
+    const notes = edits.notes ?? check.auditor_notes ?? null
     setSavingId(check.id)
     const { error: saveErr } = await saveManualCheckVerdict(check.id, { verdict, auditorNotes: notes })
     setSavingId(null)
@@ -209,10 +212,182 @@ function ManualChecksTab({ auditId }) {
   const updateLocal = (checkId, field, value) =>
     setLocalEdits(prev => ({ ...prev, [checkId]: { ...(prev[checkId] ?? {}), [field]: value } }))
 
+  // ── Columns for DataTable ───────────────────────────────────────────────────
+  const columns = useMemo(() => [
+    {
+      key: 'sc',
+      header: 'Success Criterion',
+      width: 'min-w-48',
+      render: (check) => (
+        <div>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">{check.sc_id}</span>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{check.sc_name || '—'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'level',
+      header: 'Level',
+      width: 'w-20',
+      render: (check) => (
+        <Badge color="blue" size="sm">
+          {getScLevel(check.sc_id)}
+        </Badge>
+      ),
+    },
+    {
+      key: 'axeResult',
+      header: 'Axe Result',
+      width: 'min-w-32',
+      render: (check) => {
+        const autoStyle = AUTO_STATUS_STYLES[check.auto_status] ?? AUTO_STATUS_STYLES['always-manual']
+        return (
+          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${autoStyle.cls}`}>
+            {autoStyle.label}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'source',
+      header: 'Source',
+      width: 'min-w-32',
+      render: (check) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {SOURCE_LABELS[check.source] ?? check.source ?? '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'verdict',
+      header: 'Verdict',
+      width: 'w-28',
+      render: (check) => {
+        const localEdit = localEdits[check.id] ?? {}
+        const currentVerdict = localEdit.verdict !== undefined ? localEdit.verdict : (check.verdict ?? 'untriaged')
+        return <ManualCheckBadge status={currentVerdict} />
+      },
+    },
+  ], [localEdits])
+
+  // ── Render expanded content ─────────────────────────────────────────────────
+  const renderExpand = useCallback((check) => {
+    const evidence = evidenceForSC(check.sc_id)
+    const localEdit = localEdits[check.id] ?? {}
+    const currentVerdict = localEdit.verdict !== undefined ? localEdit.verdict : (check.verdict ?? null)
+    const currentNotes = localEdit.notes !== undefined ? localEdit.notes : (check.auditor_notes ?? '')
+    const isDirty = localEdit.verdict !== undefined || localEdit.notes !== undefined
+
+    return (
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* Left: Evidence from triage */}
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Triage Evidence ({evidence.length})
+          </p>
+          {evidence.length === 0 ? (
+            <p className="text-xs italic text-gray-500 dark:text-gray-400">No triage items for this criterion.</p>
+          ) : (
+            <div className="space-y-2">
+              {evidence.map(ti => {
+                const decisionColor = {
+                  confirmed: 'text-red-700 dark:text-red-400',
+                  'not-failure': 'text-green-700 dark:text-green-400',
+                  'manual-check': 'text-amber-700 dark:text-amber-400',
+                  deferred: 'text-gray-500 dark:text-gray-400',
+                }[ti.decision] ?? 'text-gray-500 dark:text-gray-400'
+
+                return (
+                  <div key={ti.id} className="rounded bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs font-medium text-gray-900 dark:text-white">
+                        {ti.rule_id}
+                      </span>
+                      <span className={`shrink-0 text-xs ${decisionColor}`}>
+                        {ti.decision
+                          ? { confirmed: 'Confirmed failure', 'not-failure': 'Not a failure', 'manual-check': 'Needs manual check', deferred: 'Deferred' }[ti.decision]
+                          : 'Untriaged'}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      {ti.node_count} element{ti.node_count !== 1 ? 's' : ''} · {ti.page_name || 'Unknown page'}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Auditor verdict form */}
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Auditor Verdict
+          </p>
+
+          {/* Verdict buttons */}
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Select verdict">
+            {[
+              { value: 'pass', label: 'Pass', cls: 'border-green-300 text-green-700 hover:bg-green-50 dark:text-green-400' },
+              { value: 'fail', label: 'Fail', cls: 'border-red-300 text-red-700 hover:bg-red-50 dark:text-red-400' },
+              { value: 'na', label: 'N/A', cls: 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:text-gray-400' },
+              { value: 'deferred', label: 'Defer', cls: 'border-amber-300 text-amber-700 hover:bg-amber-50 dark:text-amber-400' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => updateLocal(check.id, 'verdict', opt.value === currentVerdict ? null : opt.value)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors
+                  ${opt.cls}
+                  ${currentVerdict === opt.value
+                    ? 'ring-2 ring-purple-400 ring-offset-1 border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
+                    : ''}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label htmlFor={`notes-${check.id}`} className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+              Notes
+            </label>
+            <Textarea
+              id={`notes-${check.id}`}
+              rows={3}
+              placeholder="Add testing notes, observations, evidence…"
+              value={currentNotes}
+              onChange={e => updateLocal(check.id, 'notes', e.target.value)}
+              className="text-xs"
+            />
+          </div>
+
+          {/* Save button */}
+          <div className="flex justify-end">
+            <Button
+              color="primary"
+              size="xs"
+              disabled={!isDirty || savingId === check.id}
+              onClick={() => handleSave(check)}
+            >
+              {savingId === check.id ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }, [evidenceForSC, localEdits, savingId])
+
   // ── Loading / error states ──────────────────────────────────────────────────
-  if (loading) return <div className="flex justify-center py-16"><Spinner size="md" color="purple" /></div>
-  if (error)   return (
-    <div className="relative overflow-hidden rounded-lg  bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+  if (loading) return (
+    <div className="flex items-center justify-center py-16">
+      <Spinner size="md" color="purple" />
+    </div>
+  )
+
+  if (error) return (
+    <div className="relative overflow-hidden rounded-lg bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="px-4 py-3 text-sm text-red-600 dark:text-red-400">{error}</div>
     </div>
   )
@@ -235,16 +410,20 @@ function ManualChecksTab({ auditId }) {
           {/* Summary pills */}
           <div className="flex flex-wrap gap-2">
             {[
-              { key: 'fail',      label: 'Fail',    cls: 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300' },
-              { key: 'pass',      label: 'Pass',    cls: 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300' },
-              { key: 'deferred',  label: 'Deferred',cls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300' },
-              { key: 'untriaged', label: 'Pending', cls: 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400' },
-            ].map(({ key, label, cls }) => (counts[key] ?? 0) > 0 && (
+              { key: 'fail', label: 'Fail', color: 'red' },
+              { key: 'pass', label: 'Pass', color: 'green' },
+              { key: 'deferred', label: 'Deferred', color: 'amber' },
+              { key: 'untriaged', label: 'Pending', color: 'gray' },
+            ].map(({ key, label, color }) => (counts[key] ?? 0) > 0 && (
               <button
                 key={key}
                 type="button"
                 onClick={() => setVerdictFilter(verdictFilter === key ? 'all' : key)}
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all ${cls}
+                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all
+                  ${color === 'red' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300' : ''}
+                  ${color === 'green' ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300' : ''}
+                  ${color === 'amber' ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300' : ''}
+                  ${color === 'gray' ? 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400' : ''}
                   ${verdictFilter === key ? 'ring-2 ring-purple-300 ring-offset-1' : ''}`}
               >
                 {counts[key]} {label}
@@ -294,7 +473,7 @@ function ManualChecksTab({ auditId }) {
         </Select>
       </div>
 
-      {/* ── SC table, grouped by principle ────────────────────────────────── */}
+      {/* ── SC table using DataTable ───────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="border-t border-gray-200 dark:border-gray-700">
           <EmptyState
@@ -306,219 +485,14 @@ function ManualChecksTab({ auditId }) {
           />
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <Table
-            hoverable
-            theme={{
-              ...customTheme.table,
-              head: {
-                base: 'bg-gray-50 dark:bg-gray-700',
-                cell: { base: 'p-4 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-400' }
-              }
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableHeadCell>Success Criterion</TableHeadCell>
-                <TableHeadCell>Level</TableHeadCell>
-                <TableHeadCell>Axe Result</TableHeadCell>
-                <TableHeadCell>Source</TableHeadCell>
-                <TableHeadCell>Verdict</TableHeadCell>
-                <TableHeadCell><span className="sr-only">Expand</span></TableHeadCell>
-              </TableRow>
-            </TableHead>
-            <TableBody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {Object.keys(PRINCIPLES).sort().map(principleKey => {
-                const rows = byPrinciple[principleKey]
-                if (!rows || rows.length === 0) return null
-                return (
-                  <>
-                    {/* Principle section header */}
-                    <tr key={`p-${principleKey}`} className="bg-gray-100 dark:bg-gray-700/80">
-                      <td colSpan={6} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                        {principleKey}. {PRINCIPLES[principleKey]}
-                      </td>
-                    </tr>
-
-                    {rows.map(check => {
-                      const isExpanded = expandedSC === check.id
-                      const evidence   = evidenceForSC(check.sc_id)
-                      const localEdit  = localEdits[check.id] ?? {}
-                      const currentVerdict = localEdit.verdict !== undefined ? localEdit.verdict : (check.verdict ?? null)
-                      const currentNotes   = localEdit.notes   !== undefined ? localEdit.notes   : (check.auditor_notes ?? '')
-                      const verdictStyle   = VERDICT_STYLES[currentVerdict ?? 'untriaged']
-                      const autoStyle      = AUTO_STATUS_STYLES[check.auto_status] ?? AUTO_STATUS_STYLES['always-manual']
-                      const isDirty = localEdit.verdict !== undefined || localEdit.notes !== undefined
-
-                      return (
-                        <>
-                          {/* SC row */}
-                          <TableRow
-                            key={check.id}
-                            className="bg-white dark:bg-gray-800"
-                          >
-                            {/* SC number + name */}
-                            <th scope="row" className="p-4">
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white">{check.sc_id}</span>
-                              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{check.sc_name || '—'}</p>
-                            </th>
-
-                            {/* Level */}
-                            <TableCell className="p-4">
-                              <Badge theme={customTheme.badge} color="primary" size="xs">
-                                {check.wcag_level || '?'}
-                              </Badge>
-                            </TableCell>
-
-                            {/* Axe auto-status */}
-                            <TableCell className="p-4">
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${autoStyle.cls}`}>
-                                {autoStyle.label}
-                              </span>
-                            </TableCell>
-
-                            {/* Source */}
-                            <TableCell className="p-4 text-sm text-gray-500 dark:text-gray-400">
-                              {SOURCE_LABELS[check.source] ?? check.source ?? '—'}
-                            </TableCell>
-
-                            {/* Verdict */}
-                            <TableCell className="p-4">
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${verdictStyle.cls}`}>
-                                {verdictStyle.label}
-                              </span>
-                            </TableCell>
-
-                            {/* Expand toggle */}
-                            <TableCell className="p-4">
-                              <button
-                                type="button"
-                                onClick={() => setExpandedSC(isExpanded ? null : check.id)}
-                                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-                                aria-label={isExpanded ? `Collapse ${check.sc_id}` : `Expand ${check.sc_id}`}
-                                aria-expanded={isExpanded}
-                              >
-                                {isExpanded
-                                  ? <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                                  : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
-                              </button>
-                            </TableCell>
-                          </TableRow>
-
-                          {/* Expanded row */}
-                          {isExpanded && (
-                            <tr key={`${check.id}-expanded`} className="bg-gray-100/20 dark:bg-gray-800/60">
-                              <td colSpan={6} className="px-5 py-4">
-                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-                                  {/* Left: Evidence from triage */}
-                                  <div>
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                      Triage Evidence ({evidence.length})
-                                    </p>
-                                    {evidence.length === 0 ? (
-                                      <p className="text-xs italic text-gray-500 dark:text-gray-400">No triage items for this criterion.</p>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        {evidence.map(ti => {
-                                          const decisionColor = {
-                                            confirmed:    'text-red-700 dark:text-red-400',
-                                            'not-failure':'text-green-700 dark:text-green-400',
-                                            'manual-check':'text-amber-700 dark:text-amber-400',
-                                            deferred:     'text-gray-500 dark:text-gray-400',
-                                          }[ti.decision] ?? 'text-gray-500 dark:text-gray-400'
-
-                                          return (
-                                            <div key={ti.id} className="rounded  bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-                                              <div className="flex items-center justify-between gap-2">
-                                                <span className="truncate text-xs font-medium text-gray-900 dark:text-white">
-                                                  {ti.rule_id}
-                                                </span>
-                                                <span className={`shrink-0 text-xs ${decisionColor}`}>
-                                                  {ti.decision
-                                                    ? { confirmed: 'Confirmed failure', 'not-failure': 'Not a failure', 'manual-check': 'Needs manual check', deferred: 'Deferred' }[ti.decision]
-                                                    : 'Untriaged'}
-                                                </span>
-                                              </div>
-                                              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                                {ti.node_count} element{ti.node_count !== 1 ? 's' : ''} · {ti.page_name || 'Unknown page'}
-                                              </p>
-                                            </div>
-                                          )
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Right: Auditor verdict form */}
-                                  <div className="space-y-3">
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                      Auditor Verdict
-                                    </p>
-
-                                    {/* Verdict buttons */}
-                                    <div className="flex flex-wrap gap-2" role="group" aria-label="Select verdict">
-                                      {[
-                                        { value: 'pass',     label: 'Pass',     cls: 'border-green-300 text-green-700 hover:bg-green-50 dark:text-green-400' },
-                                        { value: 'fail',     label: 'Fail',     cls: 'border-red-300 text-red-700 hover:bg-red-50 dark:text-red-400' },
-                                        { value: 'na',       label: 'N/A',      cls: 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:text-gray-400' },
-                                        { value: 'deferred', label: 'Defer',    cls: 'border-amber-300 text-amber-700 hover:bg-amber-50 dark:text-amber-400' },
-                                      ].map(opt => (
-                                        <button
-                                          key={opt.value}
-                                          type="button"
-                                          onClick={() => updateLocal(check.id, 'verdict', opt.value === currentVerdict ? null : opt.value)}
-                                          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors
-                                            ${opt.cls}
-                                            ${currentVerdict === opt.value
-                                              ? 'ring-2 ring-purple-400 ring-offset-1 border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
-                                              : ''}`}
-                                        >
-                                          {opt.label}
-                                        </button>
-                                      ))}
-                                    </div>
-
-                                    {/* Notes */}
-                                    <div>
-                                      <label htmlFor={`notes-${check.id}`} className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                        Notes
-                                      </label>
-                                      <Textarea
-                                        id={`notes-${check.id}`}
-                                        rows={3}
-                                        placeholder="Add testing notes, observations, evidence…"
-                                        value={currentNotes}
-                                        onChange={e => updateLocal(check.id, 'notes', e.target.value)}
-                                        className="text-xs"
-                                      />
-                                    </div>
-
-                                    {/* Save button */}
-                                    <div className="flex justify-end">
-                                      <Button
-                                        color="primary"
-                                        size="xs"
-                                        disabled={!isDirty || savingId === check.id}
-                                        onClick={() => handleSave(check)}
-                                      >
-                                        {savingId === check.id ? 'Saving…' : 'Save'}
-                                      </Button>
-                                    </div>
-                                  </div>
-
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </>
-                      )
-                    })}
-                  </>
-                )
-              })}
-            </TableBody>
-          </Table>
+        <div className="relative overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={filtered}
+            expandable
+            renderExpand={renderExpand}
+            keyExtractor={(row) => row.id}
+          />
         </div>
       )}
 
@@ -535,6 +509,29 @@ function ManualChecksTab({ auditId }) {
 // ─── Report Tab ───────────────────────────────────────────────────────────────
 
 function ReportTab({ audit }) {
+  // Enable only when all triage items are resolved (untriaged_count = 0).
+  // untriaged_count comes from the audit_summary view and is always present
+  // on the audit object loaded by getAudit().
+  const triageComplete = (audit.untriaged_count ?? 1) === 0
+
+  // FIX (#1): the Generate Report button was a no-op (no onClick). Now it builds
+  // a real WCAG conformance report from the audit's triage data and opens it in a
+  // print-ready tab. Fully wrapped so a failure shows a message, never crashes.
+  const [generating, setGenerating] = useState(false)
+  const [reportError, setReportError] = useState(null)
+
+  const handleGenerate = async () => {
+    setGenerating(true)
+    setReportError(null)
+    try {
+      await generateAndOpenReport(audit)
+    } catch (err) {
+      setReportError(err?.message ?? 'Report generation failed.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   return (
     <div className="relative overflow-hidden rounded-lg bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex flex-col items-center px-6 py-16 text-center">
@@ -542,14 +539,37 @@ function ReportTab({ audit }) {
           <BarChart3 className="h-8 w-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">Report Generation</h3>
-        <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
-          Once all triage items are resolved, you'll be able to generate a WCAG{' '}
-          {audit.wcag_version} {audit.conformance_level} conformance report.
-        </p>
-        <Button color="primary" size="sm" className="mt-5" disabled>
+        {triageComplete ? (
+          <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+            All triage items are resolved. You can now generate the WCAG{' '}
+            {audit.wcag_version} {audit.conformance_level} conformance report.
+          </p>
+        ) : (
+          <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+            Once all triage items are resolved, you'll be able to generate a WCAG{' '}
+            {audit.wcag_version} {audit.conformance_level} conformance report.{' '}
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              {audit.untriaged_count ?? 0} item{(audit.untriaged_count ?? 0) !== 1 ? 's' : ''} remaining.
+            </span>
+          </p>
+        )}
+        <Button
+          color="primary"
+          size="sm"
+          className="mt-5"
+          onClick={handleGenerate}
+          disabled={generating}
+          aria-busy={generating}
+          title="Generate report"
+        >
           <BarChart3 className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          Generate Report
+          {generating ? 'Generating…' : 'Generate Report'}
         </Button>
+        {reportError && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">
+            {reportError}
+          </p>
+        )}
       </div>
     </div>
   )
@@ -574,14 +594,25 @@ function ScanPanelError({ error, resetErrorBoundary }) {
 export default function AuditDetailPage() {
   const { auditId } = useParams()
   const navigate    = useNavigate()
+  const location    = useLocation()
   const { user }    = useAuth()
+
+  // Read hash synchronously so Tabs.Item active prop is correct on first render
+  const hashMap = {
+    '#triage': 'Triage',
+    '#scan': 'Scan',
+    '#manual-checks': 'Manual Checks',
+    '#report': 'Report',
+  }
+  const initialTab = hashMap[location.hash] || 'overview'
 
   const [audit, setAudit]           = useState(null)
   const [scanJobs, setScanJobs]     = useState([])
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError]           = useState(null)
-  const [activeTab, setActiveTab]   = useState('overview')
+  const [activeTab, setActiveTab]   = useState(initialTab)
+  const [triageRefreshKey, setTriageRefreshKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -630,7 +661,7 @@ export default function AuditDetailPage() {
 
       {/* ── Breadcrumb + Title header */}
       <div className="col-span-full mb-4 xl:mb-2">
-        <Breadcrumb className="mb-5">
+        <Breadcrumb className="mb-3">
           <BreadcrumbItem href="/">
             <div className="flex items-center gap-x-3">
               <Home className="h-4 w-4" />
@@ -641,21 +672,99 @@ export default function AuditDetailPage() {
           <BreadcrumbItem>{audit.name}</BreadcrumbItem>
         </Breadcrumb>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{audit.name}</h1>
-            {audit.project_name && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{audit.project_name}</p>
+        {/* Title row with badges */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-[22px] dark:text-white">
+                {audit.name}
+              </h1>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                audit.status === 'active'
+                  ? 'bg-success-50 text-success-700 dark:bg-success-900/20 dark:text-success-300'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+              }`}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {audit.status === 'active' ? 'Active' : audit.status}
+              </span>
+              <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                WCAG {audit.wcag_version} {audit.conformance_level}
+              </span>
+            </div>
+            {audit.website_url && (
+              <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                <Globe className="h-3.5 w-3.5" />
+                <a
+                  href={audit.website_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-primary-700 hover:underline dark:text-primary-400"
+                >
+                  {audit.website_url.replace(/^https?:\/\//, '')}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             )}
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700"
-            aria-label="Refresh audit data"
-          >
-            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
-          </button>
+
+          {/* Meta chips + actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Score chip */}
+            <button
+              onClick={() => setActiveTab('overview')}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm transition-colors hover:border-primary-300 dark:border-gray-600 dark:bg-gray-700"
+              title="View conformance score"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="#E9E5F0" strokeWidth="3" />
+                <circle
+                  cx="12" cy="12" r="9" fill="none"
+                  stroke={scoreLabel(fmtScore(audit)).color}
+                  strokeWidth="3"
+                  strokeDasharray={`${2 * Math.PI * 9 * (fmtScore(audit) / 100)} ${2 * Math.PI * 9}`}
+                  strokeLinecap="round"
+                  transform="rotate(-90 12 12)"
+                />
+              </svg>
+              <span className="font-bold text-warning-600 dark:text-warning-400">{fmtScore(audit)}%</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">score</span>
+            </button>
+
+            {/* Due date chip */}
+            {audit.target_end_date && (
+              <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700">
+                <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                <span className={`text-xs font-semibold ${new Date(audit.target_end_date) < new Date() ? 'text-warning-600 dark:text-warning-400' : 'text-gray-600 dark:text-gray-300'}`}>
+                  {new Date(audit.target_end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+            )}
+
+            {/* Assignee chip */}
+            <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700">
+              <Users className="h-3.5 w-3.5 text-gray-400" />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Unassigned</span>
+            </div>
+
+            {/* Actions */}
+            <Button size="xs" color="light" onClick={() => {}}>
+              <ExternalLink className="mr-1 h-3.5 w-3.5" />
+              Export
+            </Button>
+            <Button size="xs" color="light" onClick={() => {}}>
+              <ExternalLink className="mr-1 h-3.5 w-3.5" />
+              Share
+            </Button>
+
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700"
+              aria-label="Refresh audit data"
+            >
+              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -667,12 +776,12 @@ export default function AuditDetailPage() {
           className="gap-0"
           onActiveTabChange={(tab) => setActiveTab(tab)}
         >
-          <Tabs.Item title="Overview" icon={BarChart3}>
+          <Tabs.Item title="Overview" icon={BarChart3} active={activeTab === 'Overview'}>
             <div className="pt-4">
               <OverviewTab audit={audit} scanJobs={scanJobs} />
             </div>
           </Tabs.Item>
-          <Tabs.Item title="Scan" icon={FileSearch}>
+          <Tabs.Item title="Scan" icon={FileSearch} active={activeTab === 'Scan'}>
             <div className="pt-4">
               <ErrorBoundary fallback={ScanPanelError}>
                 <ScanPanel
@@ -686,21 +795,22 @@ export default function AuditDetailPage() {
                   }}
                   auditId={auditId}
                   userId={user?.id}
+                  onScanComplete={() => setTriageRefreshKey(k => k + 1)}
                 />
               </ErrorBoundary>
             </div>
           </Tabs.Item>
-          <Tabs.Item title="Triage" icon={ClipboardList}>
+          <Tabs.Item title="Triage" icon={ClipboardList} active={activeTab === 'Triage'}>
             <div className="pt-4">
-              <TriageTab auditId={auditId} />
+              <TriageTab auditId={auditId} refreshKey={triageRefreshKey} />
             </div>
           </Tabs.Item>
-          <Tabs.Item title="Manual Checks" icon={CheckCircle2}>
+          <Tabs.Item title="Manual Checks" icon={CheckCircle2} active={activeTab === 'Manual Checks'}>
             <div className="pt-4">
               <ManualChecksTab auditId={auditId} />
             </div>
           </Tabs.Item>
-          <Tabs.Item title="Report" icon={BarChart3}>
+          <Tabs.Item title="Report" icon={BarChart3} active={activeTab === 'Report'}>
             <div className="pt-4">
               <ReportTab audit={audit} />
             </div>

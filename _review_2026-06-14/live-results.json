@@ -1,0 +1,394 @@
+[
+  {
+    "type": "E-commerce — catalog",
+    "url": "https://www.example-shop.com",
+    "rulesFailed": 5,
+    "nodes": 5,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 3,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      },
+      {
+        "id": "region",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "All page content should be contained by landmarks"
+      }
+    ]
+  },
+  {
+    "type": "News / media article",
+    "url": "https://www.example-news.com",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "Government / public form",
+    "url": "https://www.example-gov.org",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "Video / streaming",
+    "url": "https://www.example-video.com",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "Blog + comment form",
+    "url": "https://www.example-blog.com",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "SaaS dashboard / data table",
+    "url": "https://www.example-app.com",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "Restaurant / hospitality",
+    "url": "https://www.example-restaurant.com",
+    "rulesFailed": 5,
+    "nodes": 25,
+    "byImpact": {
+      "critical": 0,
+      "serious": 14,
+      "moderate": 10,
+      "minor": 1
+    },
+    "rules": [
+      {
+        "id": "aria-prohibited-attr",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Elements must only use permitted ARIA attributes"
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 13,
+        "help": "Elements must meet minimum color contrast ratio thresholds"
+      },
+      {
+        "id": "empty-heading",
+        "impact": "minor",
+        "nodes": 1,
+        "help": "Headings should not be empty"
+      },
+      {
+        "id": "landmark-complementary-is-top-level",
+        "impact": "moderate",
+        "nodes": 6,
+        "help": "Aside should not be contained in another landmark"
+      },
+      {
+        "id": "region",
+        "impact": "moderate",
+        "nodes": 4,
+        "help": "All page content should be contained by landmarks"
+      }
+    ]
+  },
+  {
+    "type": "Travel / booking",
+    "url": "https://www.example-travel.com",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "Social feed",
+    "url": "https://www.example-social.com",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  },
+  {
+    "type": "University / education",
+    "url": "https://www.example-edu.edu",
+    "rulesFailed": 4,
+    "nodes": 4,
+    "byImpact": {
+      "critical": 0,
+      "serious": 2,
+      "moderate": 2,
+      "minor": 0
+    },
+    "rules": [
+      {
+        "id": "document-title",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "Documents must have <title> element to aid in navigation"
+      },
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "nodes": 1,
+        "help": "<html> element must have a lang attribute"
+      },
+      {
+        "id": "landmark-one-main",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Document should have one main landmark"
+      },
+      {
+        "id": "page-has-heading-one",
+        "impact": "moderate",
+        "nodes": 1,
+        "help": "Page should contain a level-one heading"
+      }
+    ]
+  }
+]

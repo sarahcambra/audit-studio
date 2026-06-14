@@ -23,16 +23,16 @@
     --color-input-border: #777777;
 
     --color-gray-25: #fcfcfd;
-    --color-gray-50:  #F8F9FA;
+    --color-gray-50:  #F8F7FC;  /* purple-tinted page bg */
     --color-gray-100: #f3f4f6;
-    --color-gray-200: #e5e7eb;
+    --color-gray-200: #E9E5F0;  /* purple-tinted borders */
     --color-gray-300: #d1d5db;
     --color-gray-400: #9ca3af;
     --color-gray-500: #6b7280;
     --color-gray-600: #4b5563;
     --color-gray-700: #374151;
     --color-gray-800: #1f2937;
-    --color-gray-900: #111827;
+    --color-gray-900: #1E1334;  /* purple-tinted darkest text */
     --color-gray-950: #030712;
 
     /* App “white”: off-white surfaces + Tailwind `white` utility (no #fff) */
@@ -41,21 +41,22 @@
     --color-black: #030712;
 
     /*
-     * Flowbite `primary-*` (bg-primary-700, focus:ring-primary-300, etc.)
-     * Matches :root --accent in index.css (#540CAC = primary-700).
+     * Flowbite `primary-*` — bright violet brand palette.
+     * Centered on #7C3AED (primary-700) to match existing `bg-primary-700`
+     * usage across the app without refactoring component code.
      */
-    --color-primary-25: #faf7fc;
-    --color-primary-50: #f4eff8;
-    --color-primary-100: #e7d9f2;
-    --color-primary-200: #d4b8ea;
-    --color-primary-300: #be93e1;
-    --color-primary-400: #a56cd6;
-    --color-primary-500: #8a45ca;
-    --color-primary-600: #6f24bc;
-    --color-primary-700: #540cac;
-    --color-primary-800: #43088a;
-    --color-primary-900: #310564;
-    --color-primary-950: #160232;
+    --color-primary-25: #faf9ff;
+    --color-primary-50: #f5f3ff;   /* purple-xlight — active nav bg */
+    --color-primary-100: #ede9fe;  /* purple-light — focus ring bg */
+    --color-primary-200: #ddd6fe;
+    --color-primary-300: #c4b5fd;
+    --color-primary-400: #a78bfa;
+    --color-primary-500: #8b5cf6;
+    --color-primary-600: #6d28d9;
+    --color-primary-700: #7C3AED;  /* purple — main brand */
+    --color-primary-800: #5B21B6;  /* purple-dark — hover / active */
+    --color-primary-900: #4c1d95;
+    --color-primary-950: #2e1065;
 
     /*
      * Secondary scale — slate / cool neutral (Tailwind `secondary-*`).

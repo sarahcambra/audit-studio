@@ -1,4 +1,4 @@
-import { supabase } from '../supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Fetch all manual checks for an audit, ordered by sort_order then sc_id.

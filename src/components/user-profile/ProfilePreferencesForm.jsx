@@ -1,5 +1,5 @@
 import { Button } from 'flowbite-react'
-import AuditDetailsFields from '../wizard/AuditDetailsFields'
+import AuditDetailsFields from '@/features/audit/components/AuditForm/AuditDetailsFields'
 
 /**
  * Profile grid card — mirrors Audit Details (step 1) content with Flowbite radios + Next.

@@ -1,4 +1,4 @@
-import { supabase } from '../supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Fetch all KB overrides for a user (their custom rule edits).

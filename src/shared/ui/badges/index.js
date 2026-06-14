@@ -1,0 +1,5 @@
+export { WcagBadge } from './WcagBadge'
+export { StatusBadge } from './StatusBadge'
+export { ImpactBadge } from './ImpactBadge'
+export { ManualCheckBadge } from './ManualCheckBadge'
+export { DecisionBadge } from './DecisionBadge'

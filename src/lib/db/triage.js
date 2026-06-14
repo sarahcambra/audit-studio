@@ -1,4 +1,4 @@
-import { supabase } from '../supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Upsert a triage decision for a violation group.
@@ -36,6 +36,33 @@ export async function getTriageItems(auditId) {
     .select('*')
     .eq('audit_id', auditId)
     .order('created_at', { ascending: true })
+
+  return { data, error }
+}
+
+/**
+ * Fetch a single triage item by ID.
+ */
+export async function getTriageItemById(itemId) {
+  const { data, error } = await supabase
+    .from('triage_items')
+    .select('*')
+    .eq('id', itemId)
+    .single()
+
+  return { data, error }
+}
+
+/**
+ * Fetch scan results with full violation data for a job.
+ * Used to get all node details for expanded triage rows.
+ */
+export async function getScanResultsWithViolations(jobId) {
+  const { data, error } = await supabase
+    .from('scan_results')
+    .select('violations_json, grouped_violations, custom_checks_json')
+    .eq('job_id', jobId)
+    .single()
 
   return { data, error }
 }

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import NewAuditWizard from '../components/NewAuditWizard'
+import { Card } from 'flowbite-react'
+import { customTheme } from '@config/theme.js'
+import NewAuditWizard from '@features/audit/components/AuditForm/NewAuditWizard'
 
 export default function NewAuditPage() {
   const navigate = useNavigate()
@@ -28,9 +30,9 @@ export default function NewAuditPage() {
       </div>
 
       {/* Main content card */}
-      <div className="col-span-full overflow-hidden rounded-lg  bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 min-h-[600px]">
+      <Card theme={customTheme.card} className="col-span-full min-h-[600px]">
         <NewAuditWizard onClose={handleClose} />
-      </div>
+      </Card>
     </div>
   )
 }

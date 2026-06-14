@@ -1,0 +1,21 @@
+{
+  "name": "audit-scan-worker",
+  "version": "2.2.0",
+  "description": "Playwright + Stealth + axe-core scan worker for GCE",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@supabase/supabase-js": "^2.49.4",
+    "playwright": "1.60.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}

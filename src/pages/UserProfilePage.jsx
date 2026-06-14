@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import NewAuditStepper from '../components/NewAuditStepper'
-import AuditNavFooter from '../components/wizard/AuditNavFooter'
-import Step1Info from '../components/wizard/Step1Info'
-import Step2ProjectDetails from '../components/wizard/Step2ProjectDetails'
-import Step3PreTest from '../components/wizard/Step3PreTest'
-import Step4Scope from '../components/wizard/Step4Scope'
-import Step5Review from '../components/wizard/Step5Review'
-import { ProfilePageHeader } from '../components/user-profile'
+import NewAuditStepper from '@features/audit/components/AuditForm/NewAuditStepper'
+import AuditNavFooter from '@features/audit/components/AuditForm/AuditNavFooter'
+import Step1Info from '@features/audit/components/AuditForm/steps/Step1Info'
+import Step2ProjectDetails from '@features/audit/components/AuditForm/steps/Step2ProjectDetails'
+import Step3PreTest from '@features/audit/components/AuditForm/steps/Step3PreTest'
+import Step4Scope from '@features/audit/components/AuditForm/steps/Step4Scope'
+import Step5Review from '@features/audit/components/AuditForm/steps/Step5Review'
+import { ProfilePageHeader } from '@/components/user-profile'
 
 const defaultForm = {
   auditName: '',
@@ -89,7 +89,7 @@ export default function UserProfilePage() {
       />
 
       <div className="w-full max-w-3xl">
-        <div className="rounded bg-neutral-primary border border-default shadow-sm p-5 sm:p-6">
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-5 sm:p-6">
           {renderStep()}
         </div>
       </div>

@@ -1,10 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@lib/supabase'
 
 /**
  * Hook for managing sequential scan execution via Vercel API.
- * Playwright runs server-side, never in browser.
- * Polls Supabase for status and results.
+ * Uses Supabase Realtime subscriptions instead of polling for instant updates.
  *
  * @param {Object} options
  * @param {string} options.auditId - audit ID from database
@@ -12,29 +11,289 @@ import { supabase } from '../lib/supabase'
  * @param {Object} options.audit - { wcagVersion, conformanceLevel }
  * @param {Object} options.scResults - from getApproxScCount(), provides activeList
  * @param {Function} options.onProgress - callback when job status changes
+ * @param {Function} options.onError - callback for scan errors (for toast display)
  */
-export function useScanRunner({ auditId, userId, audit, scResults, onProgress }) {
+export function useScanRunner({ auditId, userId, audit, scResults, onProgress, onError }) {
   const [jobs, setJobs] = useState([])
   const [isRunning, setIsRunning] = useState(false)
   const [currentJobId, setCurrentJobId] = useState(null)
-  const pollIntervalsRef = useRef({})
-  // Ref to track latest job states for atomic updates (avoids stale closures)
-  const latestJobsRef = useRef([])
-  // Ref to track isRunning without closure staleness (used in runAll polling loop)
+  const subscriptionsRef = useRef({})
   const isRunningRef = useRef(false)
 
-  // Keep refs in sync with state
-  useEffect(() => {
-    latestJobsRef.current = jobs
-  }, [jobs])
-
-  useEffect(() => {
-    isRunningRef.current = isRunning
-  }, [isRunning])
+  useEffect(() => { isRunningRef.current = isRunning }, [isRunning])
 
   /**
-   * Add a page scan job to the queue
+   * Subscribe to Supabase Realtime for a specific job ID.
+   * Replaces the old 3s polling approach — updates arrive within ~1s.
    */
+  const subscribeToJob = useCallback((supabaseJobId, localJobId) => {
+    const channel = supabase
+      .channel(`scan-job-${supabaseJobId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'scan_jobs',
+          filter: `id=eq.${supabaseJobId}`,
+        },
+        async (payload) => {
+          const { status, error_message } = payload.new
+
+          if (status === 'complete') {
+            // Fetch full results
+            const { data: results, error: resultsError } = await supabase
+              .from('scan_results')
+              .select('*')
+              .eq('job_id', supabaseJobId)
+              .single()
+
+            if (resultsError) {
+              console.error('Realtime: Failed to fetch results:', resultsError.message)
+              handleJobError(localJobId, supabaseJobId, resultsError.message)
+              return
+            }
+
+            setJobs(prev =>
+              prev.map(j =>
+                j.id === localJobId
+                  ? {
+                      ...j,
+                      status: 'complete',
+                      completedAt: new Date().toISOString(),
+                      results: {
+                        groupedViolations: results.grouped_violations ?? [],
+                        incomplete:        results.incomplete_json    ?? [],
+                        passes:            results.passes_json        ?? [],
+                        inapplicable:      results.inapplicable_json  ?? [],
+                        screenshot:        results.summary?.screenshotUrl ?? null,
+                      },
+                      summary: results.summary,
+                    }
+                  : j
+              )
+            )
+            onProgress?.(localJobId, 'complete')
+            cleanupSubscription(localJobId)
+            setIsRunning(false)
+            setCurrentJobId(null)
+
+          } else if (status === 'error') {
+            handleJobError(localJobId, supabaseJobId, error_message)
+          }
+        }
+      )
+      .subscribe(async (status) => {
+        // CRITICAL FIX: Check status immediately after subscription is ready.
+        // Realtime might miss updates that happen between subscribe() and channel-ready.
+        if (status === 'SUBSCRIBED') {
+          const { data: currentJob } = await supabase
+            .from('scan_jobs')
+            .select('status, error_message, completed_at')
+            .eq('id', supabaseJobId)
+            .single()
+
+          if (currentJob?.status === 'complete') {
+            // Job finished while we were subscribing - fetch results
+            const { data: results } = await supabase
+              .from('scan_results')
+              .select('*')
+              .eq('job_id', supabaseJobId)
+              .single()
+
+            if (results) {
+              setJobs(prev =>
+                prev.map(j =>
+                  j.id === localJobId
+                    ? {
+                        ...j,
+                        status: 'complete',
+                        completedAt: currentJob.completed_at || new Date().toISOString(),
+                        results: {
+                          groupedViolations: results.grouped_violations ?? [],
+                          incomplete:        results.incomplete_json    ?? [],
+                          passes:            results.passes_json        ?? [],
+                          inapplicable:      results.inapplicable_json  ?? [],
+                          screenshot:        results.summary?.screenshotUrl ?? null,
+                        },
+                        summary: results.summary,
+                      }
+                    : j
+                )
+              )
+              onProgress?.(localJobId, 'complete')
+              cleanupSubscription(localJobId)
+              setIsRunning(false)
+              setCurrentJobId(null)
+            }
+          } else if (currentJob?.status === 'error') {
+            handleJobError(localJobId, supabaseJobId, currentJob.error_message)
+          }
+          // If still 'running', Realtime will catch the update when it finishes
+        }
+      })
+
+    subscriptionsRef.current[localJobId] = channel
+
+    // POLLING BACKUP: Check every 3 seconds for 2 minutes (Realtime might miss)
+    // This catches the completion even if Realtime subscription fails
+    let pollCount = 0
+    const maxPolls = 40 // 40 * 3s = 2 minutes
+    const pollInterval = setInterval(async () => {
+      pollCount++
+
+      const { data: jobStatus } = await supabase
+        .from('scan_jobs')
+        .select('status, error_message, completed_at')
+        .eq('id', supabaseJobId)
+        .single()
+
+      if (jobStatus?.status === 'complete') {
+        clearInterval(pollInterval)
+        const { data: results } = await supabase
+          .from('scan_results')
+          .select('*')
+          .eq('job_id', supabaseJobId)
+          .single()
+
+        if (results) {
+          setJobs(prev =>
+            prev.map(j =>
+              j.id === localJobId
+                ? {
+                    ...j,
+                    status: 'complete',
+                    completedAt: jobStatus.completed_at || new Date().toISOString(),
+                    results: {
+                      groupedViolations: results.grouped_violations ?? [],
+                      incomplete:        results.incomplete_json    ?? [],
+                      passes:            results.passes_json        ?? [],
+                      inapplicable:      results.inapplicable_json  ?? [],
+                      screenshot:        results.summary?.screenshotUrl ?? null,
+                    },
+                    summary: results.summary,
+                  }
+                : j
+            )
+          )
+          onProgress?.(localJobId, 'complete')
+          cleanupSubscription(localJobId)
+          setIsRunning(false)
+          setCurrentJobId(null)
+        }
+      } else if (jobStatus?.status === 'error') {
+        clearInterval(pollInterval)
+        handleJobError(localJobId, supabaseJobId, jobStatus.error_message)
+      }
+
+      // Stop polling after max attempts or if subscription was cleaned up
+      if (pollCount >= maxPolls || !subscriptionsRef.current[localJobId]) {
+        clearInterval(pollInterval)
+      }
+    }, 3000)
+
+    // Store interval for cleanup
+    subscriptionsRef.current[`${localJobId}-poll`] = pollInterval
+
+    // Stale-job watchdog: fires after 10 minutes.
+    // Our scan worker has a 5-min hard timeout, so any job still 'running'
+    // at 10 min is dead (container was killed, network dropped, etc.).
+    const fallbackTimer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('scan_jobs')
+        .select('status, error_message, started_at')
+        .eq('id', supabaseJobId)
+        .single()
+
+      if (!data) return // query failed — leave job as-is, user can refresh
+
+      if (data.status === 'complete') {
+        // Realtime missed it — resolve normally
+        const { data: results } = await supabase
+          .from('scan_results')
+          .select('*')
+          .eq('job_id', supabaseJobId)
+          .single()
+
+        setJobs(prev =>
+          prev.map(j =>
+            j.id === localJobId
+              ? {
+                  ...j,
+                  status: 'complete',
+                  completedAt: new Date().toISOString(),
+                  results: {
+                    groupedViolations: results?.grouped_violations ?? [],
+                    incomplete:        results?.incomplete_json    ?? [],
+                    passes:            results?.passes_json        ?? [],
+                    inapplicable:      results?.inapplicable_json  ?? [],
+                    screenshot:        results?.summary?.screenshotUrl ?? null,
+                  },
+                  summary: results?.summary,
+                }
+              : j
+          )
+        )
+        onProgress?.(localJobId, 'complete')
+        cleanupSubscription(localJobId)
+        setIsRunning(false)
+        setCurrentJobId(null)
+
+      } else if (data.status === 'error') {
+        // Realtime missed the error — surface it now
+        handleJobError(localJobId, supabaseJobId, data.error_message)
+
+      } else {
+        // Still 'running' or 'pending' after 10 min → the worker is dead
+        const staleMessage = 'Scan timed out — the scan worker may have restarted. Please try again.'
+        console.warn(`[useScanRunner] Stale job detected: ${supabaseJobId}`)
+        // Mark it as error in the DB so it doesn't stay stuck across page reloads
+        void supabase
+          .from('scan_jobs')
+          .update({ status: 'error', error_message: staleMessage, completed_at: new Date().toISOString() })
+          .eq('id', supabaseJobId)
+          .then(null, () => {})
+        handleJobError(localJobId, supabaseJobId, staleMessage)
+      }
+    }, 600_000) // 10 min watchdog — worker hard limit is 5 min, so anything beyond is stale
+
+    // Store timer for cleanup
+    subscriptionsRef.current[`${localJobId}-timer`] = fallbackTimer
+  }, [onProgress, onError])
+
+  function handleJobError(localJobId, supabaseJobId, errorMessage) {
+    setJobs(prev =>
+      prev.map(j =>
+        j.id === localJobId
+          ? { ...j, status: 'error', completedAt: new Date().toISOString(), error: errorMessage }
+          : j
+      )
+    )
+    onProgress?.(localJobId, 'error', errorMessage)
+    onError?.(errorMessage)
+    cleanupSubscription(localJobId)
+    setIsRunning(false)
+    setCurrentJobId(null)
+  }
+
+  function cleanupSubscription(localJobId) {
+    const channel = subscriptionsRef.current[localJobId]
+    if (channel) {
+      supabase.removeChannel(channel)
+      delete subscriptionsRef.current[localJobId]
+    }
+    const timer = subscriptionsRef.current[`${localJobId}-timer`]
+    if (timer) {
+      clearTimeout(timer)
+      delete subscriptionsRef.current[`${localJobId}-timer`]
+    }
+    const poll = subscriptionsRef.current[`${localJobId}-poll`]
+    if (poll) {
+      clearInterval(poll)
+      delete subscriptionsRef.current[`${localJobId}-poll`]
+    }
+  }
+
   const addPageScan = useCallback((url, scanName) => {
     const jobId = `job-${Date.now()}-${Math.random().toString(36).slice(2)}`
     const job = {
@@ -49,9 +308,6 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
     return jobId
   }, [])
 
-  /**
-   * Add a component scan job to the queue
-   */
   const addComponentScan = useCallback((url, selector, scanName) => {
     const jobId = `job-${Date.now()}-${Math.random().toString(36).slice(2)}`
     const job = {
@@ -67,9 +323,6 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
     return jobId
   }, [])
 
-  /**
-   * Add a flow scan job to the queue
-   */
   const addFlowScan = useCallback((url, steps, scanName) => {
     const jobId = `job-${Date.now()}-${Math.random().toString(36).slice(2)}`
     const job = {
@@ -86,144 +339,7 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
   }, [])
 
   /**
-   * Poll Supabase for job status and results
-   */
-  const pollJobStatus = useCallback(async (supabaseJobId, localJobId) => {
-    try {
-      const { data, error } = await supabase
-        .from('scan_jobs')
-        .select('status, error_message')
-        .eq('id', supabaseJobId)
-        .single()
-
-      if (error) {
-        // Supabase query error - update job state and stop polling
-        console.error('pollJobStatus: Supabase query error:', error.message)
-        setJobs(prev =>
-          prev.map(j =>
-            j.id === localJobId
-              ? {
-                  ...j,
-                  status: 'error',
-                  completedAt: new Date().toISOString(),
-                  error: `Database error: ${error.message}`,
-                }
-              : j
-          )
-        )
-        onProgress?.(localJobId, 'error', error.message)
-
-        if (pollIntervalsRef.current[localJobId]) {
-          clearInterval(pollIntervalsRef.current[localJobId])
-          delete pollIntervalsRef.current[localJobId]
-        }
-        setIsRunning(false)
-        setCurrentJobId(null)
-        return { jobId: supabaseJobId, status: 'error', error: error.message }
-      }
-
-      if (data.status === 'complete') {
-        // Fetch scan results
-        const { data: results, error: resultsError } = await supabase
-          .from('scan_results')
-          .select('*')
-          .eq('job_id', supabaseJobId)
-          .single()
-
-        if (resultsError) {
-          console.error('pollJobStatus: Failed to fetch results:', resultsError.message)
-          throw resultsError
-        }
-
-        setJobs(prev =>
-          prev.map(j =>
-            j.id === localJobId
-              ? {
-                  ...j,
-                  status: 'complete',
-                  completedAt: new Date().toISOString(),
-                  results: {
-                    groupedViolations: results.grouped_violations ?? [],
-                    incomplete:        results.incomplete_json    ?? [],
-                    passes:            results.passes_json        ?? [],
-                    inapplicable:      results.inapplicable_json  ?? [],
-                  },
-                  summary: results.summary,
-                }
-              : j
-          )
-        )
-
-        onProgress?.(localJobId, 'complete')
-
-        // Stop polling
-        if (pollIntervalsRef.current[localJobId]) {
-          clearInterval(pollIntervalsRef.current[localJobId])
-          delete pollIntervalsRef.current[localJobId]
-        }
-
-        setIsRunning(false)
-        setCurrentJobId(null)
-        return { jobId: supabaseJobId, status: 'complete', results }
-      } else if (data.status === 'error') {
-        setJobs(prev =>
-          prev.map(j =>
-            j.id === localJobId
-              ? {
-                  ...j,
-                  status: 'error',
-                  completedAt: new Date().toISOString(),
-                  error: data.error_message,
-                }
-              : j
-          )
-        )
-
-        onProgress?.(localJobId, 'error', data.error_message)
-
-        // Stop polling
-        if (pollIntervalsRef.current[localJobId]) {
-          clearInterval(pollIntervalsRef.current[localJobId])
-          delete pollIntervalsRef.current[localJobId]
-        }
-
-        setIsRunning(false)
-        setCurrentJobId(null)
-        return { jobId: supabaseJobId, status: 'error', error: data.error_message }
-      }
-
-      // Still polling - job in progress
-      return null
-    } catch (err) {
-      // Catch-all for unexpected errors
-      console.error('pollJobStatus: Unexpected error:', err.message)
-      setJobs(prev =>
-        prev.map(j =>
-          j.id === localJobId
-            ? {
-                ...j,
-                status: 'error',
-                completedAt: new Date().toISOString(),
-                error: err.message,
-              }
-            : j
-        )
-      )
-      onProgress?.(localJobId, 'error', err.message)
-
-      if (pollIntervalsRef.current[localJobId]) {
-        clearInterval(pollIntervalsRef.current[localJobId])
-        delete pollIntervalsRef.current[localJobId]
-      }
-      setIsRunning(false)
-      setCurrentJobId(null)
-      return { jobId: supabaseJobId, status: 'error', error: err.message }
-    }
-  }, [onProgress])
-
-  /**
    * Run the next pending job in the queue
-   * @returns {Promise<{jobId: string, status: string} | null>} Job execution result or null
    */
   const runNextJob = useCallback(async () => {
     if (isRunning) {
@@ -231,7 +347,6 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
       return null
     }
 
-    // Priority queue: component (1) > page (2) > flow (3)
     const PRIORITY = { component: 1, page: 2, flow: 3 }
     const pendingJob = jobs
       .filter(j => j.status === 'pending')
@@ -245,7 +360,6 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
     setIsRunning(true)
     setCurrentJobId(pendingJob.id)
 
-    // Update job status to running
     setJobs(prev =>
       prev.map(j =>
         j.id === pendingJob.id
@@ -257,28 +371,17 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
     onProgress?.(pendingJob.id, 'running')
 
     try {
-      // Validate required data before API call
-      if (!auditId) {
-        throw new Error('Missing audit ID. Please start a new audit.')
-      }
-      if (!userId) {
-        throw new Error('User not authenticated. Please sign in again.')
-      }
-      if (!pendingJob.url) {
-        throw new Error('Missing URL for scan job.')
-      }
-      // Validate URL format
-      try {
-        new URL(pendingJob.url)
-      } catch {
-        throw new Error(`Invalid URL format: ${pendingJob.url}`)
-      }
-      // Validate flow steps if applicable
+      if (!auditId) throw new Error('Missing audit ID. Please start a new audit.')
+      if (!userId) throw new Error('User not authenticated. Please sign in again.')
+      if (!pendingJob.url) throw new Error('Missing URL for scan job.')
+      try { new URL(pendingJob.url) } catch { throw new Error(`Invalid URL format: ${pendingJob.url}`) }
       if (pendingJob.scanType === 'flow' && (!pendingJob.steps || !Array.isArray(pendingJob.steps))) {
         throw new Error('Flow scans require valid steps configuration.')
       }
 
-      // Call the server-side API endpoint with retry logic for network errors
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Session expired. Please sign in again.')
+
       const MAX_RETRIES = 3
       let response
       let lastError
@@ -287,10 +390,12 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
         try {
           response = await fetch('/api/scan', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
             body: JSON.stringify({
               auditId,
-              userId,
               scanType: pendingJob.scanType,
               url: pendingJob.url,
               scanName: pendingJob.scanName,
@@ -301,13 +406,12 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
               activeSCList: scResults?.activeList || [],
             }),
           })
-          break // Request succeeded (regardless of status code)
+          break
         } catch (networkErr) {
           lastError = networkErr
-          // Retry on network errors (timeout, DNS failure, lost connection)
           if (attempt < MAX_RETRIES) {
             console.warn(`runNextJob: Request failed (attempt ${attempt}/${MAX_RETRIES}), retrying...`, networkErr.message)
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)) // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
           }
         }
       }
@@ -317,7 +421,6 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
       }
 
       if (!response.ok) {
-        // Handle non-JSON responses (HTML error pages, etc.)
         let errorMessage = 'Scan request failed'
         try {
           const contentType = response.headers.get('content-type')
@@ -328,60 +431,46 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
             errorMessage = `Server error: ${response.status} ${response.statusText}`
           }
         } catch {
-          // Response body is not JSON
           errorMessage = `Server error: ${response.status} ${response.statusText}`
         }
         throw new Error(errorMessage)
       }
 
-      const { jobId, summary } = await response.json()
+      const { jobId } = await response.json()
 
-      // Update job with supabase job ID and summary
       setJobs(prev =>
         prev.map(j =>
           j.id === pendingJob.id
-            ? { ...j, supabaseJobId: jobId, summary: { ...summary, scanName: pendingJob.scanName } }
+            ? { ...j, supabaseJobId: jobId, status: 'running', summary: { scanName: pendingJob.scanName } }
             : j
         )
       )
 
-      // Start polling Supabase for completion
-      const pollInterval = setInterval(() => {
-        pollJobStatus(jobId, pendingJob.id)
-      }, 2000) // Poll every 2 seconds
+      // Subscribe to Realtime updates instead of polling
+      subscribeToJob(jobId, pendingJob.id)
 
-      pollIntervalsRef.current[pendingJob.id] = pollInterval
     } catch (err) {
-      // Update job with error
       setJobs(prev =>
         prev.map(j =>
           j.id === pendingJob.id
-            ? {
-                ...j,
-                status: 'error',
-                completedAt: new Date().toISOString(),
-                error: err.message,
-              }
+            ? { ...j, status: 'error', completedAt: new Date().toISOString(), error: err.message }
             : j
         )
       )
-
       onProgress?.(pendingJob.id, 'error', err.message)
+      onError?.(err.message)
       setIsRunning(false)
       setCurrentJobId(null)
       return { jobId: pendingJob.id, status: 'error', error: err.message }
     }
-  }, [isRunning, jobs, auditId, userId, audit, scResults, onProgress, pollJobStatus])
+  }, [isRunning, jobs, auditId, userId, audit, scResults, onProgress, onError, subscribeToJob])
 
   /**
    * Run all pending jobs sequentially
    */
   const runAll = useCallback(async () => {
     const pendingCount = jobs.filter(j => j.status === 'pending').length
-    if (pendingCount === 0) {
-      console.log('runAll: No pending jobs to run')
-      return []
-    }
+    if (pendingCount === 0) return []
 
     const results = []
     for (let i = 0; i < pendingCount; i++) {
@@ -389,12 +478,10 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
       if (result) results.push(result)
 
       // Wait for current job to complete before starting next
-      // Poll isRunning ref with timeout safeguard
       await new Promise((resolve, reject) => {
         const startTime = Date.now()
-        const timeout = 300000 // 5 minute timeout per job
+        const timeout = 300000
         const checkInterval = setInterval(() => {
-          // Use ref to read current isRunning value without stale closure
           if (!isRunningRef.current) {
             clearInterval(checkInterval)
             resolve()
@@ -411,29 +498,16 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
     return results
   }, [jobs, runNextJob])
 
-  /**
-   * Remove a job from the queue
-   */
   const removeJob = useCallback((jobId) => {
-    // Clear polling interval if exists
-    if (pollIntervalsRef.current[jobId]) {
-      clearInterval(pollIntervalsRef.current[jobId])
-      delete pollIntervalsRef.current[jobId]
-    }
+    cleanupSubscription(jobId)
     setJobs(prev => prev.filter(j => j.id !== jobId))
   }, [])
 
-  /**
-   * Clear all completed jobs
-   */
   const clearCompleted = useCallback(() => {
     setJobs(prev => prev.filter(j => j.status === 'pending' || j.status === 'running'))
   }, [])
 
-  /**
-   * Load completed scan history for this audit from Supabase on mount.
-   * Restores the scan history table when the user navigates away and back.
-   */
+  // Load completed scan history on mount
   useEffect(() => {
     if (!auditId) return
     async function loadHistory() {
@@ -471,6 +545,7 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
             incomplete:        sr.incomplete_json    ?? [],
             passes:            sr.passes_json        ?? [],
             inapplicable:      sr.inapplicable_json  ?? [],
+            screenshot:        sr.summary?.screenshotUrl ?? null,
           },
           summary: sr.summary ?? {},
         }
@@ -480,13 +555,16 @@ export function useScanRunner({ auditId, userId, audit, scResults, onProgress })
     loadHistory()
   }, [auditId])
 
-  /**
-   * Cleanup polling intervals on unmount
-   */
+  // Cleanup all subscriptions on unmount
   useEffect(() => {
     return () => {
-      const intervals = pollIntervalsRef.current
-      Object.values(intervals).forEach(interval => clearInterval(interval))
+      Object.entries(subscriptionsRef.current).forEach(([key, val]) => {
+        if (typeof val === 'number') {
+          clearTimeout(val)
+        } else if (typeof val === 'object' && val?.unsubscribe) {
+          supabase.removeChannel(val)
+        }
+      })
     }
   }, [])
 

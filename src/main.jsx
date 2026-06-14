@@ -4,9 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider as FlowbiteThemeProvider } from 'flowbite-react'
 import './index.css'
 import App from './App.jsx'
-import { ThemeProvider } from './context/ThemeContext.jsx'
-import { AuthProvider } from './context/AuthContext.jsx'
-import { customTheme } from './theme.js'
+import { ThemeProvider } from './shared/context/ThemeContext.jsx'
+import { AuthProvider } from './features/auth'
+import { ToastProvider } from './shared/context/ToastContext.jsx'
+import { customTheme } from './config/theme.js'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -14,7 +15,9 @@ createRoot(document.getElementById('root')).render(
       <FlowbiteThemeProvider theme={customTheme}>
         <ThemeProvider>
           <AuthProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </FlowbiteThemeProvider>

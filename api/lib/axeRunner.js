@@ -92,10 +92,10 @@ async function launchBrowser() {
   })
 }
 
-async function navigateTo(page, url, timeoutMs = 45000) {
-  await page.goto(url, { waitUntil: 'load', timeout: timeoutMs })
-  // Brief pause to let JS-rendered content settle (important for SPAs and news sites)
-  await page.waitForTimeout(1500)
+async function navigateTo(page, url, timeoutMs = 30000) {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs })
+  // Brief pause to let JS-rendered content settle (important for SPAs)
+  await page.waitForTimeout(800)
 }
 
 /**
@@ -108,6 +108,7 @@ async function navigateTo(page, url, timeoutMs = 45000) {
 async function runAxe(page, tags, include = null) {
   let builder = new AxeBuilder({ page }).options({
     runOnly: { type: 'tag', values: tags },
+    timeout: 20000, // axe analysis cap — prevents runaway rule evaluation
   })
   if (include) builder = builder.include(include)
   return builder.analyze()

@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Studio — Improved Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --purple: #7C3AED;
+  --purple-dark: #5B21B6;
+  --purple-light: #EDE9FE;
+  --purple-xlight: #F5F3FF;
+  --bg: #F8F7FC;
+  --sidebar-bg: #FFFFFF;
+  --white: #FFFFFF;
+  --text: #1E1334;
+  --text-2: #6B7280;
+  --text-3: #9CA3AF;
+  --border: #E9E5F0;
+  --green: #059669;
+  --green-bg: #ECFDF5;
+  --green-text: #065F46;
+  --amber: #D97706;
+  --amber-bg: #FFFBEB;
+  --amber-text: #92400E;
+  --red: #DC2626;
+  --red-bg: #FEF2F2;
+  --red-text: #991B1B;
+  --blue: #2563EB;
+  --blue-bg: #EFF6FF;
+  --blue-text: #1E40AF;
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow: 0 4px 12px rgba(124,58,237,.08), 0 1px 3px rgba(0,0,0,.05);
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ──────────────────────────────── */
+.sidebar {
+  width: 216px;
+  min-width: 216px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 16px;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 18px 16px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.logo-mark {
+  width: 28px; height: 28px;
+  background: var(--purple);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-mark svg { width: 16px; height: 16px; fill: white; }
+
+.nav-section-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 10px 18px 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  margin: 1px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-weight: 500;
+  font-size: 13.5px;
+  transition: background .15s, color .15s;
+  text-decoration: none;
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--purple-xlight); color: var(--purple); font-weight: 600; }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .75; }
+.nav-item.active svg { opacity: 1; }
+.nav-chevron { margin-left: auto; width: 14px !important; height: 14px !important; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 18px 0;
+  border-top: 1px solid var(--border);
+}
+.collapse-btn {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text-2); cursor: pointer;
+  padding: 6px 0;
+}
+.collapse-btn svg { width: 15px; height: 15px; }
+
+/* ── MAIN ─────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── TOPBAR ───────────────────────────────── */
+.topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  flex-shrink: 0;
+}
+.topbar-search {
+  flex: 1;
+  max-width: 320px;
+  position: relative;
+}
+.topbar-search input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 12px 7px 34px;
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.topbar-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.topbar-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-3); }
+.topbar-spacer { flex: 1; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.icon-btn {
+  width: 34px; height: 34px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-2);
+  transition: background .15s;
+}
+.icon-btn:hover { background: var(--bg); }
+.icon-btn svg { width: 18px; height: 18px; }
+.notif-wrap { position: relative; }
+.notif-dot {
+  position: absolute; top: 5px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--red); border-radius: 50%;
+  border: 2px solid white;
+}
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ec4899);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: white;
+  cursor: pointer;
+}
+.btn-primary {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--purple);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, transform .1s;
+  white-space: nowrap;
+}
+.btn-primary:hover { background: var(--purple-dark); }
+.btn-primary svg { width: 15px; height: 15px; }
+
+/* ── CONTENT ──────────────────────────────── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 28px 40px;
+}
+.page-header { margin-bottom: 22px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
+.page-subtitle { color: var(--text-2); font-size: 13.5px; margin-top: 2px; }
+
+/* ── AI INSIGHTS CARD ── */
+.ai-card { background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 50%, #6D28D9 100%); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 18px; position: relative; overflow: hidden; }
+.ai-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+.ai-card-icon { width: 38px; height: 38px; background: rgba(255,255,255,.15); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+.ai-card-content { flex: 1; min-width: 0; }
+.ai-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.18); color: white; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 9px; border-radius: 20px; margin-bottom: 5px; }
+.ai-title { font-size: 14px; font-weight: 700; color: white; margin-bottom: 7px; }
+.ai-insights-row { display: flex; gap: 7px; flex-wrap: wrap; }
+.ai-insight-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.95); font-size: 12px; font-weight: 500; padding: 5px 11px; border-radius: 7px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+.ai-insight-chip:hover { background: rgba(255,255,255,.22); }
+.ai-insight-chip svg { width: 13px; height: 13px; opacity: .8; flex-shrink: 0; }
+.ai-dismiss { width: 28px; height: 28px; background: rgba(255,255,255,.12); border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.7); flex-shrink: 0; transition: background .15s; }
+.ai-dismiss:hover { background: rgba(255,255,255,.22); color: white; }
+.ai-dismiss svg { width: 14px; height: 14px; }
+
+/* ── NEW AUDIT DRAWER ── */
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; display: none; backdrop-filter: blur(2px); }
+.drawer-backdrop.open { display: block; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 440px; background: var(--white); z-index: 201; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1); box-shadow: -8px 0 32px rgba(0,0,0,.12); }
+.drawer.open { transform: translateX(0); }
+.drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.drawer-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.drawer-close { width: 32px; height: 32px; border-radius: 7px; border: none; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-2); transition: background .15s; }
+.drawer-close:hover { background: var(--border); }
+.drawer-close svg { width: 16px; height: 16px; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.drawer-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 4px; }
+.form-label .req { color: var(--red); }
+.form-hint { font-size: 12px; color: var(--text-3); }
+.form-input { border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; font-size: 13.5px; font-family: inherit; outline: none; color: var(--text); background: var(--white); transition: border-color .15s, box-shadow .15s; }
+.form-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.form-select { border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; font-size: 13.5px; font-family: inherit; outline: none; color: var(--text); background: var(--white); transition: border-color .15s, box-shadow .15s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; padding-right: 32px; }
+.form-select:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.standard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.standard-opt { border: 2px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all .15s; }
+.standard-opt:hover { border-color: var(--purple); }
+.standard-opt.selected { border-color: var(--purple); background: var(--purple-xlight); }
+.standard-opt-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.standard-opt-desc { font-size: 11.5px; color: var(--text-2); }
+.standard-opt.selected .standard-opt-title { color: var(--purple); }
+.form-divider { height: 1px; background: var(--border); margin: 2px 0; }
+.form-section-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+
+/* ── PIPELINE MINI (table) ── */
+.pipeline-mini { display: flex; align-items: center; gap: 3px; }
+.pm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pm-dot.done { background: var(--purple); }
+.pm-dot.current { background: var(--purple); box-shadow: 0 0 0 2px var(--purple-light); }
+.pm-dot.empty { background: var(--border); }
+.pm-dash { width: 10px; height: 1px; background: var(--border); flex-shrink: 0; }
+.pm-dash.done { background: var(--purple); }
+.pm-label { font-size: 12px; font-weight: 600; color: var(--purple); margin-left: 6px; white-space: nowrap; }
+
+/* ── STAT CARDS ───────────────────────────── */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .1s;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card:hover { border-color: var(--purple); box-shadow: var(--shadow); transform: translateY(-1px); }
+.stat-card.active-filter { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); }
+.stat-card-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.stat-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+.stat-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-icon svg { width: 17px; height: 17px; }
+.stat-icon.purple { background: var(--purple-light); color: var(--purple); }
+.stat-icon.green { background: var(--green-bg); color: var(--green); }
+.stat-icon.amber { background: var(--amber-bg); color: var(--amber); }
+.stat-icon.red { background: var(--red-bg); color: var(--red); }
+.stat-value { font-size: 28px; font-weight: 700; letter-spacing: -.5px; line-height: 1; color: var(--text); }
+.stat-value.green { color: var(--green); }
+.stat-meta { font-size: 12px; color: var(--text-2); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+.stat-meta.positive { color: var(--green); }
+.stat-meta.warning { color: var(--amber); }
+.stat-meta.danger { color: var(--red); }
+.trend { font-size: 11px; font-weight: 500; }
+
+/* ── AUDITS TABLE SECTION ─────────────────── */
+.audits-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.table-search {
+  position: relative;
+  flex: 1;
+  max-width: 280px;
+}
+.table-search input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 12px 7px 32px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.table-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-light); background: white; }
+.table-search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); pointer-events: none; }
+.filter-btn {
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, background .15s;
+}
+.filter-btn:hover { border-color: var(--purple); color: var(--text); background: var(--bg); }
+.filter-btn svg { width: 14px; height: 14px; }
+.toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* ── FILTER TABS ──────────────────────────── */
+.filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.filter-tab {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  border: 1px solid transparent;
+  user-select: none;
+  display: flex; align-items: center; gap: 6px;
+}
+.filter-tab:hover { background: var(--bg); color: var(--text); }
+.filter-tab.active { background: var(--purple-xlight); color: var(--purple); border-color: var(--purple-light); font-weight: 600; }
+.filter-count {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text-2);
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 20px;
+  text-align: center;
+}
+.filter-tab.active .filter-count { background: var(--purple-light); color: var(--purple); }
+
+/* ── RESULTS BAR ──────────────────────────── */
+.results-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.results-count { font-weight: 600; color: var(--text); }
+
+/* ── TABLE ────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #FDFCFF;
+  cursor: pointer;
+  user-select: none;
+}
+thead th:hover { color: var(--text); }
+thead th.sort-active { color: var(--purple); }
+thead th:first-child { width: 40px; padding-left: 16px; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; cursor: pointer; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--purple-xlight); }
+tbody td { padding: 12px 14px; vertical-align: middle; }
+tbody td:first-child { padding-left: 16px; }
+
+/* checkbox */
+.cb {
+  width: 15px; height: 15px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  accent-color: var(--purple);
+}
+
+/* client cell */
+.client-cell { display: flex; align-items: center; gap: 10px; }
+.client-avatar {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.client-info { min-width: 0; }
+.client-name { font-weight: 600; font-size: 13.5px; color: var(--text); }
+.client-url { font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+
+/* standard badge */
+.std-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.std-badge.aa { background: #EEF2FF; color: #4338CA; }
+.std-badge.aaa { background: #FDF4FF; color: #7E22CE; }
+
+/* pipeline */
+.pipeline-cell { min-width: 130px; }
+.pipeline-steps {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.pipeline-seg {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: #E5E7EB;
+  transition: background .2s;
+}
+.pipeline-seg.done { background: var(--purple); }
+.pipeline-seg.current { background: oklch(72% 0.18 280); }
+.pipeline-labels {
+  display: flex;
+  justify-content: space-between;
+}
+.pipeline-label {
+  font-size: 9.5px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.pipeline-label.done { color: var(--purple); font-weight: 600; }
+.pipeline-label.current { color: oklch(55% 0.20 280); font-weight: 600; }
+
+/* score */
+.score-cell { min-width: 70px; }
+.score-wrap { display: flex; align-items: center; gap: 7px; }
+.score-num { font-size: 15px; font-weight: 700; }
+.score-num.good { color: var(--green); }
+.score-num.mid { color: var(--amber); }
+.score-num.bad { color: var(--red); }
+.score-num.na { color: var(--text-3); font-size: 13px; font-weight: 500; }
+.score-bar-wrap { flex: 1; height: 4px; background: #E5E7EB; border-radius: 2px; min-width: 30px; }
+.score-bar { height: 100%; border-radius: 2px; transition: width .3s; }
+.score-bar.good { background: var(--green); }
+.score-bar.mid { background: var(--amber); }
+.score-bar.bad { background: var(--red); }
+
+/* severity */
+.sev-cell { min-width: 140px; }
+.sev-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.sev-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11.5px; font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.sev-tag.critical { background: var(--red-bg); color: var(--red-text); }
+.sev-tag.serious { background: #FFF7ED; color: #9A3412; }
+.sev-tag.moderate { background: var(--amber-bg); color: var(--amber-text); }
+.sev-tag.none { color: var(--green); font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.sev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sev-dot.critical { background: var(--red); }
+.sev-dot.serious { background: #EA580C; }
+.sev-dot.moderate { background: var(--amber); }
+
+/* assignee */
+.assignee-cell { }
+.assignee-avatars { display: flex; }
+.assignee-av {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: white;
+  margin-left: -6px;
+  font-size: 10px;
+}
+.assignee-av:first-child { margin-left: 0; }
+.assignee-unassigned { font-size: 12px; color: var(--text-3); font-style: italic; }
+
+/* due date */
+.due-cell { min-width: 110px; }
+.due-wrap { display: flex; align-items: center; gap: 5px; }
+.due-date { font-size: 13px; color: var(--text-2); }
+.due-date.overdue { color: var(--red); font-weight: 600; }
+.due-date.soon { color: var(--amber); font-weight: 600; }
+.due-set { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.due-set:hover { color: var(--purple); }
+.due-set svg { width: 12px; height: 12px; }
+.overdue-badge {
+  font-size: 10px; font-weight: 700;
+  background: var(--red-bg); color: var(--red);
+  padding: 1px 5px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+
+/* row actions */
+.row-actions {
+  display: flex; align-items: center; gap: 2px;
+}
+tbody tr:hover .row-actions { }
+.row-btn {
+  width: 28px; height: 28px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-2);
+  transition: background .15s, color .15s;
+}
+.row-btn:hover { background: var(--purple-light); color: var(--purple); }
+.row-btn svg { width: 14px; height: 14px; }
+
+/* ── ANNOTATION OVERLAY ───────────────────── */
+.ann-toggle {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--text);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  z-index: 100;
+  transition: background .15s;
+}
+.ann-toggle:hover { background: #2D1F5E; }
+.ann-toggle svg { width: 16px; height: 16px; }
+.ann-badge-count {
+  background: var(--purple);
+  color: white;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+}
+
+.annotation {
+  position: absolute;
+  background: #1E1334;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  max-width: 220px;
+  z-index: 50;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.annotation::before {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  background: #1E1334;
+  border-left: 1px solid rgba(255,255,255,.1);
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+.annotation.arrow-left::before { left: -5px; top: 12px; transform: rotate(-45deg); }
+.annotation.arrow-bottom::before { bottom: -5px; left: 20px; transform: rotate(-135deg); border-color: transparent; border-bottom: 1px solid rgba(255,255,255,.1); border-right: 1px solid rgba(255,255,255,.1); }
+.annotation .ann-title { font-weight: 700; color: #C4B5FD; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+.ann-highlight {
+  outline: 2.5px solid var(--purple) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+  position: relative;
+  z-index: 10;
+}
+.ann-highlight-red {
+  outline: 2.5px dashed var(--red) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.ann-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  background: var(--purple);
+  color: white;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* hide annotations by default */
+.annotations-mode .ann-target { transition: outline .15s; }
+.ann-note { display: none; }
+.annotations-mode .ann-note { display: block; }
+
+</style>
+</head>
+<body id="app">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 16 16"><path d="M3 8 L8 3 L13 8 L8 13Z" fill="white" opacity=".85"/><circle cx="8" cy="8" r="2.5" fill="white"/></svg>
+    </div>
+    Audit Studio
+  </div>
+
+  <a href="#" class="nav-item active">
+    <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+    Dashboard
+  </a>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M3 8h14M8 8v8"/></svg>
+    Audits
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14l6-8 4 5 2-3 4 6H2z"/></svg>
+    Reports
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+
+  <div class="nav-section-label" style="margin-top:8px">Resources</div>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a2 2 0 012-2h10a1 1 0 011 1v13"/><path d="M4 19h13M4 19a2 2 0 01-2-2v-1h4v1a2 2 0 01-2 2z"/><path d="M8 7h5M8 10h5M8 13h3"/></svg>
+    Knowledge base
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+  <a href="#" class="nav-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 6v5l3 2"/></svg>
+    Settings
+    <svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="collapse-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 5l-5 5 5 5"/></svg>
+      Collapse
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-search" id="topbar-search">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M20 20l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search audits, clients, standards…" />
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="btn-primary" onclick="openDrawer()">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+        New Audit
+      </button>
+      <div class="notif-wrap">
+        <button class="icon-btn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2a6 6 0 00-6 6c0 2.387-.697 4.216-1.5 5.5h15c-.803-1.284-1.5-3.113-1.5-5.5a6 6 0 00-6-6z"/><path d="M10 18a2 2 0 002-2H8a2 2 0 002 2z"/></svg>
+        </button>
+        <div class="notif-dot"></div>
+      </div>
+      <button class="icon-btn">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><rect x="12" y="12" width="6" height="6" rx="1"/></svg>
+      </button>
+      <div class="avatar">SL</div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="page-header">
+      <div class="page-title">Audits</div>
+      <div class="page-subtitle">Manage and track accessibility audits across all clients</div>
+    </div>
+
+    <!-- AI INSIGHTS CARD -->
+    <div class="ai-card" id="ai-card">
+      <div class="ai-card-icon">✦</div>
+      <div class="ai-card-content">
+        <div class="ai-badge">✦ AI Insights</div>
+        <div class="ai-title">3 things need your attention today</div>
+        <div class="ai-insights-row">
+          <div class="ai-insight-chip" onclick="setStatFilter('active', document.querySelector('.stat-card[data-filter=active]'))">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2L1 14h14L8 2z"/></svg>
+            UoL &amp; Globo are overdue — 15 critical issues unresolved
+          </div>
+          <div class="ai-insight-chip" onclick="document.querySelector('.filter-tab[data-tab=complete]').click()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l4 4 6-6"/></svg>
+            HSBC is complete — report ready to send
+          </div>
+          <div class="ai-insight-chip" onclick="setStatFilter('triage', document.querySelector('.stat-card[data-filter=triage]'))">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg>
+            150 issues pending triage across 8 audits
+          </div>
+        </div>
+      </div>
+      <button class="ai-dismiss" onclick="document.getElementById('ai-card').style.display='none'" title="Dismiss">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-cards">
+      <div class="stat-card" data-filter="active" onclick="setStatFilter('active', this)">
+        <div class="stat-card-row">
+          <div>
+            <div class="stat-label">Active Audits</div>
+            <div class="stat-value" id="sc-active">9</div>
+          </div>
+          <div class="stat-icon purple">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 6v5l3 2"/></svg>
+          </div>
+        </div>
+        <div class="stat-meta warning">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 3.25v4.5a.75.75 0 01-1.5 0v-4.5a.75.75 0 011.5 0zm0 7a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+          2 overdue · 7 on track
+        </div>
+      </div>
+
+      <div class="stat-card" data-filter="failures" onclick="setStatFilter('failures', this)">
+        <div class="stat-card-row">
+          <div>
+            <div class="stat-label">Confirmed Failures</div>
+            <div class="stat-value green">0</div>
+          </div>
+          <div class="stat-icon green">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 10l4 4 6-7"/><circle cx="10" cy="10" r="8"/></svg>
+          </div>
+        </div>
+        <div class="stat-meta positive">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.25 5.25l-4 4a.75.75 0 01-1.06 0l-2-2a.75.75 0 011.06-1.06L6.75 8.69l3.47-3.47a.75.75 0 011.06 1.06z"/></svg>
+          All clear — no failures found
+        </div>
+      </div>
+
+      <div class="stat-card" data-filter="triage" onclick="setStatFilter('triage', this)">
+        <div class="stat-card-row">
+          <div>
+            <div class="stat-label">Pending Triage</div>
+            <div class="stat-value">150</div>
+          </div>
+          <div class="stat-icon amber">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3v1M10 16v1M3 10H2M18 10h-1M5.05 5.05l-.7-.7M15.65 15.65l-.7-.7M15.65 4.35l-.7.7M5.05 14.95l-.7.7"/><circle cx="10" cy="10" r="4"/></svg>
+          </div>
+        </div>
+        <div class="stat-meta warning">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 14h14L8 1zm.75 5.5v4a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0zm0 6.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+          Across 8 audits · click to filter
+        </div>
+      </div>
+
+      <div class="stat-card" data-filter="review" onclick="setStatFilter('review', this)">
+        <div class="stat-card-row">
+          <div>
+            <div class="stat-label">Needs Review</div>
+            <div class="stat-value">52</div>
+          </div>
+          <div class="stat-icon red">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5"/><circle cx="10" cy="14.5" r=".5" fill="currentColor" stroke="none"/></svg>
+          </div>
+        </div>
+        <div class="stat-meta danger">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 3.25v4.5a.75.75 0 01-1.5 0v-4.5a.75.75 0 011.5 0zm0 7a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+          52 require human check
+        </div>
+      </div>
+    </div>
+
+    <!-- AUDITS TABLE -->
+    <div class="audits-section">
+      <!-- Toolbar (single search + filters) -->
+      <div class="table-toolbar">
+        <div class="table-search">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M20 20l-4.35-4.35"/></svg>
+          <input type="text" id="table-search-input" placeholder="Search by client or URL…" oninput="filterTable()" />
+        </div>
+        <button class="filter-btn" id="filter-btn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
+          Filter
+        </button>
+        <button class="filter-btn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8l5-5 5 5M5 12l5 5 5-5"/></svg>
+          Sort
+        </button>
+        <div class="toolbar-right">
+        </div>
+      </div>
+
+      <!-- Filter tabs as chips (replaces Show only: radio buttons) -->
+      <div class="filter-tabs">
+        <div class="filter-tab active" data-tab="all" onclick="setTab(this, 'all')">All <span class="filter-count" id="count-all">10</span></div>
+        <div class="filter-tab" data-tab="active" onclick="setTab(this, 'active')">Active <span class="filter-count" id="count-active">7</span></div>
+        <div class="filter-tab" data-tab="triage" onclick="setTab(this, 'triage')">Needs triage <span class="filter-count" id="count-triage">2</span></div>
+        <div class="filter-tab" data-tab="complete" onclick="setTab(this, 'complete')">Complete <span class="filter-count" id="count-complete">1</span></div>
+        <div class="filter-tab" data-tab="archived" onclick="setTab(this, 'archived')">Archived <span class="filter-count" id="count-archived">0</span></div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="audits-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="cb" id="cb-all" onchange="toggleAll(this)"></th>
+              <th>Audit / Client</th>
+              <th>Standard</th>
+              <th>Pipeline</th>
+              <th>Score</th>
+              <th>Issues</th>
+              <th>Assignee</th>
+              <th class="sort-active">Due date <span style="opacity:.5">↑</span></th>
+              <th style="width:80px"></th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- rows inserted by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW AUDIT DRAWER -->
+<div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div class="drawer" id="new-audit-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">New Audit</div>
+    <button class="drawer-close" onclick="closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-group">
+      <label class="form-label">Client name <span class="req">*</span></label>
+      <input class="form-input" type="text" placeholder="e.g. Wikipedia, BBC, Globo" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Website URL <span class="req">*</span></label>
+      <input class="form-input" type="url" placeholder="https://example.com" />
+      <span class="form-hint">The root URL — you’ll add specific pages in the Scan tab</span>
+    </div>
+    <div class="form-group">
+      <div class="form-label">WCAG Standard <span class="req">*</span></div>
+      <div class="standard-grid">
+        <div class="standard-opt selected" onclick="selectStandard(this)">
+          <div class="standard-opt-title">WCAG 2.2 AA</div>
+          <div class="standard-opt-desc">Most common — legal baseline in EU &amp; UK</div>
+        </div>
+        <div class="standard-opt" onclick="selectStandard(this)">
+          <div class="standard-opt-title">WCAG 2.2 AAA</div>
+          <div class="standard-opt-desc">Highest level — public sector &amp; gov</div>
+        </div>
+        <div class="standard-opt" onclick="selectStandard(this)">
+          <div class="standard-opt-title">WCAG 2.1 AA</div>
+          <div class="standard-opt-desc">Legacy standard — still widely required</div>
+        </div>
+        <div class="standard-opt" onclick="selectStandard(this)">
+          <div class="standard-opt-title">Section 508</div>
+          <div class="standard-opt-desc">US federal agencies &amp; contractors</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-divider"></div>
+    <div class="form-group">
+      <label class="form-label">Assignee</label>
+      <select class="form-select">
+        <option value="">Unassigned</option>
+        <option>Sofia Lima</option>
+        <option>Marcus Reyes</option>
+        <option>Alex Chen</option>
+        <option>Chris K.</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Due date</label>
+      <input class="form-input" type="date" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
+      <textarea class="form-input" rows="3" placeholder="Any context for this audit…" style="resize:vertical"></textarea>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-primary" style="flex:1;justify-content:center" onclick="window.location='Audit Detail Improved.html'">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+      Create Audit
+    </button>
+    <button class="btn-secondary" onclick="closeDrawer()">Cancel</button>
+  </div>
+</div>
+
+<!-- ANNOTATION CALLOUTS (positioned absolutely) -->
+<div id="annotations" style="display:none; pointer-events:none;">
+  <!-- These get positioned dynamically -->
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const audits = [
+  {
+    id: 1, client: 'Globo', initials: 'G', color: '#7C3AED',
+    url: 'globo.com',
+    standard: 'SC 2.2 AA', standardClass: 'aa',
+    pipeline: ['done','done','current','empty'],
+    score: 68, status: 'active',
+    issues: [{ type:'critical', count:2 },{ type:'serious', count:3 }],
+    assignees: [{ initials:'AL', color:'#0EA5E9' },{ initials:'MR', color:'#8B5CF6' }],
+    dueDate: '2026-06-05', overdue: true
+  },
+  {
+    id: 2, client: 'Temu', initials: 'T', color: '#0EA5E9',
+    url: 'temu.com',
+    standard: 'SC 2.2 AAA', standardClass: 'aaa',
+    pipeline: ['done','current','empty','empty'],
+    score: 91, status: 'active',
+    issues: [{ type:'serious', count:1 }],
+    assignees: [{ initials:'CK', color:'#10B981' }],
+    dueDate: '2026-06-28', overdue: false, soon: false
+  },
+  {
+    id: 3, client: 'Zara', initials: 'Z', color: '#EC4899',
+    url: 'zara.com/en',
+    standard: 'SC 2.2 AAA', standardClass: 'aaa',
+    pipeline: ['done','done','done','current'],
+    score: 84, status: 'triage',
+    issues: [],
+    assignees: [{ initials:'AL', color:'#0EA5E9' }],
+    dueDate: '2026-07-14', overdue: false, soon: false
+  },
+  {
+    id: 4, client: 'UoL', initials: 'U', color: '#F59E0B',
+    url: 'london.ac.uk',
+    standard: 'SC 2.2 AA', standardClass: 'aa',
+    pipeline: ['done','current','empty','empty'],
+    score: 45, status: 'active',
+    issues: [{ type:'critical', count:10 },{ type:'serious', count:5 },{ type:'moderate', count:3 }],
+    assignees: [{ initials:'MR', color:'#8B5CF6' },{ initials:'SL', color:'#EF4444' }],
+    dueDate: '2026-06-09', overdue: true
+  },
+  {
+    id: 5, client: 'Globo', initials: 'G', color: '#7C3AED',
+    url: 'globoplay.globo.com',
+    standard: 'SC 2.2 AAA', standardClass: 'aaa',
+    pipeline: ['done','done','current','empty'],
+    score: 73, status: 'active',
+    issues: [{ type:'critical', count:5 },{ type:'moderate', count:2 }],
+    assignees: [{ initials:'CK', color:'#10B981' }],
+    dueDate: null, overdue: false
+  },
+  {
+    id: 6, client: 'HSBC', initials: 'H', color: '#EF4444',
+    url: 'hsbc.co.uk',
+    standard: 'SC 2.2 AA', standardClass: 'aa',
+    pipeline: ['done','done','done','done'],
+    score: 96, status: 'complete',
+    issues: [],
+    assignees: [{ initials:'AL', color:'#0EA5E9' },{ initials:'CK', color:'#10B981' }],
+    dueDate: '2026-05-30', overdue: false
+  },
+  {
+    id: 7, client: 'Nike', initials: 'N', color: '#1F2937',
+    url: 'nike.com/gb',
+    standard: 'SC 2.2 AA', standardClass: 'aa',
+    pipeline: ['current','empty','empty','empty'],
+    score: null, status: 'triage',
+    issues: [],
+    assignees: [],
+    dueDate: '2026-07-01', overdue: false, soon: false
+  },
+  {
+    id: 8, client: 'Airbnb', initials: 'A', color: '#FF5A5F',
+    url: 'airbnb.co.uk',
+    standard: 'SC 2.2 AAA', standardClass: 'aaa',
+    pipeline: ['done','current','empty','empty'],
+    score: 79, status: 'active',
+    issues: [{ type:'serious', count:4 },{ type:'moderate', count:6 }],
+    assignees: [{ initials:'MR', color:'#8B5CF6' }],
+    dueDate: '2026-06-20', overdue: false, soon: true
+  },
+  {
+    id: 9, client: 'BBC', initials: 'B', color: '#374151',
+    url: 'bbc.co.uk',
+    standard: 'SC 2.2 AA', standardClass: 'aa',
+    pipeline: ['done','done','current','empty'],
+    score: 88, status: 'active',
+    issues: [{ type:'moderate', count:2 }],
+    assignees: [{ initials:'SL', color:'#EF4444' }],
+    dueDate: '2026-06-25', overdue: false
+  },
+  {
+    id: 10, client: 'Notion', initials: 'No', color: '#111827',
+    url: 'notion.so',
+    standard: 'SC 2.2 AAA', standardClass: 'aaa',
+    pipeline: ['done','done','done','current'],
+    score: 82, status: 'active',
+    issues: [{ type:'serious', count:2 },{ type:'minor', count:3 }],
+    assignees: [{ initials:'AL', color:'#0EA5E9' },{ initials:'CK', color:'#10B981' },{ initials:'MR', color:'#8B5CF6' }],
+    dueDate: '2026-07-05', overdue: false
+  }
+];
+
+const pipelineStages = ['Scan','Triage','Review','Done'];
+
+function formatDate(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+}
+
+function scoreClass(s) {
+  if (s === null) return 'na';
+  if (s >= 80) return 'good';
+  if (s >= 60) return 'mid';
+  return 'bad';
+}
+
+function renderRow(a) {
+  const scoreC = scoreClass(a.score);
+  const scoreW = a.score !== null ? (a.score + '%') : '0%';
+
+  const currentIdx = a.pipeline.indexOf('current');
+  const currentLabel = pipelineStages[currentIdx] || 'Done';
+  const pipelineHTML = `<div class="pipeline-mini">
+    ${a.pipeline.map((s,i) => [
+      i > 0 ? `<div class="pm-dash ${a.pipeline[i-1]==='done'?'done':''}"></div>` : '',
+      `<div class="pm-dot ${s==='done'?'done':s==='current'?'current':'empty'}"></div>`
+    ].join('')).join('')}
+    <span class="pm-label">${currentLabel}</span>
+  </div>`;
+
+  let scoreHTML;
+  if (a.score === null) {
+    scoreHTML = `<span class="score-num na">—</span>`;
+  } else {
+    scoreHTML = `
+      <div class="score-wrap">
+        <span class="score-num ${scoreC}">${a.score}%</span>
+        <div class="score-bar-wrap"><div class="score-bar ${scoreC}" style="width:${scoreW}"></div></div>
+      </div>`;
+  }
+
+  let issuesHTML;
+  if (!a.issues || a.issues.length === 0) {
+    issuesHTML = `<span class="sev-tag none"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.25 5.25l-4 4a.75.75 0 01-1.06 0l-2-2a.75.75 0 011.06-1.06L6.75 8.69l3.47-3.47a.75.75 0 011.06 1.06z"/></svg> None</span>`;
+  } else {
+    issuesHTML = `<div class="sev-tags">${a.issues.map(iss => `
+      <span class="sev-tag ${iss.type}">
+        <span class="sev-dot ${iss.type}"></span>${iss.count} ${iss.type}
+      </span>`).join('')}</div>`;
+  }
+
+  let assigneeHTML;
+  if (!a.assignees || a.assignees.length === 0) {
+    assigneeHTML = `<span class="assignee-unassigned">Unassigned</span>`;
+  } else {
+    const visible = a.assignees.slice(0,3);
+    const extra = a.assignees.length - 3;
+    assigneeHTML = `<div class="assignee-avatars">
+      ${visible.map(av => `<div class="assignee-av" style="background:${av.color}" title="${av.initials}">${av.initials}</div>`).join('')}
+      ${extra > 0 ? `<div class="assignee-av" style="background:#9CA3AF">+${extra}</div>` : ''}
+    </div>`;
+  }
+
+  let dueHTML;
+  if (!a.dueDate) {
+    dueHTML = `<span class="due-set"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>Set due date</span>`;
+  } else if (a.overdue) {
+    dueHTML = `<div class="due-wrap"><span class="due-date overdue">${formatDate(a.dueDate)}</span><span class="overdue-badge">Overdue</span></div>`;
+  } else if (a.soon) {
+    dueHTML = `<span class="due-date soon">${formatDate(a.dueDate)} · Soon</span>`;
+  } else {
+    dueHTML = `<span class="due-date">${formatDate(a.dueDate)}</span>`;
+  }
+
+  return `<tr data-status="${a.status}" data-client="${a.client.toLowerCase()}" data-url="${a.url.toLowerCase()}">
+    <td><input type="checkbox" class="cb row-cb"></td>
+    <td>
+      <div class="client-cell">
+        <div class="client-avatar" style="background:${a.color}">${a.initials}</div>
+        <div class="client-info">
+          <div class="client-name">${a.client}</div>
+          <div class="client-url">${a.url}</div>
+        </div>
+      </div>
+    </td>
+    <td><span class="std-badge ${a.standardClass}">${a.standard}</span></td>
+    <td class="pipeline-cell">${pipelineHTML}</td>
+    <td class="score-cell">${scoreHTML}</td>
+    <td class="sev-cell">${issuesHTML}</td>
+    <td class="assignee-cell">${assigneeHTML}</td>
+    <td class="due-cell">${dueHTML}</td>
+    <td>
+      <div class="row-actions">
+        <button class="row-btn" title="Open audit" onclick="window.location='Audit Detail Improved.html'">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H4a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9"/><path d="M11 2h3v3M14 2l-6 6"/></svg>
+        </button>
+        <button class="row-btn" title="Assign">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14s1-4 6-4 6 4 6 4"/></svg>
+        </button>
+        <button class="row-btn" title="More actions">
+          <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="8" cy="13" r="1.2"/></svg>
+        </button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+let currentTab = 'all';
+let currentSearch = '';
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const rows = audits.filter(a => {
+    const matchTab = currentTab === 'all' || a.status === currentTab;
+    const search = currentSearch.toLowerCase();
+    const matchSearch = !search || a.client.toLowerCase().includes(search) || a.url.toLowerCase().includes(search);
+    return matchTab && matchSearch;
+  });
+  tbody.innerHTML = rows.map(renderRow).join('');
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', function(e) {
+      if (e.target.closest('.row-actions') || e.target.type === 'checkbox') return;
+      window.location = 'Audit Detail Improved.html';
+    });
+  });
+  document.querySelector('.results-bar') && (document.querySelector('.results-bar .results-count').textContent = rows.length + ' results');
+}
+
+function setTab(el, tab) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentTab = tab;
+  renderTable();
+}
+
+function setStatFilter(type, card) {
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+  card.classList.add('active-filter');
+  const map = { active: 'active', triage: 'triage', review: 'review', failures: 'all' };
+  const tabMap = { active: 'active', triage: 'triage', review: 'all', failures: 'all' };
+  const tabEl = document.querySelector(`.filter-tab[data-tab="${tabMap[type]}"]`);
+  if (tabEl) setTab(tabEl, tabMap[type]);
+}
+
+function filterTable() {
+  currentSearch = document.getElementById('table-search-input').value;
+  renderTable();
+}
+
+function toggleAll(cb) {
+  document.querySelectorAll('.row-cb').forEach(c => c.checked = cb.checked);
+}
+
+function openDrawer() {
+  document.getElementById('new-audit-drawer').classList.add('open');
+  document.getElementById('drawer-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('new-audit-drawer').classList.remove('open');
+  document.getElementById('drawer-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function selectStandard(el) {
+  el.closest('.standard-grid').querySelectorAll('.standard-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Render on load
+renderTable();
+
+// ── ANNOTATIONS ───────────────────────────────────────────────────
+let annotationsVisible = false;
+const improvements = [
+  {
+    title: 'Removed duplicate search',
+    body: 'One global search in topbar. The table now has its own focused search. Two search bars is confusing.',
+    target: '#table-search-input',
+    side: 'bottom',
+    dx: 0, dy: 48
+  },
+  {
+    title: 'Stat cards are now clickable',
+    body: 'Clicking any KPI card filters the table to that status — Pending Triage → filters to triage rows.',
+    target: '.stat-card:nth-child(3)',
+    side: 'bottom',
+    dx: 0, dy: 8
+  },
+  {
+    title: 'Positive empty state',
+    body: '"0 failures" now renders in green with a checkmark — a good finding, not a broken state.',
+    target: '.stat-card:nth-child(2)',
+    side: 'bottom',
+    dx: 0, dy: 8
+  },
+  {
+    title: 'Client URL visible',
+    body: 'The domain being audited is shown under the client name — essential context missing before.',
+    target: 'tbody tr:first-child .client-info',
+    side: 'right',
+    dx: 8, dy: -10
+  },
+  {
+    title: 'Conformance score',
+    body: 'New column showing a 0–100% score with a visual bar. Replaces the useless "Issues: 0" column.',
+    target: 'thead th:nth-child(5)',
+    side: 'bottom',
+    dx: -60, dy: 8
+  },
+  {
+    title: 'Severity breakdown',
+    body: 'Issues column now shows critical / serious / moderate severity chips, not just a binary "blocking" count.',
+    target: 'thead th:nth-child(6)',
+    side: 'bottom',
+    dx: -60, dy: 8
+  },
+  {
+    title: 'Assignee column',
+    body: 'Who owns this audit? Now visible at a glance — key for team workflows.',
+    target: 'thead th:nth-child(7)',
+    side: 'bottom',
+    dx: -40, dy: 8
+  },
+  {
+    title: 'Due date urgency',
+    body: 'Overdue dates highlighted in red with a badge. "Soon" dates in amber. Unset dates use a subtle action link.',
+    target: 'tbody tr:first-child .due-cell',
+    side: 'left',
+    dx: -240, dy: -8
+  },
+];
+
+function toggleAnnotations() {
+  annotationsVisible = !annotationsVisible;
+  const btn = document.getElementById('ann-toggle');
+  const overlay = document.getElementById('annotations');
+
+  if (annotationsVisible) {
+    btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 15.5l11-11M4.5 4.5l11 11"/></svg> Hide improvements <span class="ann-badge-count">8</span>`;
+    overlay.style.display = 'block';
+    positionAnnotations();
+  } else {
+    btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 6v5"/><circle cx="10" cy="14.5" r=".5" fill="currentColor" stroke="none"/></svg> Show improvements <span class="ann-badge-count">8</span>`;
+    overlay.style.display = 'none';
+    document.querySelectorAll('.ann-highlight').forEach(el => el.classList.remove('ann-highlight'));
+  }
+}
+
+function positionAnnotations() {
+  const overlay = document.getElementById('annotations');
+  overlay.innerHTML = '';
+  document.querySelectorAll('.ann-highlight').forEach(el => el.classList.remove('ann-highlight'));
+
+  improvements.forEach((imp, i) => {
+    const target = document.querySelector(imp.target);
+    if (!target) return;
+    target.classList.add('ann-highlight');
+
+    const rect = target.getBoundingClientRect();
+    const note = document.createElement('div');
+    note.className = `annotation`;
+    note.innerHTML = `<div class="ann-title"><span class="ann-badge" style="display:inline-flex;margin-right:5px">${i+1}</span>${imp.title}</div>${imp.body}`;
+    note.style.position = 'fixed';
+
+    let top, left;
+    if (imp.side === 'bottom') {
+      top = rect.bottom + (imp.dy || 8);
+      left = rect.left + (imp.dx || 0);
+      note.style.setProperty('--arr','bottom');
+    } else if (imp.side === 'right') {
+      top = rect.top + (imp.dy || 0);
+      left = rect.right + (imp.dx || 8);
+      note.classList.add('arrow-left');
+    } else if (imp.side === 'left') {
+      top = rect.top + (imp.dy || 0);
+      left = rect.left + (imp.dx || -230);
+    }
+
+    note.style.top = top + 'px';
+    note.style.left = left + 'px';
+    overlay.appendChild(note);
+  });
+}
+
+window.addEventListener('resize', () => { if (annotationsVisible) positionAnnotations(); });
+</script>
+
+</body>
+</html>
