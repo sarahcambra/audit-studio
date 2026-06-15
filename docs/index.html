@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuditV2 Documentation Hub</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --surface-2: #f1f3f5;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --accent: #0d6efd;
+    --accent-text: #ffffff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
+    --radius: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #21262d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-text: #0d1117;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    min-height: 100vh;
+    transition: background .2s, color .2s;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Header */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(6px);
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto; padding: 1rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .logo {
+    font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: .55rem;
+  }
+  .logo svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .logo span { color: var(--text-muted); font-weight: 500; font-size: .95rem; }
+  .spacer { flex: 1; }
+  .search-wrap {
+    position: relative; flex: 1 1 280px; max-width: 420px;
+  }
+  .search-wrap input {
+    width: 100%; padding: .55rem .85rem .55rem 2.4rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface-2); color: var(--text); font-size: .95rem;
+    outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  .search-wrap svg {
+    position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; opacity: .5; pointer-events: none;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .5rem .85rem; border-radius: var(--radius); font-size: .9rem;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    cursor: pointer; transition: background .15s, border-color .15s;
+    user-select: none;
+  }
+  .btn:hover { background: var(--border); }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* Main */
+  main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+  /* Group */
+  .group { margin-bottom: 2.5rem; }
+  .group-header {
+    display: flex; align-items: baseline; gap: .75rem; margin-bottom: .9rem;
+  }
+  .group-title {
+    font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .group-count {
+    font-size: .8rem; color: var(--text-muted); background: var(--surface-2);
+    padding: .15rem .5rem; border-radius: 999px; border: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.1rem 1.2rem;
+    box-shadow: var(--shadow); transition: box-shadow .2s, transform .15s, border-color .2s;
+    display: flex; flex-direction: column; gap: .35rem;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-hover); border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    transform: translateY(-1px);
+  }
+  .card.hidden { display: none; }
+  .card-title {
+    font-size: 1.05rem; font-weight: 600; line-height: 1.3;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .card-title svg { width: 18px; height: 18px; opacity: .75; flex-shrink: 0; }
+  .card-desc {
+    font-size: .9rem; color: var(--text-muted); line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-meta {
+    margin-top: .4rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+    font-size: .78rem; color: var(--text-muted); font-family: var(--mono);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .15rem .45rem; border-radius: 4px; font-size: .72rem;
+    border: 1px solid var(--border); background: var(--surface-2);
+    text-transform: uppercase; letter-spacing: .03em; font-weight: 600;
+  }
+  .badge-md { color: #198754; border-color: color-mix(in srgb, #198754 25%, var(--border)); }
+  .badge-html { color: #0d6efd; border-color: color-mix(in srgb, #0d6efd 25%, var(--border)); }
+  .badge-excalidraw { color: #a371f7; border-color: color-mix(in srgb, #a371f7 25%, var(--border)); }
+  .badge-json { color: #e36209; border-color: color-mix(in srgb, #e36209 25%, var(--border)); }
+
+  /* Footer */
+  footer {
+    max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 2.5rem;
+    text-align: center; font-size: .85rem; color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+
+  /* Utility */
+  .no-results {
+    text-align: center; padding: 3rem 1rem; color: var(--text-muted);
+    font-size: 1rem; display: none;
+  }
+  .no-results.visible { display: block; }
+
+  @media (max-width: 640px) {
+    .header-inner { padding: .9rem 1rem; }
+    .logo { font-size: 1.15rem; }
+    .search-wrap { max-width: none; width: 100%; order: 3; }
+    main { padding: 1rem; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      AuditV2 <span>/ Docs</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="search" placeholder="Search docs…" autocomplete="off">
+    </div>
+    <button class="btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg id="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+      <svg id="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      <span class="btn-label">Theme</span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- Overview -->
+  <section class="group" data-group="overview">
+    <div class="group-header">
+      <h2 class="group-title">Overview</h2>
+      <span class="group-count" id="count-overview">2</span>
+    </div>
+    <div class="grid">
+      <article class="card" data-keywords="readme overview project quickstart introduction">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <a href="../README.md" target="_blank">README.md</a>
+        </div>
+        <p class="card-desc">Project overview, tech stack, quick-start commands, and high-level architecture summary.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>3.5 KB</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="structure directory module map folders files src scan-worker functions">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <a href="STRUCTURE.md" target="_blank">STRUCTURE.md</a>
+        </div>
+        <p class="card-desc">Comprehensive directory and module map. Every folder and key file explained with purpose and cross-references.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>24.7 KB</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Architecture & Design -->
+  <section class="group" data-group="architecture">
+    <div class="group-header">
+      <h2 class="group-title">Architecture &amp; Design</h2>
+      <span class="group-count" id="count-architecture">2</span>
+    </div>
+    <div class="grid">
+      <article class="card" data-keywords="architecture system scan pipeline data model component hierarchy custom checks">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          <a href="ARCHITECTURE.md" target="_blank">ARCHITECTURE.md</a>
+        </div>
+        <p class="card-desc">System architecture, detailed scan pipeline, data model, component hierarchy, and custom checks architecture.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>29.2 KB</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="diagram excalidraw data flow pipeline visualization">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><line x1="12" y1="22" x2="12" y2="15.5"></line><polyline points="22 8.5 12 15.5 2 8.5"></polyline><polyline points="2 15.5 12 8.5 22 15.5"></polyline><line x1="12" y1="8.5" x2="12" y2="2"></line></svg>
+          <span>Excalidraw Diagrams</span>
+        </div>
+        <p class="card-desc">Visual architecture diagrams. Open with Excalidraw (excalidraw.com) or any text editor (JSON-based).</p>
+        <div class="card-meta">
+          <a class="badge badge-excalidraw" href="diagrams/scan-pipeline.excalidraw" target="_blank">scan-pipeline</a>
+          <a class="badge badge-excalidraw" href="diagrams/data-flow.excalidraw" target="_blank">data-flow</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Operations -->
+  <section class="group" data-group="operations">
+    <div class="group-header">
+      <h2 class="group-title">Operations</h2>
+      <span class="group-count" id="count-operations">3</span>
+    </div>
+    <div class="grid">
+      <article class="card" data-keywords="operations manual env variables gce worker firebase functions supabase security checklist">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          <a href="OPERATIONS.md" target="_blank">OPERATIONS.md</a>
+        </div>
+        <p class="card-desc">Environment variables, GCE worker ops, Firebase Functions ops, Supabase ops, security checklist, and development standards.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>36.3 KB</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="deployment guide firebase hosting gce worker domain https verification">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <a href="DEPLOYMENT.md" target="_blank">DEPLOYMENT.md</a>
+        </div>
+        <p class="card-desc">Step-by-step deployment: local dev, Firebase Hosting, Firebase Functions, GCE worker, domain + HTTPS, end-to-end verification.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>17.3 KB</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="troubleshooting scan worker gce vm firebase frontend supabase chrome debug">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <a href="TROUBLESHOOTING.md" target="_blank">TROUBLESHOOTING.md</a>
+        </div>
+        <p class="card-desc">Symptom-diagnosis-fix-prevention entries for scan worker, GCE VM, Firebase Functions, frontend, Supabase, and Chrome issues.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>20.6 KB</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Reference -->
+  <section class="group" data-group="reference">
+    <div class="group-header">
+      <h2 class="group-title">Reference</h2>
+      <span class="group-count" id="count-reference">3</span>
+    </div>
+    <div class="grid">
+      <article class="card" data-keywords="library lib supabase db utilities modules curated data mappings dom helpers">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <a href="LIBRARY.md" target="_blank">LIBRARY.md</a>
+        </div>
+        <p class="card-desc">Complete reference for every utility module in <code>src/lib/</code> — Supabase clients, DB helpers, DOM utilities, and violation processing.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>22.0 KB</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="components pages scanpanel scanresults react jsx props state">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          <a href="COMPONENTS.md" target="_blank">COMPONENTS.md</a>
+        </div>
+        <p class="card-desc">Components &amp; pages documentation — props, state, side effects, parent/child relationships for key React components.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>11.8 KB</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="hooks useScanRunner auth provider react custom hooks">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          <a href="HOOKS.md" target="_blank">HOOKS.md</a>
+        </div>
+        <p class="card-desc">Custom React hooks documentation — <code>useScanRunner</code>, <code>AuthProvider</code> / <code>useAuth</code>, and other key hooks.</p>
+        <div class="card-meta">
+          <span class="badge badge-md">MD</span>
+          <span>2.4 KB</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Tools -->
+  <section class="group" data-group="tools">
+    <div class="group-header">
+      <h2 class="group-title">Tools</h2>
+      <span class="group-count" id="count-tools">2</span>
+    </div>
+    <div class="grid">
+      <article class="card" data-keywords="rules explorer html interactive axe-core wcag violations rule enrichments">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <a href="rules/explorer.html" target="_blank">Rule Explorer</a>
+        </div>
+        <p class="card-desc">Interactive HTML explorer for axe-core rule enrichments. Browse rules by category, impact level, and remediation guidance.</p>
+        <div class="card-meta">
+          <span class="badge badge-html">HTML</span>
+          <span>rules/explorer.html</span>
+        </div>
+      </article>
+      <article class="card" data-keywords="rules json data catalog axe core rules list metadata">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+          <a href="rules/rules.json" target="_blank">rules.json</a>
+        </div>
+        <p class="card-desc">Machine-readable catalog of axe-core rules with metadata, tags, impact levels, and remediation pointers used by the scan engine.</p>
+        <div class="card-meta">
+          <span class="badge badge-json">JSON</span>
+          <span>rules/rules.json</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Archive -->
+  <section class="group" data-group="archive">
+    <div class="group-header">
+      <h2 class="group-title">Archive</h2>
+      <span class="group-count" id="count-archive">12</span>
+    </div>
+    <div class="grid">
+      <article class="card" data-keywords="phase1 architecture plan migration gcp remediation comprehensive audit">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/ARCHITECTURE_PLAN.md" target="_blank">ARCHITECTURE_PLAN.md</a>
+        </div>
+        <p class="card-desc">Original architecture planning document before consolidation.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="phase1 complete">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/PHASE1_COMPLETE.md" target="_blank">PHASE1_COMPLETE.md</a>
+        </div>
+        <p class="card-desc">Phase 1 completion report.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="phase2 complete">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/PHASE2_COMPLETE.md" target="_blank">PHASE2_COMPLETE.md</a>
+        </div>
+        <p class="card-desc">Phase 2 completion report.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="phase3 complete">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/PHASE3_COMPLETE.md" target="_blank">PHASE3_COMPLETE.md</a>
+        </div>
+        <p class="card-desc">Phase 3 completion report.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="phase4 complete">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/PHASE4_COMPLETE.md" target="_blank">PHASE4_COMPLETE.md</a>
+        </div>
+        <p class="card-desc">Phase 4 completion report.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="architecture complete">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/ARCHITECTURE_COMPLETE.md" target="_blank">ARCHITECTURE_COMPLETE.md</a>
+        </div>
+        <p class="card-desc">Final consolidated architecture document (superseded by current docs).</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="migration gcp">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/MIGRATION_GCP.md" target="_blank">MIGRATION_GCP.md</a>
+        </div>
+        <p class="card-desc">Google Cloud Platform migration notes.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="scan worker fix prompt">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/SCAN_WORKER_FIX_PROMPT.md" target="_blank">SCAN_WORKER_FIX_PROMPT.md</a>
+        </div>
+        <p class="card-desc">Original prompt and notes for scan worker fixes.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="technical audit 2026-05-30">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/TECHNICAL_AUDIT_2026-05-30.md" target="_blank">TECHNICAL_AUDIT_2026-05-30.md</a>
+        </div>
+        <p class="card-desc">Technical audit report from 30 May 2026.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="custom checks plan">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/CUSTOM_CHECKS_PLAN.md" target="_blank">CUSTOM_CHECKS_PLAN.md</a>
+        </div>
+        <p class="card-desc">Plan for custom accessibility checks beyond axe-core.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="remediation plan">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/REMEDIATION_PLAN.md" target="_blank">REMEDIATION_PLAN.md</a>
+        </div>
+        <p class="card-desc">Remediation strategy and timeline.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+      <article class="card" data-keywords="comprehensive audit report">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 5 9 18 6 12 2 12"></polyline></svg>
+          <a href="archive/COMPREHENSIVE_AUDIT_REPORT.md" target="_blank">COMPREHENSIVE_AUDIT_REPORT.md</a>
+        </div>
+        <p class="card-desc">Full comprehensive audit report.</p>
+        <div class="card-meta"><span class="badge badge-md">MD</span><span>archive/</span></div>
+      </article>
+    </div>
+  </section>
+
+  <div class="no-results" id="noResults">
+    <p>No documents match your search.</p>
+  </div>
+</main>
+
+<footer>
+  <p>AuditV2 Documentation Hub &middot; Generated 2026-06-15</p>
+  <p style="margin-top:.25rem; opacity:.7;">Open directly from disk (<code>file://</code>) — no server required.</p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // Theme toggle
+  const themeToggle = document.getElementById('themeToggle');
+  const moon = document.getElementById('moon');
+  const sun = document.getElementById('sun');
+  const stored = localStorage.getItem('av2docs-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let isDark = stored ? stored === 'dark' : prefersDark;
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    moon.style.display = isDark ? 'none' : 'block';
+    sun.style.display = isDark ? 'block' : 'none';
+  }
+  applyTheme();
+
+  themeToggle.addEventListener('click', () => {
+    isDark = !isDark;
+    localStorage.setItem('av2docs-theme', isDark ? 'dark' : 'light');
+    applyTheme();
+  });
+
+  // Search / filter
+  const searchInput = document.getElementById('search');
+  const cards = document.querySelectorAll('.card');
+  const groups = document.querySelectorAll('.group');
+  const noResults = document.getElementById('noResults');
+
+  function updateCounts() {
+    groups.forEach(group => {
+      const visible = group.querySelectorAll('.card:not(.hidden)').length;
+      const countEl = group.querySelector('.group-count');
+      if (countEl) countEl.textContent = visible;
+      group.style.display = visible === 0 ? 'none' : '';
+    });
+    const anyVisible = document.querySelectorAll('.card:not(.hidden)').length > 0;
+    noResults.classList.toggle('visible', !anyVisible);
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    const raw = e.target.value.trim().toLowerCase();
+    const terms = raw.split(/\s+/).filter(Boolean);
+
+    cards.forEach(card => {
+      const text = (card.textContent + ' ' + (card.dataset.keywords || '')).toLowerCase();
+      const match = terms.length === 0 || terms.every(t => text.includes(t));
+      card.classList.toggle('hidden', !match);
+    });
+
+    updateCounts();
+  });
+
+  // Keyboard shortcut: /
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+
+  // Smooth scroll to first match on Enter in search
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const first = document.querySelector('.card:not(.hidden)');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+})();
+</script>
+</body>
+</html>

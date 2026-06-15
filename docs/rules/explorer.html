@@ -1,0 +1,4154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rule Enrichment Explorer</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-text: #ffffff;
+    --chip-bg: #eef2ff;
+    --chip-text: #3730a3;
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+    --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  [data-theme="dark"] {
+    --bg: #0b0f19;
+    --surface: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #1f2937;
+    --primary: #3b82f6;
+    --primary-text: #ffffff;
+    --chip-bg: #1e293b;
+    --chip-text: #93c5fd;
+    --code-bg: #0b0f19;
+    --code-text: #e2e8f0;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.3);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    background: var(--bg);
+    color: var(--text);
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; margin-bottom: 16px; }
+  h1 { font-size: 22px; margin: 0; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .search-wrap { position: relative; flex: 1 1 260px; min-width: 220px; }
+  .search-wrap input {
+    width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font-size: 14px; outline: none;
+  }
+  .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer;
+  }
+  .btn[aria-pressed="true"] { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+  .btn:hover { filter: brightness(0.98); }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .results { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden; outline: none; transition: transform .06s ease, box-shadow .2s ease;
+  }
+  .card:focus-visible { box-shadow: 0 0 0 3px rgba(37,99,235,0.25); }
+  .card-header {
+    display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; cursor: pointer; user-select: none;
+  }
+  .card-header .meta { flex: 1; }
+  .rule-id { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; color: var(--muted); }
+  .rule-title { font-weight: 600; font-size: 15px; margin-top: 2px; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .pill {
+    font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-text); font-weight: 600;
+  }
+  .pill.difficulty-easy { background: #dcfce7; color: #166534; }
+  .pill.difficulty-medium { background: #fef9c3; color: #854d0e; }
+  .pill.difficulty-hard { background: #fee2e2; color: #991b1b; }
+  [data-theme="dark"] .pill.difficulty-easy { background: #14532d; color: #bbf7d0; }
+  [data-theme="dark"] .pill.difficulty-medium { background: #713f12; color: #fde047; }
+  [data-theme="dark"] .pill.difficulty-hard { background: #7f1d1d; color: #fecaca; }
+  .chevron { margin-left: auto; color: var(--muted); transition: transform .2s ease; flex-shrink: 0; }
+  .card[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+  .card-body { display: none; padding: 0 16px 16px; }
+  .card[aria-expanded="true"] .card-body { display: block; }
+  .section { margin-top: 12px; }
+  .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .section p { margin: 0; font-size: 14px; line-height: 1.55; }
+  .code-block { position: relative; margin-top: 8px; }
+  .code-block pre {
+    margin: 0; padding: 12px; border-radius: var(--radius-sm); background: var(--code-bg); color: var(--code-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px;
+    line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word;
+  }
+  .code-block .copy {
+    position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: 11px; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #e2e8f0; cursor: pointer;
+  }
+  .code-block .copy:hover { background: rgba(255,255,255,0.15); }
+  .links { display: flex; flex-direction: column; gap: 6px; }
+  .links a { color: var(--primary); text-decoration: none; font-size: 13px; }
+  .links a:hover { text-decoration: underline; }
+  .tag-list { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 12px; padding: 4px 8px; border-radius: 6px; background: var(--chip-bg); color: var(--chip-text); }
+  .empty { text-align: center; color: var(--muted); padding: 40px 16px; }
+  .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--border); color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .theme-btn { position: fixed; top: 16px; right: 16px; z-index: 1000; }
+  .highlight { background: rgba(253,224,71,0.35); padding: 1px 2px; border-radius: 3px; }
+  [data-theme="dark"] .highlight { background: rgba(253,224,71,0.2); }
+</style>
+</head>
+<body>
+  <button class="btn theme-btn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+  <div class="container">
+    <header>
+      <h1>🔍 Rule Enrichment Explorer</h1>
+      <div class="controls">
+        <span class="kbd">/</span> <span style="font-size:12px;color:var(--muted)">Search</span>
+        <span class="kbd">↑↓</span> <span style="font-size:12px;color:var(--muted)">Navigate</span>
+        <span class="kbd">Enter</span> <span style="font-size:12px;color:var(--muted)">Expand</span>
+        <span class="kbd">Esc</span> <span style="font-size:12px;color:var(--muted)">Close</span>
+      </div>
+    </header>
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input id="search" type="text" placeholder="Search by rule ID, title, or notes…" autocomplete="off" />
+    </div>
+    <div class="filters" id="filters">
+      <div class="filter-group">
+        <span class="filter-label">Type</span>
+        <button class="btn filter" data-filter="ruleType" data-value="wcag" aria-pressed="false">WCAG</button>
+        <button class="btn filter" data-filter="ruleType" data-value="best-practice" aria-pressed="false">Best Practice</button>
+        <button class="btn filter" data-filter="ruleType" data-value="experimental" aria-pressed="false">Experimental</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Difficulty</span>
+        <button class="btn filter" data-filter="fixDifficulty" data-value="Easy" aria-pressed="false">Easy</button>
+        <button class="btn filter" data-filter="fixDifficulty" data-value="Medium" aria-pressed="false">Medium</button>
+        <button class="btn filter" data-filter="fixDifficulty" data-value="Hard" aria-pressed="false">Hard</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Issue</span>
+        <button class="btn filter" data-filter="issueType" data-value="failure" aria-pressed="false">Failure</button>
+        <button class="btn filter" data-filter="issueType" data-value="needs review" aria-pressed="false">Needs Review</button>
+        <button class="btn filter" data-filter="issueType" data-value="failure, needs review" aria-pressed="false">Both</button>
+      </div>
+    </div>
+    <div class="results" id="results">Loading…</div>
+    <div class="grid" id="grid" role="list"></div>
+  </div>
+
+  <!-- Inline data placeholder: generate-data.js replaces this block -->
+  <script type="application/json" id="rules-data">
+[
+  {
+    "id": "accesskeys",
+    "auditorTitle": "Duplicate accesskey attribute",
+    "ruleType": "best-practice",
+    "auditorNotes": "Accesskey values must be unique per page. Duplicate accesskeys can confuse keyboard users trying to navigate quickly.",
+    "wcagTechniques": [
+      {
+        "id": "G202",
+        "title": "Ensuring keyboard control for all functionality",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G202"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure each accesskey value is unique. Consider if accesskeys are needed at all, as they can conflict with browser shortcuts.",
+    "badExample": "<button accesskey='s'>Save</button>\n<button accesskey='s'>Search</button>",
+    "goodExample": "<button accesskey='s'>Save</button>\n<button accesskey='e'>Search</button>",
+    "codeHighlight": "accesskey",
+    "affectedUsers": [
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "area-alt",
+    "auditorTitle": "Image map area missing alt text",
+    "ruleType": "wcag",
+    "auditorNotes": "Active area elements in image maps must have alternative text describing the destination or purpose of the link.",
+    "wcagTechniques": [
+      {
+        "id": "H24",
+        "title": "Providing text alternatives for image map areas",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H24"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add alt attribute to each area element describing the link destination.",
+    "badExample": "<area shape='rect' coords='0,0,100,100' href='page.html'>",
+    "goodExample": "<area shape='rect' coords='0,0,100,100' href='page.html' alt='Go to Products'>",
+    "codeHighlight": "alt",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-allowed-attr",
+    "auditorTitle": "ARIA attribute not allowed for this role",
+    "ruleType": "wcag",
+    "auditorNotes": "Certain ARIA attributes are only valid on specific roles. Check the ARIA specification for valid attribute-role combinations.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA5",
+        "title": "Using WAI-ARIA state and property attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA5"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to using role attribute on wrong element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove invalid ARIA attributes or change the element's role to one that supports them.",
+    "badExample": "<div role='button' aria-live='polite'>Click me</div>",
+    "goodExample": "<div role='button' aria-pressed='false'>Toggle</div>",
+    "codeHighlight": "aria-",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-allowed-role",
+    "auditorTitle": "ARIA role not appropriate for element",
+    "ruleType": "best-practice",
+    "auditorNotes": "Some roles should not be used on certain HTML elements as they conflict with native semantics.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA state and property attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove the conflicting role or use a different element that matches the intended role.",
+    "badExample": "<button role='link'>Submit</button>",
+    "goodExample": "<button>Submit</button>\n<a href='/page'>Go to Page</a>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-braille-equivalent",
+    "auditorTitle": "ARIA braille attribute missing equivalent",
+    "ruleType": "wcag",
+    "auditorNotes": "aria-braillelabel and aria-brailleroledescription must have non-braille equivalents for users without braille displays.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure aria-label or aria-labelledby is present alongside aria-braillelabel.",
+    "badExample": "<div aria-braillelabel='XYZ' role='img'></div>",
+    "goodExample": "<div aria-label='Chart showing sales' aria-braillelabel='XYZ' role='img'></div>",
+    "codeHighlight": "aria-braille",
+    "affectedUsers": [
+      "Braille display users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-command-name",
+    "auditorTitle": "ARIA command missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Elements with role='button', role='link', or role='menuitem' must have accessible name via aria-label, aria-labelledby, or text content.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA14",
+        "title": "Using aria-label to provide an invisible label",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA14"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Button Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+      }
+    ],
+    "clientFix": "Add aria-label or aria-labelledby, or ensure the element has visible text content.",
+    "badExample": "<div role='button' tabindex='0'><i class='icon'></i></div>",
+    "goodExample": "<div role='button' tabindex='0' aria-label='Close'><i class='icon'></i></div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users",
+      "Speech recognition users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-conditional-attr",
+    "auditorTitle": "ARIA conditional attribute misused",
+    "ruleType": "wcag",
+    "auditorNotes": "Certain ARIA attributes are only required or valid under specific conditions based on the element's state.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA5",
+        "title": "Using WAI-ARIA state and property attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA5"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to incorrect ARIA attribute usage",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Review ARIA specification for conditional attributes and ensure correct usage based on element state.",
+    "badExample": "<div role='option' aria-selected='true'></div>",
+    "goodExample": "<div role='option' aria-selected='false'></div>",
+    "codeHighlight": "aria-",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-deprecated-role",
+    "auditorTitle": "Deprecated ARIA role used",
+    "ruleType": "wcag",
+    "auditorNotes": "Some ARIA roles are deprecated and should not be used. They may not be supported by assistive technologies.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to deprecated ARIA role",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Replace deprecated role with current equivalent. Check ARIA 1.2 spec for current roles.",
+    "badExample": "<div role='directory'>...</div>",
+    "goodExample": "<ul>...</ul>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-dialog-name",
+    "auditorTitle": "ARIA dialog missing accessible name",
+    "ruleType": "best-practice",
+    "auditorNotes": "Dialog and alertdialog roles must have accessible names to identify their purpose to screen reader users.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA8",
+        "title": "Using aria-label for link purpose",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA8"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Dialog Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+      }
+    ],
+    "clientFix": "Add aria-label or aria-labelledby to describe the dialog's purpose.",
+    "badExample": "<div role='dialog'>...</div>",
+    "goodExample": "<div role='dialog' aria-label='Shipping Address Form'>...</div>",
+    "codeHighlight": "role=dialog",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-hidden-body",
+    "auditorTitle": "Page hidden from assistive technologies",
+    "ruleType": "wcag",
+    "auditorNotes": "Setting aria-hidden='true' on the body element hides the entire page from screen readers, making it completely inaccessible.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using aria-hidden to hide content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F93",
+        "title": "Failure due to hiding content with aria-hidden",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F93"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove aria-hidden from the body element. Use it sparingly only on specific decorative elements.",
+    "badExample": "<body aria-hidden='true'>",
+    "goodExample": "<body>",
+    "codeHighlight": "aria-hidden",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-hidden-focus",
+    "auditorTitle": "Hidden element contains focusable content",
+    "ruleType": "wcag",
+    "auditorNotes": "Elements with aria-hidden='true' must not contain focusable elements or be focusable themselves. This creates a keyboard trap for screen reader users.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using aria-hidden to hide content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to focusable element inside aria-hidden",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove focusable elements from inside aria-hidden containers, or remove aria-hidden from the container.",
+    "badExample": "<div aria-hidden='true'>\n  <button>Click me</button>\n</div>",
+    "goodExample": "<div aria-hidden='true'>\n  <span>Decorative icon</span>\n</div>",
+    "codeHighlight": "aria-hidden",
+    "affectedUsers": [
+      "Screen reader users",
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-input-field-name",
+    "auditorTitle": "ARIA input field missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Custom input fields using ARIA (role='textbox', role='combobox', role='spinbutton', etc.) must have an accessible name.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA14",
+        "title": "Using aria-label to provide an invisible label",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA14"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Combobox Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/"
+      }
+    ],
+    "clientFix": "Add aria-label, aria-labelledby, or ensure visible text provides the accessible name.",
+    "badExample": "<div role='textbox' contenteditable='true'></div>",
+    "goodExample": "<div role='textbox' contenteditable='true' aria-label='Comments'></div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users",
+      "Speech recognition users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-meter-name",
+    "auditorTitle": "ARIA meter missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Elements with role='meter' must have an accessible name describing what is being measured.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Meter Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/meter/"
+      }
+    ],
+    "clientFix": "Add aria-label or aria-labelledby to describe what the meter measures.",
+    "badExample": "<div role='meter' aria-valuenow='50' aria-valuemin='0' aria-valuemax='100'></div>",
+    "goodExample": "<div role='meter' aria-label='Disk usage' aria-valuenow='50' aria-valuemin='0' aria-valuemax='100'></div>",
+    "codeHighlight": "role=meter",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-progressbar-name",
+    "auditorTitle": "ARIA progressbar missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Elements with role='progressbar' must have an accessible name describing the progress being shown.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Progressbar Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/progressbar/"
+      }
+    ],
+    "clientFix": "Add aria-label or aria-labelledby to describe what progress is being shown.",
+    "badExample": "<div role='progressbar' aria-valuenow='75'></div>",
+    "goodExample": "<div role='progressbar' aria-label='Upload progress' aria-valuenow='75'></div>",
+    "codeHighlight": "role=progressbar",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-prohibited-attr",
+    "auditorTitle": "Prohibited ARIA attribute used",
+    "ruleType": "wcag",
+    "auditorNotes": "Certain ARIA attributes are prohibited on specific roles or elements. Using them can cause assistive technology to ignore the element.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA5",
+        "title": "Using WAI-ARIA state and property attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA5"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to prohibited ARIA attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove prohibited ARIA attributes from the element. Check ARIA spec for allowed attributes per role.",
+    "badExample": "<div role='generic' aria-label='Description'>...</div>",
+    "goodExample": "<div aria-label='Description'>...</div>",
+    "codeHighlight": "aria-",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-required-attr",
+    "auditorTitle": "ARIA role missing required attributes",
+    "ruleType": "wcag",
+    "auditorNotes": "Certain ARIA roles require specific attributes. For example, role='checkbox' requires aria-checked.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA state and property attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to incomplete ARIA implementation",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add the required ARIA attribute for the given role. Check ARIA spec for required attributes per role.",
+    "badExample": "<div role='checkbox' tabindex='0'>Subscribe</div>",
+    "goodExample": "<div role='checkbox' tabindex='0' aria-checked='false'>Subscribe</div>",
+    "codeHighlight": "aria-",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-required-children",
+    "auditorTitle": "ARIA parent missing required children",
+    "ruleType": "wcag",
+    "auditorNotes": "Certain ARIA roles require specific child roles. For example, role='listbox' must contain role='option' children.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA17",
+        "title": "Using grouping roles to identify related form controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA17"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to missing required child roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Listbox Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/listbox/"
+      }
+    ],
+    "clientFix": "Add required child elements with appropriate roles. Check ARIA spec for required children per parent role.",
+    "badExample": "<div role='listbox'>\n  <div>Option 1</div>\n</div>",
+    "goodExample": "<div role='listbox'>\n  <div role='option'>Option 1</div>\n</div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-required-parent",
+    "auditorTitle": "ARIA child missing required parent",
+    "ruleType": "wcag",
+    "auditorNotes": "Certain ARIA roles must be contained within specific parent roles. For example, role='option' must be inside role='listbox' or role='select'.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA17",
+        "title": "Using grouping roles to identify related form controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA17"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to missing required parent role",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Listbox Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/listbox/"
+      }
+    ],
+    "clientFix": "Wrap the element in a container with the required parent role. Check ARIA spec for required parent per child role.",
+    "badExample": "<div role='option'>Option 1</div>",
+    "goodExample": "<div role='listbox'>\n  <div role='option'>Option 1</div>\n</div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-roledescription",
+    "auditorTitle": "aria-roledescription on element without semantic role",
+    "ruleType": "wcag",
+    "auditorNotes": "aria-roledescription must be on elements with an implicit or explicit role. It customizes how assistive technologies announce the role.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to invalid ARIA usage",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add an explicit role to the element or ensure it has an implicit role before using aria-roledescription.",
+    "badExample": "<div aria-roledescription='slide'>...</div>",
+    "goodExample": "<div role='group' aria-roledescription='slide'>...</div>",
+    "codeHighlight": "aria-roledescription",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-roles",
+    "auditorTitle": "Invalid ARIA role value",
+    "ruleType": "wcag",
+    "auditorNotes": "ARIA roles must be valid values from the ARIA specification. Invalid roles are ignored by assistive technologies.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to invalid ARIA role",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Replace with a valid ARIA role from the ARIA 1.2 specification. Check spelling and case sensitivity.",
+    "badExample": "<div role='slider-bar'>...</div>",
+    "goodExample": "<div role='slider'>...</div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-text",
+    "auditorTitle": "role=text has focusable descendants",
+    "ruleType": "best-practice",
+    "auditorNotes": "role=text is for static text content and should not contain focusable elements like links or buttons.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove focusable elements from inside role=text or use a different role.",
+    "badExample": "<div role='text'>\n  <a href='/'>Link</a>\n</div>",
+    "goodExample": "<div role='text'>Static text content</div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users",
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "aria-toggle-field-name",
+    "auditorTitle": "ARIA toggle field missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Toggle fields (role='checkbox', role='switch', etc.) must have accessible names to indicate their purpose.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Switch Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/switch/"
+      }
+    ],
+    "clientFix": "Add aria-label or aria-labelledby to describe the toggle's purpose.",
+    "badExample": "<div role='switch' aria-checked='false'></div>",
+    "goodExample": "<div role='switch' aria-checked='false' aria-label='Notifications'></div>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users",
+      "Speech recognition users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-tooltip-name",
+    "auditorTitle": "ARIA tooltip missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Elements with role='tooltip' must have an accessible name describing the tooltip content.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Tooltip Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/"
+      }
+    ],
+    "clientFix": "Add aria-label or ensure the tooltip text provides the accessible name.",
+    "badExample": "<div role='tooltip'>...</div>",
+    "goodExample": "<div role='tooltip' aria-label='Help for email field'>Enter a valid email address</div>",
+    "codeHighlight": "role=tooltip",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-treeitem-name",
+    "auditorTitle": "ARIA treeitem missing accessible name",
+    "ruleType": "best-practice",
+    "auditorNotes": "Treeitem elements must have accessible names to identify each node in a tree structure.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA8",
+        "title": "Using aria-label for link purpose",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA8"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Treeview Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/treeview/"
+      }
+    ],
+    "clientFix": "Add aria-label or ensure visible text provides the treeitem name.",
+    "badExample": "<div role='treeitem'>...</div>",
+    "goodExample": "<div role='treeitem' aria-label='Documents folder'>...</div>",
+    "codeHighlight": "role=treeitem",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-valid-attr",
+    "auditorTitle": "Invalid ARIA attribute",
+    "ruleType": "wcag",
+    "auditorNotes": "Attributes starting with aria- must be valid ARIA attributes from the specification. Invalid attributes are ignored by assistive technologies.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to invalid ARIA attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Replace with valid ARIA attribute from the ARIA 1.2 specification.",
+    "badExample": "<div aria-cheked='true'>...</div>",
+    "goodExample": "<div aria-checked='true'>...</div>",
+    "codeHighlight": "aria-",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "aria-valid-attr-value",
+    "auditorTitle": "Invalid ARIA attribute value",
+    "ruleType": "wcag",
+    "auditorNotes": "ARIA attributes must have valid values according to the ARIA specification. Invalid values are treated as if the attribute were not present.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using WAI-ARIA roles",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F92",
+        "title": "Failure due to invalid ARIA attribute value",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F92"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use valid values for ARIA attributes. Check ARIA spec for allowed values per attribute.",
+    "badExample": "<div aria-hidden='yes'>...</div>",
+    "goodExample": "<div aria-hidden='true'>...</div>",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "audio-caption",
+    "auditorTitle": "Audio content missing captions",
+    "ruleType": "wcag",
+    "auditorNotes": "Audio content that conveys information must have text alternatives or captions for deaf/hard-of-hearing users.",
+    "wcagTechniques": [
+      {
+        "id": "G158",
+        "title": "Providing an alternative for time-based media",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G158"
+      },
+      {
+        "id": "H96",
+        "title": "Using the track element to provide alternatives for media",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H96"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F30",
+        "title": "Failure due to not providing text alternatives",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F30"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Provide a transcript or use the track element to add captions to audio content.",
+    "badExample": "<audio src='podcast.mp3'></audio>",
+    "goodExample": "<audio src='podcast.mp3'>\n  <track kind='captions' src='captions.vtt' srclang='en' label='English'>\n</audio>",
+    "codeHighlight": "track",
+    "affectedUsers": [
+      "Deaf users",
+      "Hard-of-hearing users"
+    ],
+    "fixDifficulty": "Hard"
+  },
+  {
+    "id": "autocomplete-valid",
+    "auditorTitle": "Invalid autocomplete attribute value",
+    "ruleType": "wcag",
+    "auditorNotes": "The autocomplete attribute must use valid values from the HTML specification. Correct values help browsers autofill form fields.",
+    "wcagTechniques": [
+      {
+        "id": "H98",
+        "title": "Using autocomplete attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H98"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use valid autocomplete values like 'name', 'email', 'tel', 'street-address', etc.",
+    "badExample": "<input type='text' autocomplete='username'>",
+    "goodExample": "<input type='text' autocomplete='name'>\n<input type='email' autocomplete='email'>",
+    "codeHighlight": "autocomplete",
+    "affectedUsers": [
+      "Users with cognitive disabilities",
+      "Users with motor disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "avoid-inline-spacing",
+    "auditorTitle": "Inline text spacing blocks user styles",
+    "ruleType": "wcag",
+    "auditorNotes": "Inline style attributes for line-height, letter-spacing, or word-spacing can prevent users from overriding spacing with custom stylesheets.",
+    "wcagTechniques": [
+      {
+        "id": "G207",
+        "title": "Allowing users to override text spacing",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G207"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use CSS classes instead of inline styles for text spacing so users can override them.",
+    "badExample": "<p style='line-height: 1.2;'>Text</p>",
+    "goodExample": "<p class='text-content'>Text</p>\n<!-- in CSS: .text-content { line-height: 1.2; } -->",
+    "codeHighlight": "style",
+    "affectedUsers": [
+      "Users with low vision",
+      "Users with dyslexia"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "blink",
+    "auditorTitle": "Blink element used",
+    "ruleType": "wcag",
+    "auditorNotes": "The blink element is deprecated and causes content to flash, which can trigger seizures in photosensitive users.",
+    "wcagTechniques": [
+      {
+        "id": "G19",
+        "title": "Ensuring no component flashes more than 3 times per second",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G19"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F47",
+        "title": "Failure due to using blink element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F47"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove the blink element. Use CSS animations with care if attention is needed.",
+    "badExample": "<blink>Important!</blink>",
+    "goodExample": "<span class='highlight'>Important!</span>",
+    "codeHighlight": "blink",
+    "affectedUsers": [
+      "Users with photosensitive epilepsy",
+      "Users with attention disorders"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "button-name",
+    "auditorTitle": "Buttons without accessible names",
+    "ruleType": "wcag",
+    "auditorNotes": "Buttons must have visible text, aria-label, or aria-labelledby. Icon-only buttons are common failures without accessible names.",
+    "wcagTechniques": [
+      {
+        "id": "H91",
+        "title": "Using HTML form controls and links",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H91"
+      },
+      {
+        "id": "ARIA14",
+        "title": "Using aria-label to provide an invisible label",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA14"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Button Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+      }
+    ],
+    "clientFix": "Add visible text inside the button or use aria-label to describe the button's action.",
+    "badExample": "<button><i class='icon-close'></i></button>",
+    "goodExample": "<button aria-label='Close dialog'><i class='icon-close'></i></button>\n<button>Submit</button>",
+    "codeHighlight": "button",
+    "affectedUsers": [
+      "Screen reader users",
+      "Speech recognition users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "bypass",
+    "auditorTitle": "No skip link for repeated content",
+    "ruleType": "wcag",
+    "auditorNotes": "Pages with repeated content (navigation, banners) must provide a way to skip directly to main content. Implement skip links or proper heading structure.",
+    "wcagTechniques": [
+      {
+        "id": "G1",
+        "title": "Adding a link at the top of each page to go directly to the main content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G1"
+      },
+      {
+        "id": "G123",
+        "title": "Adding a link at the beginning of a block of repeated content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G123"
+      },
+      {
+        "id": "H69",
+        "title": "Providing heading elements at the beginning of each section",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H69"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F66",
+        "title": "Failure due to not providing a way to skip past repetitive content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F66"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/generic.html"
+      }
+    ],
+    "clientFix": "Add a 'Skip to main content' link at the top of the page that jumps to the main element or use proper landmarks (main, nav).",
+    "badExample": "<body>\n  <nav>...</nav>\n  <div id='content'>...</div>",
+    "goodExample": "<body>\n  <a href='#main' class='skip-link'>Skip to main content</a>\n  <nav>...</nav>\n  <main id='main'>...</main>",
+    "codeHighlight": "href",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "color-contrast",
+    "auditorTitle": "Insufficient color contrast",
+    "ruleType": "wcag",
+    "auditorNotes": "Requires 4.5:1 for normal text, 3:1 for large text (18pt+ or 14pt+bold). Check text over images, gradients, and semi-transparent backgrounds carefully.",
+    "wcagTechniques": [
+      {
+        "id": "G18",
+        "title": "Ensuring a contrast ratio of at least 4.5:1",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G18"
+      },
+      {
+        "id": "G145",
+        "title": "Ensuring a contrast ratio of at least 3:1 for large text",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G145"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F24",
+        "title": "Failure due to specifying foreground without background",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F24"
+      },
+      {
+        "id": "F83",
+        "title": "Failure due to background color not being specified",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F83"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Adjust colors to meet WCAG contrast requirements. Use a contrast checker tool. Consider adding a semi-transparent background behind text over images.",
+    "badExample": "<span style='color: #888888;'>Light gray text on white</span>",
+    "goodExample": "<span style='color: #595959;'>Dark gray text (4.5:1 contrast)</span>",
+    "codeHighlight": "color",
+    "affectedUsers": [
+      "Low vision users",
+      "Colorblind users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "color-contrast-enhanced",
+    "auditorTitle": "Insufficient contrast for enhanced (AAA)",
+    "ruleType": "wcag",
+    "auditorNotes": "Enhanced contrast requires 7:1 for normal text and 4.5:1 for large text (WCAG AAA level). This exceeds minimum requirements.",
+    "wcagTechniques": [
+      {
+        "id": "G18",
+        "title": "Ensuring a contrast ratio of at least 4.5:1",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G18"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "For enhanced accessibility, increase contrast to 7:1 for normal text. Use a contrast checker tool.",
+    "badExample": "<span style='color: #666;'>Medium gray text (fails AAA)</span>",
+    "goodExample": "<span style='color: #333;'>Dark text (passes AAA)</span>",
+    "codeHighlight": "color",
+    "affectedUsers": [
+      "Users with low vision"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "css-orientation-lock",
+    "auditorTitle": "Screen orientation locked",
+    "ruleType": "experimental",
+    "auditorNotes": "Content should not be locked to a specific screen orientation. Users may need to view content in their preferred orientation.",
+    "wcagTechniques": [
+      {
+        "id": "G214",
+        "title": "Using content that does not restrict orientation",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G214"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove CSS or meta tags that lock orientation. Allow both portrait and landscape.",
+    "badExample": "@media screen and (orientation: portrait) { body { display: none; } }",
+    "goodExample": "/* Support both orientations */\n@media screen { /* responsive styles */ }",
+    "codeHighlight": "orientation",
+    "affectedUsers": [
+      "Users with devices mounted in fixed orientations",
+      "Users with motor disabilities"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "definition-list",
+    "auditorTitle": "Definition list structured incorrectly",
+    "ruleType": "wcag",
+    "auditorNotes": "dl elements must only contain dt, dd, script, template, or div elements. Improper nesting breaks the semantic structure for screen readers.",
+    "wcagTechniques": [
+      {
+        "id": "H40",
+        "title": "Using definition lists",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H40"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F42",
+        "title": "Failure due to incorrect dl structure",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F42"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure dl only contains properly ordered dt and dd elements, optionally wrapped in div groups.",
+    "badExample": "<dl>\n  <span>Term</span>\n  <dd>Definition</dd>\n</dl>",
+    "goodExample": "<dl>\n  <dt>Term</dt>\n  <dd>Definition</dd>\n</dl>",
+    "codeHighlight": "dl",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "dlitem",
+    "auditorTitle": "Definition term/item outside list",
+    "ruleType": "wcag",
+    "auditorNotes": "dt and dd elements must be direct children of dl elements. Using them outside breaks semantic meaning.",
+    "wcagTechniques": [
+      {
+        "id": "H40",
+        "title": "Using definition lists",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H40"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F42",
+        "title": "Failure due to orphaned dt/dd elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F42"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Place dt and dd elements only as direct children of dl elements.",
+    "badExample": "<div>\n  <dt>Term</dt>\n</div>",
+    "goodExample": "<dl>\n  <dt>Term</dt>\n  <dd>Definition</dd>\n</dl>",
+    "codeHighlight": "dt",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "document-title",
+    "auditorTitle": "Page title missing or weak",
+    "ruleType": "wcag",
+    "auditorNotes": "Each page must have a unique, descriptive <title> in the head. Generic titles like 'Home' or missing titles fail this criterion.",
+    "wcagTechniques": [
+      {
+        "id": "H25",
+        "title": "Providing a title using the title element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H25"
+      },
+      {
+        "id": "G88",
+        "title": "Providing descriptive titles for Web pages",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G88"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F25",
+        "title": "Failure due to the title of a Web page not identifying the content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F25"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add a descriptive <title> element to the document head that describes the page content and site context.",
+    "badExample": "<title>Home</title>",
+    "goodExample": "<title>About Us | My Company</title>",
+    "codeHighlight": "title",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "duplicate-id",
+    "auditorTitle": "Duplicate ID attribute",
+    "ruleType": "wcag",
+    "auditorNotes": "ID attributes must be unique within the page. Duplicate IDs can break JavaScript and form associations.",
+    "wcagTechniques": [
+      {
+        "id": "H93",
+        "title": "Ensuring that id attributes are unique",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H93"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure each ID is unique. Use different IDs or classes for styling multiple elements.",
+    "badExample": "<div id='section'>...</div>\n<div id='section'>...</div>",
+    "goodExample": "<div id='section-1'>...</div>\n<div id='section-2'>...</div>",
+    "codeHighlight": "id=",
+    "affectedUsers": [
+      "Users relying on proper DOM structure"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "duplicate-id-active",
+    "auditorTitle": "Duplicate ID on active element",
+    "ruleType": "wcag",
+    "auditorNotes": "Active elements (focusable elements) must have unique IDs. Duplicate IDs on interactive elements cause accessibility issues.",
+    "wcagTechniques": [
+      {
+        "id": "H93",
+        "title": "Ensuring that id attributes are unique",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H93"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure all interactive elements have unique IDs. Check buttons, links, and form elements.",
+    "badExample": "<button id='btn'>Save</button>\n<button id='btn'>Cancel</button>",
+    "goodExample": "<button id='save-btn'>Save</button>\n<button id='cancel-btn'>Cancel</button>",
+    "codeHighlight": "id=",
+    "affectedUsers": [
+      "Screen reader users",
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "duplicate-id-aria",
+    "auditorTitle": "Duplicate ID used in ARIA",
+    "ruleType": "wcag",
+    "auditorNotes": "IDs referenced by aria-labelledby or aria-describedby must be unique. Duplicate IDs break the association between labels and elements.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA9",
+        "title": "Using aria-labelledby to concatenate a label",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA9"
+      },
+      {
+        "id": "H93",
+        "title": "Ensuring that id attributes are unique",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H93"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F77",
+        "title": "Failure due to duplicate id attribute values",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F77"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure all ID attributes are unique within the page. Remove duplicate IDs.",
+    "badExample": "<div id='label'>Name</div>\n<input aria-labelledby='label'>\n<div id='label'>Email</div>",
+    "goodExample": "<div id='name-label'>Name</div>\n<input aria-labelledby='name-label'>\n<div id='email-label'>Email</div>",
+    "codeHighlight": "id=",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "empty-heading",
+    "auditorTitle": "Empty heading element",
+    "ruleType": "best-practice",
+    "auditorNotes": "Headings must have visible text content to provide meaningful structure for screen reader users. Empty headings create confusion.",
+    "wcagTechniques": [
+      {
+        "id": "H42",
+        "title": "Using h1-h6 to identify headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H42"
+      },
+      {
+        "id": "G130",
+        "title": "Providing descriptive headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G130"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add text content to the heading or remove the empty heading element.",
+    "badExample": "<h2></h2>",
+    "goodExample": "<h2>Section Title</h2>",
+    "codeHighlight": "h1",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "empty-table-header",
+    "auditorTitle": "Empty table header cell",
+    "ruleType": "best-practice",
+    "auditorNotes": "Table header cells (th) must have text content to describe the column or row they represent. Empty headers create confusion.",
+    "wcagTechniques": [
+      {
+        "id": "H51",
+        "title": "Using table markup to present tabular information",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H51"
+      },
+      {
+        "id": "H63",
+        "title": "Using scope attributes to associate header cells with data cells",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H63"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add descriptive text to the table header or use CSS for visual spacing instead of empty th elements.",
+    "badExample": "<th></th>",
+    "goodExample": "<th>Product Name</th>",
+    "codeHighlight": "th",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "focus-order-semantics",
+    "auditorTitle": "Focus order does not match semantics",
+    "ruleType": "experimental",
+    "auditorNotes": "Focusable elements should have appropriate roles. Elements in the focus order should be interactive.",
+    "wcagTechniques": [
+      {
+        "id": "G59",
+        "title": "Placing interactive elements in logical order",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G59"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Focus Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+      }
+    ],
+    "clientFix": "Ensure focusable elements have proper roles and are meant to be interactive.",
+    "badExample": "<div tabindex='0'>Static text</div>",
+    "goodExample": "<div tabindex='0' role='button'>Clickable</div>\n<!-- or remove tabindex from non-interactive elements -->",
+    "codeHighlight": "tabindex",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "form-field-multiple-labels",
+    "auditorTitle": "Form field has multiple labels",
+    "ruleType": "wcag",
+    "auditorNotes": "Form fields should have only one label. Multiple labels can cause confusion for screen reader users.",
+    "wcagTechniques": [
+      {
+        "id": "H44",
+        "title": "Using label elements to associate text labels with form controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H44"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Consolidate multiple labels into one, or use aria-labelledby if multiple text elements are needed.",
+    "badExample": "<label for='email'>Email</label>\n<label for='email'>Required</label>\n<input id='email'>",
+    "goodExample": "<label for='email'>Email (Required)</label>\n<input id='email'>",
+    "codeHighlight": "for",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "frame-focusable-content",
+    "auditorTitle": "Frame with focusable content has negative tabindex",
+    "ruleType": "wcag",
+    "auditorNotes": "Frames or iframes containing focusable content should not have tabindex='-1', as this prevents keyboard access to the content.",
+    "wcagTechniques": [
+      {
+        "id": "H64",
+        "title": "Using title attribute of frame and iframe elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H64"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove tabindex='-1' from frames that contain interactive content.",
+    "badExample": "<iframe tabindex='-1' src='form.html'></iframe>",
+    "goodExample": "<iframe src='form.html' title='Contact Form'></iframe>",
+    "codeHighlight": "iframe",
+    "affectedUsers": [
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "frame-tested",
+    "auditorTitle": "Frame content not tested",
+    "ruleType": "best-practice",
+    "auditorNotes": "This is an informational rule indicating that iframe content could not be fully tested. Manual testing of frame content is recommended.",
+    "wcagTechniques": [
+      {
+        "id": "H64",
+        "title": "Using title attribute of frame and iframe elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H64"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Manually test iframe content for accessibility. Ensure each iframe has a descriptive title attribute.",
+    "badExample": "<!-- iframe content not scanned -->",
+    "goodExample": "<iframe src='content.html' title='Product Description'></iframe>",
+    "codeHighlight": "iframe",
+    "affectedUsers": [
+      "All users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "frame-title",
+    "auditorTitle": "Frame missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "iframe and frame elements must have title attributes describing their content for screen reader users.",
+    "wcagTechniques": [
+      {
+        "id": "H64",
+        "title": "Using title attribute of frame and iframe elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H64"
+      },
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add title attribute or aria-label to describe the frame's content.",
+    "badExample": "<iframe src='/map.html'></iframe>",
+    "goodExample": "<iframe src='/map.html' title='Location Map'></iframe>",
+    "codeHighlight": "title",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "frame-title-unique",
+    "auditorTitle": "Frame titles not unique",
+    "ruleType": "wcag",
+    "auditorNotes": "Multiple frames with the same title can confuse screen reader users trying to navigate between them.",
+    "wcagTechniques": [
+      {
+        "id": "H64",
+        "title": "Using title attribute of frame and iframe elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H64"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Give each iframe a unique, descriptive title that distinguishes it from other frames.",
+    "badExample": "<iframe title='Content' src='page1.html'></iframe>\n<iframe title='Content' src='page2.html'></iframe>",
+    "goodExample": "<iframe title='Product Details' src='page1.html'></iframe>\n<iframe title='Reviews' src='page2.html'></iframe>",
+    "codeHighlight": "title",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "heading-order",
+    "auditorTitle": "Heading levels out of order",
+    "ruleType": "best-practice",
+    "auditorNotes": "Headings should follow a logical hierarchy (h1 > h2 > h3). Skipping levels or going backwards breaks the document outline for screen readers. This is a best practice, not a WCAG failure.",
+    "wcagTechniques": [
+      {
+        "id": "H42",
+        "title": "Using h1-h6 to identify headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H42"
+      },
+      {
+        "id": "G130",
+        "title": "Providing descriptive headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G130"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Hierarchical Headings",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/hierarchical-headings.html"
+      }
+    ],
+    "clientFix": "Restructure headings to follow proper nesting. Use CSS for visual styling instead of heading tags.",
+    "badExample": "<h1>Title</h1>\n<h3>Section</h3>\n<!-- skipped h2 -->",
+    "goodExample": "<h1>Title</h1>\n<h2>Section</h2>\n<h3>Subsection</h3>",
+    "codeHighlight": "h1",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "hidden-content",
+    "auditorTitle": "Hidden content detected",
+    "ruleType": "experimental",
+    "auditorNotes": "This is an informational rule noting content that is visually hidden. Ensure hidden content is appropriately marked for screen readers.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA4",
+        "title": "Using aria-hidden to hide content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA4"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Review hidden content. If it should be accessible to screen readers, use visually hidden CSS. If decorative, keep aria-hidden.",
+    "badExample": "<div style='display: none;'>Important notice</div>",
+    "goodExample": "<div class='visually-hidden'>Important notice</div>\n<!-- or -->\n<div aria-hidden='true'>Decorative icon</div>",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "html-has-lang",
+    "auditorTitle": "Page language not set",
+    "ruleType": "wcag",
+    "auditorNotes": "The html element must have a lang attribute with a valid language code. This enables screen readers to pronounce content correctly.",
+    "wcagTechniques": [
+      {
+        "id": "H57",
+        "title": "Using language attributes on the html element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H57"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add lang attribute to the html element with the appropriate language code (e.g., 'en' for English, 'sv' for Swedish).",
+    "badExample": "<html>",
+    "goodExample": "<html lang='en'>\n<html lang='sv'>",
+    "codeHighlight": "lang",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "html-lang-valid",
+    "auditorTitle": "Invalid HTML lang attribute",
+    "ruleType": "wcag",
+    "auditorNotes": "The lang attribute must have a valid BCP 47 language code. Invalid codes are ignored by assistive technologies.",
+    "wcagTechniques": [
+      {
+        "id": "H57",
+        "title": "Using language attributes on the html element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H57"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use a valid BCP 47 language code (e.g., 'en', 'en-US', 'sv', 'fr').",
+    "badExample": "<html lang='english'>",
+    "goodExample": "<html lang='en'>",
+    "codeHighlight": "lang",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "html-xml-lang-mismatch",
+    "auditorTitle": "HTML lang and xml:lang mismatch",
+    "ruleType": "wcag",
+    "auditorNotes": "When both lang and xml:lang attributes are present, they must have the same value. Mismatched values cause confusion for assistive technologies.",
+    "wcagTechniques": [
+      {
+        "id": "H57",
+        "title": "Using language attributes on the html element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H57"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure lang and xml:lang attributes have identical values on the html element.",
+    "badExample": "<html lang='en' xml:lang='fr'>",
+    "goodExample": "<html lang='en' xml:lang='en'>",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "identical-links-same-purpose",
+    "auditorTitle": "Identical links with different purposes",
+    "ruleType": "wcag",
+    "auditorNotes": "Links with the same text should serve a similar purpose. Different destinations with identical text can confuse users.",
+    "wcagTechniques": [
+      {
+        "id": "G91",
+        "title": "Providing link text that describes the purpose",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G91"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure links with identical text go to similar destinations, or use different link text to clarify the destination.",
+    "badExample": "<a href='/product-1'>Learn more</a>\n<a href='/product-2'>Learn more</a>",
+    "goodExample": "<a href='/product-1'>Learn more about Product A</a>\n<a href='/product-2'>Learn more about Product B</a>",
+    "codeHighlight": "href",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "image-alt",
+    "auditorTitle": "Images missing alt text",
+    "ruleType": "wcag",
+    "auditorNotes": "Check decorative images use empty alt (alt=\"\"). Check complex images (charts, diagrams) have long descriptions via aria-describedby or adjacent text.",
+    "wcagTechniques": [
+      {
+        "id": "H37",
+        "title": "Using alt attributes on img elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H37"
+      },
+      {
+        "id": "H67",
+        "title": "Using null alt text and no title attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H67"
+      },
+      {
+        "id": "ARIA10",
+        "title": "Using aria-labelledby to provide a text alternative for non-text content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA10"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F65",
+        "title": "Failure due to omitting the alt attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F65"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add alt='description' to all <img> elements. Use alt='' for purely decorative images. For complex images, provide detailed descriptions via aria-describedby or adjacent text.",
+    "badExample": "<img src='logo.png'>",
+    "goodExample": "<img src='logo.png' alt='Company Logo'>\n<img src='decorative-border.png' alt=''>",
+    "codeHighlight": "alt",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities",
+      "Users with slow internet connections"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "image-redundant-alt",
+    "auditorTitle": "Alt text repeats visible text",
+    "ruleType": "best-practice",
+    "auditorNotes": "When adjacent text already describes the image, alt should be empty (alt='') to avoid repetitive announcements for screen reader users. This is a best practice, not a WCAG failure.",
+    "wcagTechniques": [
+      {
+        "id": "H67",
+        "title": "Using null alt text and no title attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H67"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "If the image is decorative or the adjacent text already describes it, use alt=''. Do not repeat the same text in both the alt attribute and adjacent content.",
+    "badExample": "<img src='chart.png' alt='Sales increased 50%'>\n<p>Sales increased 50%</p>",
+    "goodExample": "<img src='chart.png' alt=''>\n<p>Sales increased 50%</p>",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "input-button-name",
+    "auditorTitle": "Inputs without accessible names",
+    "ruleType": "wcag",
+    "auditorNotes": "Input type='button', 'submit', or 'reset' must have a value attribute, aria-label, or aria-labelledby to be accessible.",
+    "wcagTechniques": [
+      {
+        "id": "H91",
+        "title": "Using HTML form controls and links",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H91"
+      },
+      {
+        "id": "ARIA16",
+        "title": "Using aria-labelledby to name user interface controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA16"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add a value attribute with the button text, or use aria-label to describe the button's action.",
+    "badExample": "<input type='submit'>",
+    "goodExample": "<input type='submit' value='Send Message'>\n<input type='button' aria-label='Search products'>",
+    "codeHighlight": "type=button",
+    "affectedUsers": [
+      "Screen reader users",
+      "Speech recognition users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "input-image-alt",
+    "auditorTitle": "Image button missing alt text",
+    "ruleType": "wcag",
+    "auditorNotes": "Input type='image' must have alt text describing the button's function, as the image itself is the button content.",
+    "wcagTechniques": [
+      {
+        "id": "H36",
+        "title": "Using alt attributes on image submit buttons",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H36"
+      },
+      {
+        "id": "H91",
+        "title": "Using HTML form controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H91"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F65",
+        "title": "Failure due to missing alt on image button",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F65"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add alt attribute describing the button action, or use aria-label if the image conveys meaning.",
+    "badExample": "<input type='image' src='search-icon.png'>",
+    "goodExample": "<input type='image' src='search-icon.png' alt='Search'>",
+    "codeHighlight": "alt",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users when images fail to load"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "label",
+    "auditorTitle": "Form fields missing labels",
+    "ruleType": "wcag",
+    "auditorNotes": "Form inputs must have an associated <label> element, aria-label, aria-labelledby, or title attribute. Placeholder alone is not sufficient.",
+    "wcagTechniques": [
+      {
+        "id": "H44",
+        "title": "Using label elements to associate text labels with form controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H44"
+      },
+      {
+        "id": "ARIA9",
+        "title": "Using aria-labelledby to concatenate a label from several text nodes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA9"
+      },
+      {
+        "id": "ARIA14",
+        "title": "Using aria-label to provide an invisible label",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA14"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to a missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Wrap the input with a <label> element or use the for attribute to associate the label. Alternatively use aria-label or aria-labelledby.",
+    "badExample": "<input type='text' placeholder='Name'>",
+    "goodExample": "<label for='name'>Full Name</label>\n<input type='text' id='name'>\n\n<input type='text' aria-label='Search query'>",
+    "codeHighlight": "for",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "label-content-name-mismatch",
+    "auditorTitle": "Label text doesn't match accessible name",
+    "ruleType": "experimental",
+    "auditorNotes": "The visible text of a control should be included in its accessible name. This helps speech recognition users activate the control.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA8",
+        "title": "Using aria-label for link purpose",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA8"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F96",
+        "title": "Failure due to label text not matching accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F96"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure the accessible name includes the visible text of the element.",
+    "badExample": "<button aria-label='Close'>X</button>",
+    "goodExample": "<button aria-label='Close dialog'>Close</button>",
+    "codeHighlight": "aria-label",
+    "affectedUsers": [
+      "Speech recognition users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "label-title-only",
+    "auditorTitle": "Form field has only title attribute label",
+    "ruleType": "best-practice",
+    "auditorNotes": "Using only the title attribute for form field labels creates problems. Not all assistive technologies expose title consistently.",
+    "wcagTechniques": [
+      {
+        "id": "H65",
+        "title": "Using the title attribute to identify form controls",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H65"
+      },
+      {
+        "id": "H44",
+        "title": "Using label elements to associate text labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H44"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use a visible label element or aria-label instead of relying only on title attribute.",
+    "badExample": "<input type='text' title='Search'>",
+    "goodExample": "<label for='search'>Search</label>\n<input id='search' type='text'>",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "landmark-banner-is-top-level",
+    "auditorTitle": "Banner landmark nested inside another landmark",
+    "ruleType": "best-practice",
+    "auditorNotes": "The banner landmark (header element or role='banner') should be at the top level, not nested inside other landmarks.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Move the header element outside of other landmark regions like nav, main, or aside.",
+    "badExample": "<main>\n  <header>...</header>\n</main>",
+    "goodExample": "<header>...</header>\n<main>...</main>",
+    "codeHighlight": "role=banner",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-complementary-is-top-level",
+    "auditorTitle": "Complementary landmark nested inside another landmark",
+    "ruleType": "best-practice",
+    "auditorNotes": "The complementary landmark (aside element or role='complementary') should be at the top level, not nested inside main or other landmarks.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Move the aside element outside of the main landmark.",
+    "badExample": "<main>\n  <aside>Sidebar</aside>\n</main>",
+    "goodExample": "<main>...</main>\n<aside>Sidebar</aside>",
+    "codeHighlight": "role=complementary",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-contentinfo-is-top-level",
+    "auditorTitle": "Contentinfo landmark nested inside another landmark",
+    "ruleType": "best-practice",
+    "auditorNotes": "The contentinfo landmark (footer element or role='contentinfo') should be at the top level, not nested inside other landmarks.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Move the footer element outside of other landmark regions.",
+    "badExample": "<main>\n  <footer>...</footer>\n</main>",
+    "goodExample": "<main>...</main>\n<footer>...</footer>",
+    "codeHighlight": "role=contentinfo",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-main-is-top-level",
+    "auditorTitle": "Main landmark nested inside another landmark",
+    "ruleType": "best-practice",
+    "auditorNotes": "The main landmark should be at the top level, not nested inside other landmarks like nav, aside, or article.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Move the main element outside of other landmark regions.",
+    "badExample": "<nav>\n  <main>...</main>\n</nav>",
+    "goodExample": "<nav>...</nav>\n<main>...</main>",
+    "codeHighlight": "role=main",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-no-duplicate-banner",
+    "auditorTitle": "Multiple banner landmarks found",
+    "ruleType": "best-practice",
+    "auditorNotes": "There should be only one banner landmark per page. Multiple banners can confuse screen reader landmark navigation.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Consolidate multiple header elements into one, or use div elements for additional header-like sections.",
+    "badExample": "<header>Main header</header>\n<header>Sub header</header>",
+    "goodExample": "<header>All header content</header>\n<div class='sub-header'>Sub content</div>",
+    "codeHighlight": "role=banner",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-no-duplicate-contentinfo",
+    "auditorTitle": "Multiple contentinfo landmarks found",
+    "ruleType": "best-practice",
+    "auditorNotes": "There should be only one contentinfo landmark per page. Multiple footers can confuse screen reader landmark navigation.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Consolidate multiple footer elements into one, or use div elements for additional footer-like sections.",
+    "badExample": "<footer>Main footer</footer>\n<footer>Secondary footer</footer>",
+    "goodExample": "<footer>All footer content</footer>\n<div class='sub-footer'>Additional info</div>",
+    "codeHighlight": "role=contentinfo",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-no-duplicate-main",
+    "auditorTitle": "Multiple main landmarks found",
+    "ruleType": "best-practice",
+    "auditorNotes": "There should be only one main landmark per page. Multiple main regions confuse screen reader navigation.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Consolidate content into a single main element or use other region roles for secondary content.",
+    "badExample": "<main>Content 1</main>\n<main>Content 2</main>",
+    "goodExample": "<main>All main content</main>",
+    "codeHighlight": "role=main",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "landmark-one-main",
+    "auditorTitle": "No main landmark found",
+    "ruleType": "best-practice",
+    "auditorNotes": "Pages should have one main landmark to identify the primary content area for screen reader navigation.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      },
+      {
+        "id": "H69",
+        "title": "Using the main element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H69"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Wrap the primary content in a <main> element or add role='main' to the content container.",
+    "badExample": "<div id='content'>...</div>",
+    "goodExample": "<main>Primary content</main>\n<!-- or -->\n<div role='main'>Primary content</div>",
+    "codeHighlight": "role=main",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "landmark-unique",
+    "auditorTitle": "Landmark not unique",
+    "ruleType": "best-practice",
+    "auditorNotes": "Landmarks of the same type should be distinguishable by an accessible name (aria-label or aria-labelledby) when multiple exist.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/"
+      }
+    ],
+    "clientFix": "Add aria-label to distinguish multiple landmarks of the same type.",
+    "badExample": "<nav>Main nav</nav>\n<nav>Footer nav</nav>",
+    "goodExample": "<nav aria-label='Main'>...</nav>\n<nav aria-label='Footer'>...</nav>",
+    "codeHighlight": "role",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "link-in-text-block",
+    "auditorTitle": "Links not distinguishable by color alone",
+    "ruleType": "wcag",
+    "auditorNotes": "Links must have a visual indicator beyond color (underline, bold, icon, or sufficient luminosity contrast) to be identifiable by colorblind users.",
+    "wcagTechniques": [
+      {
+        "id": "G182",
+        "title": "Ensuring adequate contrast ratio for text",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G182"
+      },
+      {
+        "id": "G183",
+        "title": "Using a contrast ratio of 3:1 with surrounding text",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G183"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add underline, bold, border, or icon to links. Ensure 3:1 contrast ratio between link text and surrounding body text color.",
+    "badExample": "<p>Visit our <a href='...' style='color: blue;'>website</a> today.</p>",
+    "goodExample": "<p>Visit our <a href='...' style='color: blue; text-decoration: underline;'>website</a> today.</p>",
+    "codeHighlight": "a",
+    "affectedUsers": [
+      "Colorblind users",
+      "Users with low vision"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "link-name",
+    "auditorTitle": "Links without accessible names",
+    "ruleType": "wcag",
+    "auditorNotes": "Links must have discernible text content, aria-label, or aria-labelledby. 'Click here' and 'Read more' are poor link text without context.",
+    "wcagTechniques": [
+      {
+        "id": "H30",
+        "title": "Providing link text that describes the purpose of a link",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H30"
+      },
+      {
+        "id": "ARIA8",
+        "title": "Using aria-label for link purpose",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA8"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure all links have visible text or an aria-label that describes the link destination. Avoid generic text like 'click here'.",
+    "badExample": "<a href='/about'><img src='arrow.png' alt=''></a>",
+    "goodExample": "<a href='/about'>About Us</a>\n<a href='/contact' aria-label='Contact Support'><img src='icon.png' alt=''></a>",
+    "codeHighlight": "a",
+    "affectedUsers": [
+      "Screen reader users",
+      "Speech recognition users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "list",
+    "auditorTitle": "Lists structured incorrectly",
+    "ruleType": "wcag",
+    "auditorNotes": "List elements (ul, ol) must only contain li elements. Improper nesting breaks screen reader list navigation and count announcements.",
+    "wcagTechniques": [
+      {
+        "id": "H48",
+        "title": "Using ol, ul and dl for lists or groups of links",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H48"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure list elements contain only li elements. Do not wrap other elements directly in ul/ol.",
+    "badExample": "<ul>\n  <div><li>Item</li></div>\n</ul>",
+    "goodExample": "<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>",
+    "codeHighlight": "ul",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "listitem",
+    "auditorTitle": "List items used incorrectly",
+    "ruleType": "wcag",
+    "auditorNotes": "li elements must be direct children of ul, ol, or menu elements. Using li outside proper list structure breaks semantic meaning.",
+    "wcagTechniques": [
+      {
+        "id": "H48",
+        "title": "Using ol, ul and dl for lists or groups of links",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H48"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Place li elements only as direct children of ul, ol, or menu elements. Do not use li elements outside lists.",
+    "badExample": "<div>\n  <li>Orphan item</li>\n</div>",
+    "goodExample": "<ul>\n  <li>Item</li>\n</ul>",
+    "codeHighlight": "li",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "marquee",
+    "auditorTitle": "Marquee element used",
+    "ruleType": "wcag",
+    "auditorNotes": "The marquee element is deprecated and creates scrolling text that can be distracting for users with attention disabilities.",
+    "wcagTechniques": [
+      {
+        "id": "G19",
+        "title": "Ensuring no component flashes more than 3 times per second",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G19"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove the marquee element. Use CSS animations carefully if movement is needed, with option to pause.",
+    "badExample": "<marquee>Scrolling text</marquee>",
+    "goodExample": "<div>Static text content</div>",
+    "codeHighlight": "marquee",
+    "affectedUsers": [
+      "Users with attention disorders",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "meta-refresh",
+    "auditorTitle": "Page auto-refreshes",
+    "ruleType": "wcag",
+    "auditorNotes": "Meta refresh redirects the page automatically, which can disorient screen reader users before they finish reading.",
+    "wcagTechniques": [
+      {
+        "id": "G198",
+        "title": "Providing a way for users to turn off content updates",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G198"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove meta refresh. Use server-side redirects or provide a link with warning for timed redirects.",
+    "badExample": "<meta http-equiv='refresh' content='30; url=/new-page'>",
+    "goodExample": "<a href='/new-page'>Continue to new page</a>",
+    "codeHighlight": "refresh",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "meta-refresh-no-exceptions",
+    "auditorTitle": "Page auto-refreshes without user control",
+    "ruleType": "wcag",
+    "auditorNotes": "Meta refresh with a delay automatically reloads the page, which can disorient users, especially screen reader users. No exceptions version catches all refresh directives.",
+    "wcagTechniques": [
+      {
+        "id": "G110",
+        "title": "Using an instant client-side redirect",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G110"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove meta refresh tags. If redirect is needed, use HTTP 301/302 redirects or provide user control over the refresh.",
+    "badExample": "<meta http-equiv='refresh' content='10; url=next.html'>",
+    "goodExample": "<p>Page has moved. <a href='next.html'>Go to new page</a></p>",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "meta-viewport",
+    "auditorTitle": "Zoom or scaling restricted",
+    "ruleType": "wcag",
+    "auditorNotes": "The viewport meta tag must not disable zoom (user-scalable=no) or set maximum-scale < 2. Users with low vision need to zoom to 200%.",
+    "wcagTechniques": [
+      {
+        "id": "G142",
+        "title": "Using a technology that has commonly-available user agents that support zoom",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G142"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F69",
+        "title": "Failure due to not allowing 200% text size",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F69"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure viewport meta tag allows zooming. Remove user-scalable=no and ensure maximum-scale is at least 2.0.",
+    "badExample": "<meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'>",
+    "goodExample": "<meta name='viewport' content='width=device-width, initial-scale=1'>",
+    "codeHighlight": "viewport",
+    "affectedUsers": [
+      "Users with low vision",
+      "Users with cognitive disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "meta-viewport-large",
+    "auditorTitle": "Zoom limited to less than 500%",
+    "ruleType": "best-practice",
+    "auditorNotes": "Users should be able to zoom up to 500% without horizontal scrolling. This is a WCAG 2.2 best practice for users with low vision.",
+    "wcagTechniques": [
+      {
+        "id": "G142",
+        "title": "Using a technology that has commonly-available user agents that support zoom",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G142"
+      },
+      {
+        "id": "G146",
+        "title": "Using liquid layout",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G146"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure viewport settings allow 500% zoom. Avoid fixed widths and use responsive design techniques that reflow content.",
+    "badExample": "<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=2'>",
+    "goodExample": "<meta name='viewport' content='width=device-width, initial-scale=1'>",
+    "codeHighlight": "viewport",
+    "affectedUsers": [
+      "Users with low vision"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "nested-interactive",
+    "auditorTitle": "Nested interactive elements",
+    "ruleType": "wcag",
+    "auditorNotes": "Interactive controls should not be nested inside other interactive controls. This causes focus and announcement issues.",
+    "wcagTechniques": [
+      {
+        "id": "H91",
+        "title": "Using HTML form controls and links",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H91"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Button Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+      }
+    ],
+    "clientFix": "Remove nesting. Place interactive elements as siblings, not parent-child.",
+    "badExample": "<button>\n  Click me\n  <button>Nested button</button>\n</button>",
+    "goodExample": "<button>Click me</button>\n<button>Second button</button>",
+    "codeHighlight": "tabindex",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "no-autoplay-audio",
+    "auditorTitle": "Audio plays automatically",
+    "ruleType": "wcag",
+    "auditorNotes": "Audio that plays automatically can interfere with screen reader users and is disruptive. Must have mechanism to pause or stop.",
+    "wcagTechniques": [
+      {
+        "id": "G60",
+        "title": "Playing a sound that turns off automatically within three seconds",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G60"
+      },
+      {
+        "id": "G170",
+        "title": "Providing a control to turn off audio that plays automatically",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G170"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F93",
+        "title": "Failure due to audio playing without control",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F93"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove autoplay or provide controls to pause/stop the audio. Keep auto-playing audio under 3 seconds.",
+    "badExample": "<audio src='music.mp3' autoplay></audio>",
+    "goodExample": "<audio src='music.mp3' controls></audio>",
+    "codeHighlight": "autoplay",
+    "affectedUsers": [
+      "Screen reader users",
+      "Users with attention disorders"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "object-alt",
+    "auditorTitle": "Object missing alternative text",
+    "ruleType": "wcag",
+    "auditorNotes": "Object elements must have text content between opening and closing tags that describes the object for screen readers.",
+    "wcagTechniques": [
+      {
+        "id": "H27",
+        "title": "Providing text alternatives for object elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H27"
+      },
+      {
+        "id": "H46",
+        "title": "Using noembed with embed",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H46"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F65",
+        "title": "Failure due to missing text alternative",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F65"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add text content inside the object element or use aria-label to describe the content.",
+    "badExample": "<object data='chart.svg'></object>",
+    "goodExample": "<object data='chart.svg'>Sales chart showing Q1 results</object>",
+    "codeHighlight": "alt",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "p-as-heading",
+    "auditorTitle": "Paragraph styled as heading",
+    "ruleType": "experimental",
+    "auditorNotes": "Using paragraph tags with bold or large font to simulate headings breaks document structure for screen reader navigation.",
+    "wcagTechniques": [
+      {
+        "id": "H42",
+        "title": "Using h1-h6 to identify headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H42"
+      },
+      {
+        "id": "F43",
+        "title": "Failure due to using styles to simulate headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F43"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F43",
+        "title": "Failure due to using styles to simulate headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F43"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Replace styled p elements with actual heading tags (h1-h6). Use CSS for visual styling.",
+    "badExample": "<p style='font-size: 24px; font-weight: bold;'>Section Title</p>",
+    "goodExample": "<h2>Section Title</h2>",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "page-has-heading-one",
+    "auditorTitle": "No level-one heading on page",
+    "ruleType": "best-practice",
+    "auditorNotes": "Pages should have an h1 heading that describes the page content. This helps screen reader users understand the page purpose.",
+    "wcagTechniques": [
+      {
+        "id": "H69",
+        "title": "Providing headings at the beginning of sections",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H69"
+      },
+      {
+        "id": "G130",
+        "title": "Providing descriptive headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G130"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add an h1 element at the start of the main content describing the page.",
+    "badExample": "<main>\n  <h2>Products</h2>\n</main>",
+    "goodExample": "<main>\n  <h1>Our Products</h1>\n</main>",
+    "codeHighlight": "h1",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "presentation-role-conflict",
+    "auditorTitle": "Presentational element has interactive attributes",
+    "ruleType": "best-practice",
+    "auditorNotes": "Elements with role='presentation' or role='none' should not have global ARIA attributes or tabindex, as this creates a conflict.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove aria-label, aria-describedby, tabindex, or other global ARIA attributes from presentational elements.",
+    "badExample": "<div role='presentation' aria-label='Header'>...</div>",
+    "goodExample": "<div role='presentation'>...</div>",
+    "codeHighlight": "role=presentation",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "region",
+    "auditorTitle": "Content not contained by landmarks",
+    "ruleType": "best-practice",
+    "auditorNotes": "All content should be within ARIA landmarks (header, nav, main, aside, footer) to help screen reader users navigate the page.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions of a page",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      },
+      {
+        "id": "H69",
+        "title": "Providing heading elements at the beginning of each section",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H69"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Landmark Regions",
+        "url": "https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/"
+      }
+    ],
+    "clientFix": "Wrap content in semantic HTML5 elements (header, nav, main, aside, footer) which automatically create landmark regions.",
+    "badExample": "<div>Content without landmarks</div>",
+    "goodExample": "<header>...</header>\n<nav>...</nav>\n<main>...</main>\n<footer>...</footer>",
+    "codeHighlight": "role=region",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "role-img-alt",
+    "auditorTitle": "Image role missing alt text",
+    "ruleType": "wcag",
+    "auditorNotes": "Elements with role='img' must have aria-label or aria-labelledby to provide an accessible name for the image.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      },
+      {
+        "id": "ARIA10",
+        "title": "Using aria-labelledby for text alternative",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA10"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add aria-label or aria-labelledby to describe the image content.",
+    "badExample": "<div role='img' style='background-image: url(logo.png)'></div>",
+    "goodExample": "<div role='img' aria-label='Company Logo' style='background-image: url(logo.png)'></div>",
+    "codeHighlight": "role=img",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "scope-attr-valid",
+    "auditorTitle": "Invalid scope attribute on table header",
+    "ruleType": "best-practice",
+    "auditorNotes": "The scope attribute on th elements must be either 'row' or 'col'. Invalid values are ignored by assistive technologies.",
+    "wcagTechniques": [
+      {
+        "id": "H63",
+        "title": "Using scope attributes to associate header cells",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H63"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use scope='row' for row headers and scope='col' for column headers.",
+    "badExample": "<th scope='header'>Name</th>",
+    "goodExample": "<th scope='col'>Name</th>\n<th scope='row'>John</th>",
+    "codeHighlight": "scope",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "scrollable-region-focusable",
+    "auditorTitle": "Scrollable region not keyboard accessible",
+    "ruleType": "wcag",
+    "auditorNotes": "Scrollable regions must be focusable so keyboard users can scroll the content using arrow keys.",
+    "wcagTechniques": [
+      {
+        "id": "G202",
+        "title": "Ensuring keyboard control for all functionality",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G202"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Scrollable Region Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/region.html"
+      }
+    ],
+    "clientFix": "Add tabindex='0' to the scrollable container to make it focusable.",
+    "badExample": "<div style='overflow: scroll; height: 200px;'>...</div>",
+    "goodExample": "<div tabindex='0' style='overflow: scroll; height: 200px;'>...</div>",
+    "codeHighlight": "tabindex",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "select-name",
+    "auditorTitle": "Select element missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "Select dropdowns must have associated labels so users know what is being selected.",
+    "wcagTechniques": [
+      {
+        "id": "H44",
+        "title": "Using label elements to associate text labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H44"
+      },
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Select Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/"
+      }
+    ],
+    "clientFix": "Wrap the select with a label or use the for attribute to associate the label.",
+    "badExample": "<select>...</select>",
+    "goodExample": "<label for='country'>Country</label>\n<select id='country'>...</select>",
+    "codeHighlight": "select",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "server-side-image-map",
+    "auditorTitle": "Server-side image map used",
+    "ruleType": "wcag",
+    "auditorNotes": "Server-side image maps are not keyboard accessible because the coordinates are processed on the server. Use client-side image maps instead.",
+    "wcagTechniques": [
+      {
+        "id": "H24",
+        "title": "Providing text alternatives for image map areas",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H24"
+      },
+      {
+        "id": "F2",
+        "title": "Failure due to server-side image maps",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F2"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F2",
+        "title": "Failure due to server-side image maps",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F2"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Replace with a client-side image map using map and area elements with proper alt text.",
+    "badExample": "<img src='map.cgi' ismap>",
+    "goodExample": "<img src='map.png' usemap='#map' alt='Site Map'>\n<map name='map'>\n  <area shape='rect' coords='0,0,100,100' href='page.html' alt='Home'>\n</map>",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "skip-link",
+    "auditorTitle": "Skip link target missing or not focusable",
+    "ruleType": "best-practice",
+    "auditorNotes": "Skip links must have a valid target that exists and is focusable so keyboard users can bypass repetitive content.",
+    "wcagTechniques": [
+      {
+        "id": "G1",
+        "title": "Adding a link at the top of each page to go directly to the main content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G1"
+      },
+      {
+        "id": "G123",
+        "title": "Adding a link at the beginning of a block of repeated content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G123"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Skip Link Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/skiplink.html"
+      }
+    ],
+    "clientFix": "Ensure the skip link target exists and has id matching the href, or add tabindex='-1' to make it focusable.",
+    "badExample": "<a href='#main'>Skip to main</a>\n<div id='main'>Content</div>",
+    "goodExample": "<a href='#main'>Skip to main</a>\n<main id='main' tabindex='-1'>Content</main>",
+    "codeHighlight": "href",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "summary-name",
+    "auditorTitle": "Details summary missing accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "The summary element inside details must have text content to describe what will be expanded/collapsed.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA14",
+        "title": "Using aria-label to provide an invisible label",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA14"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F68",
+        "title": "Failure due to missing accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F68"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Disclosure Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/"
+      }
+    ],
+    "clientFix": "Add visible text inside the summary element describing the details content.",
+    "badExample": "<details>\n  <summary></summary>\n  <p>Content</p>\n</details>",
+    "goodExample": "<details>\n  <summary>More Information</summary>\n  <p>Content details here</p>\n</details>",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "svg-img-alt",
+    "auditorTitle": "SVG image missing alternative text",
+    "ruleType": "wcag",
+    "auditorNotes": "SVG elements with role='img' must have aria-label, aria-labelledby, or title element for accessible name.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA6",
+        "title": "Using aria-label to provide labels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA6"
+      },
+      {
+        "id": "ARIA10",
+        "title": "Using aria-labelledby for text alternative",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA10"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F65",
+        "title": "Failure due to missing text alternative",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F65"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "SVG Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/images/"
+      }
+    ],
+    "clientFix": "Add aria-label, aria-labelledby, or include a title element inside the SVG to describe the image.",
+    "badExample": "<svg role='img'><path d='...'/></svg>",
+    "goodExample": "<svg role='img' aria-label='Shopping cart'><path d='...'/></svg>",
+    "codeHighlight": "alt",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "tabindex",
+    "auditorTitle": "Positive tabindex value used",
+    "ruleType": "best-practice",
+    "auditorNotes": "Positive tabindex values change the natural tab order and can confuse keyboard users. Use tabindex='0' for focusable elements or tabindex='-1' for programmatically focusable elements.",
+    "wcagTechniques": [
+      {
+        "id": "G59",
+        "title": "Placing the interactive elements in an order that follows sequences and relationships",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G59"
+      },
+      {
+        "id": "F44",
+        "title": "Using tabindex to create a custom tab order",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F44"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove positive tabindex values. Use tabindex='0' for elements that should be in the natural tab order.",
+    "badExample": "<button tabindex='5'>Click</button>",
+    "goodExample": "<button tabindex='0'>Click</button>\n<!-- or -->\n<div tabindex='-1' id='focus-target'>...</div>",
+    "codeHighlight": "tabindex",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "table-duplicate-name",
+    "auditorTitle": "Table caption duplicates summary attribute",
+    "ruleType": "best-practice",
+    "auditorNotes": "The caption element should not contain the same text as the summary attribute. This creates redundant announcements for screen reader users.",
+    "wcagTechniques": [
+      {
+        "id": "H39",
+        "title": "Using caption elements to associate data table captions with data tables",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H39"
+      },
+      {
+        "id": "H73",
+        "title": "Using the summary attribute of the table element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H73"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Remove the summary attribute if caption provides sufficient description, or make them different - use caption for title and summary for detailed description.",
+    "badExample": "<table summary='Sales data'>\n  <caption>Sales data</caption>",
+    "goodExample": "<table summary='Quarterly sales figures for all regions'>\n  <caption>Sales Data</caption>",
+    "codeHighlight": "table",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "table-fake-caption",
+    "auditorTitle": "Table uses fake caption instead of caption element",
+    "ruleType": "experimental",
+    "auditorNotes": "Using table cells or other elements to create a caption is not properly associated with the table. Use the caption element instead.",
+    "wcagTechniques": [
+      {
+        "id": "H39",
+        "title": "Using caption elements to associate data table captions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H39"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Replace styled cells or divs used as captions with the actual caption element as the first child of table.",
+    "badExample": "<table>\n  <tr><td colspan='2'>Sales Table</td></tr>",
+    "goodExample": "<table>\n  <caption>Sales Table</caption>",
+    "codeHighlight": "table",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "target-size",
+    "auditorTitle": "Touch target too small or too close",
+    "ruleType": "wcag",
+    "auditorNotes": "Touch targets should be at least 24x24 CSS pixels, or have sufficient spacing to prevent accidental activation. This is a WCAG 2.2 best practice.",
+    "wcagTechniques": [
+      {
+        "id": "G218",
+        "title": "Ensuring target size of 24 by 24 CSS pixels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G218"
+      },
+      {
+        "id": "C42",
+        "title": "Using min-height and min-width to ensure sufficient target spacing",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/css/C42"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure touch targets are at least 24x24 pixels, or if smaller, ensure 24px spacing between adjacent targets.",
+    "badExample": "<button style='width: 20px; height: 20px'>X</button>",
+    "goodExample": "<button style='min-width: 24px; min-height: 24px; padding: 4px'>X</button>",
+    "codeHighlight": "min-height",
+    "affectedUsers": [
+      "Touch device users",
+      "Users with motor disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "td-has-header",
+    "auditorTitle": "Table cell missing header association",
+    "ruleType": "experimental",
+    "auditorNotes": "Large tables (3x3 or larger) must have th elements to describe the data. Screen readers need headers to understand table structure.",
+    "wcagTechniques": [
+      {
+        "id": "H51",
+        "title": "Using table markup to present tabular information",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H51"
+      },
+      {
+        "id": "H63",
+        "title": "Using scope attributes to associate header cells",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H63"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": [
+      {
+        "pattern": "Table Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/table/"
+      }
+    ],
+    "clientFix": "Add th elements with scope='col' for column headers and scope='row' for row headers.",
+    "badExample": "<table>\n  <tr><td></td><td>A</td>...</tr>",
+    "goodExample": "<table>\n  <tr><th scope='col'>Name</th>...</tr>",
+    "codeHighlight": "td",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "td-headers-attr",
+    "auditorTitle": "Invalid headers attribute on table cell",
+    "ruleType": "wcag",
+    "auditorNotes": "The headers attribute must reference valid th IDs in the same table. Invalid references break the association between data and headers.",
+    "wcagTechniques": [
+      {
+        "id": "H43",
+        "title": "Using id and headers attributes to associate data cells",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H43"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F91",
+        "title": "Failure due to invalid headers attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F91"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure headers attribute references valid th element IDs that exist in the same table.",
+    "badExample": "<td headers='nonexistent-id'>Data</td>",
+    "goodExample": "<th id='name'>Name</th>\n<td headers='name'>John</td>",
+    "codeHighlight": "headers",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "th-has-data-cells",
+    "auditorTitle": "Table header with no data cells",
+    "ruleType": "wcag",
+    "auditorNotes": "Table headers must describe actual data cells. Headers without associated data cells may indicate a table structure error.",
+    "wcagTechniques": [
+      {
+        "id": "H51",
+        "title": "Using table markup to present tabular information",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H51"
+      },
+      {
+        "id": "H63",
+        "title": "Using scope attributes to associate header cells",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H63"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F91",
+        "title": "Failure due to orphaned table headers",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F91"
+      }
+    ],
+    "ariaPractices": [
+      {
+        "pattern": "Table Pattern",
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/table/"
+      }
+    ],
+    "clientFix": "Ensure each th element has corresponding td cells that it describes.",
+    "badExample": "<th>Orphan header</th>",
+    "goodExample": "<th scope='col'>Name</th>\n<td>John</td>",
+    "codeHighlight": "th",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "valid-lang",
+    "auditorTitle": "Invalid language code",
+    "ruleType": "wcag",
+    "auditorNotes": "The lang attribute must have a valid BCP 47 language code. Invalid codes prevent proper pronunciation by screen readers.",
+    "wcagTechniques": [
+      {
+        "id": "H58",
+        "title": "Using language attributes to identify changes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H58"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F69",
+        "title": "Failure due to invalid lang code",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F69"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use valid BCP 47 language codes. Common codes: en, en-US, sv, fr, de, es.",
+    "badExample": "<span lang='swedish'>Hej</span>",
+    "goodExample": "<span lang='sv'>Hej</span>",
+    "codeHighlight": "lang",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "video-caption",
+    "auditorTitle": "Video missing captions",
+    "ruleType": "wcag",
+    "auditorNotes": "Videos with audio must have synchronized captions for deaf/hard-of-hearing users. Captions include dialogue and important sounds.",
+    "wcagTechniques": [
+      {
+        "id": "G93",
+        "title": "Providing open captions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G93"
+      },
+      {
+        "id": "H95",
+        "title": "Using the track element to provide captions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H95"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F75",
+        "title": "Failure due to missing captions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F75"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add track element with kind='captions' to the video, or use a captioning service.",
+    "badExample": "<video src='video.mp4' controls></video>",
+    "goodExample": "<video src='video.mp4' controls>\n  <track kind='captions' src='captions.vtt' srclang='en' label='English'>\n</video>",
+    "affectedUsers": [
+      "Deaf users",
+      "Hard-of-hearing users"
+    ],
+    "fixDifficulty": "Hard"
+  },
+  {
+    "id": "custom-heading-skip",
+    "auditorTitle": "Skipped heading levels",
+    "ruleType": "wcag",
+    "auditorNotes": "Heading levels should not be skipped (e.g., going from h2 directly to h4). Skipped levels confuse screen reader users who rely on heading structure to understand page hierarchy.",
+    "wcagTechniques": [
+      {
+        "id": "G141",
+        "title": "Organizing a page using headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G141"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F2",
+        "title": "Failure due to missing headings",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F2"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use proper heading hierarchy. Don't skip levels - if you need an h4, there should be an h3 before it.",
+    "badExample": "<h2>Section Title</h2>\n<h4>Subsection</h4>",
+    "goodExample": "<h2>Section Title</h2>\n<h3>Subsection</h3>",
+    "codeHighlight": "h",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-pseudo-list",
+    "auditorTitle": "Fake lists using bullet characters",
+    "ruleType": "wcag",
+    "auditorNotes": "Content uses bullet characters (\u2022, -, *) to look like a list but isn't marked up as a <ul> or <ol>. Screen readers won't announce this as a list to users.",
+    "wcagTechniques": [
+      {
+        "id": "H48",
+        "title": "Using ol, ul and dl for lists",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H48"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F2",
+        "title": "Failure due to using text formatting for structure",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F2"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use proper <ul> or <ol> elements with <li> items instead of bullet characters.",
+    "badExample": "\u2022 First item<br>\u2022 Second item<br>\u2022 Third item",
+    "goodExample": "<ul>\n  <li>First item</li>\n  <li>Second item</li>\n  <li>Third item</li>\n</ul>",
+    "codeHighlight": "ul",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-duplicate-landmark",
+    "auditorTitle": "Duplicate landmarks without labels",
+    "ruleType": "wcag",
+    "auditorNotes": "Multiple landmarks of the same type (e.g., two navigation regions) exist without unique aria-label or aria-labelledby. Screen reader users can't distinguish between them.",
+    "wcagTechniques": [
+      {
+        "id": "ARIA11",
+        "title": "Using ARIA landmarks to identify regions",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add unique aria-label to each duplicate landmark. Example: aria-label='Main navigation' and aria-label='Footer navigation'.",
+    "badExample": "<nav>...</nav>\n<nav>...</nav>",
+    "goodExample": "<nav aria-label='Main'>...</nav>\n<nav aria-label='Footer'>...</nav>",
+    "codeHighlight": "aria-label",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-orientation-rotate-message",
+    "auditorTitle": "Page forces device rotation",
+    "ruleType": "wcag",
+    "auditorNotes": "Page displays a 'rotate your device' message instead of supporting both orientations. Users with devices mounted in fixed positions cannot access the content.",
+    "wcagTechniques": null,
+    "wcagFailures": [
+      {
+        "id": "F100",
+        "title": "Failure due to locking orientation",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F100"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Remove orientation restrictions. Support both portrait and landscape orientations with responsive design.",
+    "badExample": "<div class='rotate-message'>Please rotate your device</div>",
+    "goodExample": "<!-- Responsive layout works in both orientations -->",
+    "codeHighlight": "rotate",
+    "affectedUsers": [
+      "Users with fixed-mount devices",
+      "Users with limited mobility"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-orientation-locked",
+    "auditorTitle": "Content hidden in one orientation",
+    "ruleType": "wcag",
+    "auditorNotes": "Main content is hidden or inaccessible when device is in one orientation (portrait or landscape). Users should be able to access all content regardless of device position.",
+    "wcagTechniques": null,
+    "wcagFailures": [
+      {
+        "id": "F97",
+        "title": "Failure due to locking content to one orientation",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F97"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use responsive design (CSS media queries) to adapt layout, not hide content, for different orientations.",
+    "badExample": "@media (orientation: landscape) { .content { display: none; } }",
+    "goodExample": "@media (orientation: landscape) { .content { width: 80%; } }",
+    "codeHighlight": "orientation",
+    "affectedUsers": [
+      "Users with fixed-mount devices",
+      "Mobile users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-skip-link-missing",
+    "auditorTitle": "Missing skip navigation link",
+    "ruleType": "wcag",
+    "auditorNotes": "No skip link or equivalent bypass mechanism detected. Keyboard users must tab through all navigation links before reaching main content on every page.",
+    "wcagTechniques": [
+      {
+        "id": "G1",
+        "title": "Adding a link at the top of each page",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G1"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add a 'Skip to main content' link as the first focusable element on the page that jumps to the main content area.",
+    "badExample": "<!-- Navigation with 50+ links before content -->",
+    "goodExample": "<a href='#main' class='skip-link'>Skip to main content</a>\n...\n<main id='main'>",
+    "codeHighlight": "skip",
+    "affectedUsers": [
+      "Keyboard users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-skip-link-no-target",
+    "auditorTitle": "Skip link target missing",
+    "ruleType": "wcag",
+    "auditorNotes": "A skip link exists but its target element (the ID it points to) doesn't exist in the DOM. The link won't work when activated.",
+    "wcagTechniques": [
+      {
+        "id": "G1",
+        "title": "Adding a link at the top of each page",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G1"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure the skip link's href matches an existing element ID. Add tabindex='-1' to the target if it's not a focusable element.",
+    "badExample": "<a href='#content'>Skip</a>\n<!-- No element with id='content' -->",
+    "goodExample": "<a href='#content'>Skip</a>\n<main id='content' tabindex='-1'>",
+    "codeHighlight": "id=",
+    "affectedUsers": [
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-skip-link-target-obscured",
+    "auditorTitle": "Skip link content hidden by header",
+    "ruleType": "wcag",
+    "auditorNotes": "The skip link works, but the target content is partially or fully hidden behind a fixed/sticky header when the user jumps to it.",
+    "wcagTechniques": [
+      {
+        "id": "G1",
+        "title": "Adding a link at the top of each page",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G1"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use CSS scroll-margin-top or padding-top on the target element to account for fixed header height.",
+    "badExample": "<main id='content'>...</main>\n<!-- Fixed header covers content -->",
+    "goodExample": "<main id='content' style='scroll-margin-top: 80px'>...</main>",
+    "codeHighlight": "id=",
+    "affectedUsers": [
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-reflow-content-lost",
+    "auditorTitle": "Content lost at small viewport",
+    "ruleType": "wcag",
+    "auditorNotes": "Content becomes inaccessible or disappears when the viewport is resized to 320px wide (mobile width) without zooming. Users who need to zoom may lose access to this content.",
+    "wcagTechniques": [
+      {
+        "id": "G146",
+        "title": "Using liquid layout",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G146"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F102",
+        "title": "Failure due to content disappearing at reflow",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F102"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use responsive design with flexbox/grid. Ensure content reflows vertically instead of being cut off or hidden.",
+    "badExample": "<div class='sidebar' style='width: 400px'>...</div>",
+    "goodExample": "<div class='sidebar' style='max-width: 100%'>...</div>",
+    "codeHighlight": "width",
+    "affectedUsers": [
+      "Low vision users",
+      "Mobile users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-page-title",
+    "auditorTitle": "Page title missing or unhelpful",
+    "ruleType": "wcag",
+    "auditorNotes": "Page title is missing, empty, generic (like 'Home'), or just a URL. Screen reader users rely on page titles to know what page they're on.",
+    "wcagTechniques": [
+      {
+        "id": "H25",
+        "title": "Providing a title using the title element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H25"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F25",
+        "title": "Failure due to missing or non-descriptive title",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F25"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Provide a unique, descriptive title for each page that describes its content or purpose.",
+    "badExample": "<title>Home</title>\n<title>Page 1</title>",
+    "goodExample": "<title>Contact Us - Acme Corporation</title>",
+    "codeHighlight": "title",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-lang-missing",
+    "auditorTitle": "Page language not specified",
+    "ruleType": "wcag",
+    "auditorNotes": "The <html> element is missing a lang attribute. Screen readers can't determine the correct pronunciation rules for the page content.",
+    "wcagTechniques": [
+      {
+        "id": "H57",
+        "title": "Using language attributes on the html element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H57"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F69",
+        "title": "Failure due to missing lang attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F69"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add lang attribute to the <html> element with the correct language code (e.g., lang='en' for English).",
+    "badExample": "<html>\n  <head>...</head>",
+    "goodExample": "<html lang='en'>\n  <head>...</head>",
+    "codeHighlight": "lang",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-lang-invalid",
+    "auditorTitle": "Invalid page language code",
+    "ruleType": "wcag",
+    "auditorNotes": "The lang attribute has an invalid language code. Screen readers may not be able to pronounce the content correctly.",
+    "wcagTechniques": [
+      {
+        "id": "H57",
+        "title": "Using language attributes on the html element",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H57"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F69",
+        "title": "Failure due to invalid lang code",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F69"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use valid BCP 47 language codes. Examples: 'en' (English), 'en-US' (US English), 'sv' (Swedish), 'es' (Spanish).",
+    "badExample": "<html lang='english'>",
+    "goodExample": "<html lang='en'>",
+    "codeHighlight": "lang",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-placeholder-contrast",
+    "auditorTitle": "Placeholder text too faint",
+    "ruleType": "wcag",
+    "auditorNotes": "Placeholder text in form fields has contrast ratio below 4.5:1 against the background. Low vision users may not see the hint text.",
+    "wcagTechniques": [
+      {
+        "id": "G18",
+        "title": "Ensuring that a contrast ratio of at least 4.5:1",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G18"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F78",
+        "title": "Failure due to contrast below threshold",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F78"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Darken placeholder color or don't rely solely on placeholders. Use visible labels above form fields instead.",
+    "badExample": "<input placeholder='Email' style='color: #ccc'>",
+    "goodExample": "<label for='email'>Email</label>\n<input id='email' placeholder='name@example.com'>",
+    "codeHighlight": "placeholder",
+    "affectedUsers": [
+      "Low vision users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-autocomplete-missing",
+    "auditorTitle": "Form field missing autocomplete",
+    "ruleType": "wcag",
+    "auditorNotes": "Form field that collects personal information is missing an autocomplete attribute. This prevents browsers from filling in known values for users with cognitive disabilities.",
+    "wcagTechniques": [
+      {
+        "id": "H98",
+        "title": "Using HTML autocomplete attributes",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H98"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Add autocomplete attribute with appropriate value (name, email, tel, address-line1, etc.)",
+    "badExample": "<input type='text' name='fullname'>",
+    "goodExample": "<input type='text' name='fullname' autocomplete='name'>",
+    "codeHighlight": "autocomplete",
+    "affectedUsers": [
+      "Users with cognitive disabilities",
+      "Users with motor disabilities"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-link-purpose-unclear",
+    "auditorTitle": "Link text is not descriptive",
+    "ruleType": "wcag",
+    "auditorNotes": "Link text like 'click here' or 'read more' doesn't describe the destination. Users navigating by links can't tell where they'll go.",
+    "wcagTechniques": [
+      {
+        "id": "G91",
+        "title": "Providing link text that describes the purpose",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G91"
+      },
+      {
+        "id": "H33",
+        "title": "Supplementing link text with title attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H33"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F63",
+        "title": "Failure due to non-descriptive link text",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F63"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Rewrite link text to describe the destination. Instead of 'Click here', use 'Download the annual report'.",
+    "badExample": "<a href='report.pdf'>Click here</a>",
+    "goodExample": "<a href='report.pdf'>Download annual report (PDF)</a>",
+    "codeHighlight": "a",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-link-color-only",
+    "auditorTitle": "Links not distinguishable without color",
+    "ruleType": "wcag",
+    "auditorNotes": "Links are styled with color only and lack underlines or other visual indicators. Colorblind users cannot identify them as links.",
+    "wcagTechniques": [
+      {
+        "id": "G182",
+        "title": "Ensuring contrast for text that convey information",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G182"
+      },
+      {
+        "id": "G183",
+        "title": "Using contrast for links",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G183"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F73",
+        "title": "Failure due to links not distinguishable without color",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F73"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add underline to links, or ensure links have a visual indicator besides color (icon, border, etc.)",
+    "badExample": "<a href='page.html' style='color: blue; text-decoration: none'>Link</a>",
+    "goodExample": "<a href='page.html' style='color: blue; text-decoration: underline'>Link</a>",
+    "codeHighlight": "text-decoration",
+    "affectedUsers": [
+      "Colorblind users",
+      "Low vision users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-non-text-contrast",
+    "auditorTitle": "UI components lack contrast",
+    "ruleType": "wcag",
+    "auditorNotes": "Visual UI elements (buttons, form fields, icons) have insufficient contrast against adjacent colors. Users with low vision cannot perceive boundaries.",
+    "wcagTechniques": [
+      {
+        "id": "G207",
+        "title": "Ensuring contrast for visual boundaries",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G207"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Ensure UI components have at least 3:1 contrast ratio with adjacent colors. Add borders to form fields.",
+    "badExample": "<button style='background: #ddd; color: #fff'>Submit</button>",
+    "goodExample": "<button style='background: #0056b3; color: #fff'>Submit</button>",
+    "codeHighlight": "background",
+    "affectedUsers": [
+      "Low vision users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-target-size",
+    "auditorTitle": "Touch target too small",
+    "ruleType": "wcag",
+    "auditorNotes": "Clickable element is smaller than 44x44 CSS pixels. Users with motor disabilities may have difficulty activating small targets.",
+    "wcagTechniques": [
+      {
+        "id": "G221",
+        "title": "Ensuring target size of at least 44x44 pixels",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G221"
+      }
+    ],
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Increase clickable area to at least 44x44 pixels. Use padding or enlarge the visible target.",
+    "badExample": "<button style='width: 20px; height: 20px'>X</button>",
+    "goodExample": "<button style='min-width: 44px; min-height: 44px'>Close</button>",
+    "codeHighlight": "width",
+    "affectedUsers": [
+      "Users with motor disabilities",
+      "Mobile users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-focus-not-visible",
+    "auditorTitle": "Focus indicator invisible or hidden",
+    "ruleType": "wcag",
+    "auditorNotes": "Element receives focus but has no visible focus indicator, or the indicator is styled to be invisible. Keyboard users can't track their position.",
+    "wcagTechniques": [
+      {
+        "id": "G149",
+        "title": "Using user interface components that are highlighted by the user agent",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G149"
+      },
+      {
+        "id": "C15",
+        "title": "Using CSS to change the presentation of a user interface component when it receives focus",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/css/C15"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F78",
+        "title": "Failure due to styling element outline to none",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F78"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Ensure focused elements have a visible outline or border. Don't remove outline: none without adding an alternative.",
+    "badExample": "button:focus { outline: none }",
+    "goodExample": "button:focus { outline: 2px solid #0056b3; outline-offset: 2px }",
+    "codeHighlight": "outline",
+    "affectedUsers": [
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-focus-obscured",
+    "auditorTitle": "Focused element hidden by sticky header",
+    "ruleType": "wcag",
+    "auditorNotes": "When an element receives focus, it is partially or fully hidden behind a sticky header, footer, or other fixed overlay. Keyboard users can't see what has focus.",
+    "wcagTechniques": null,
+    "wcagFailures": null,
+    "ariaPractices": null,
+    "clientFix": "Use scroll-padding CSS or ensure scrollIntoView accounts for fixed elements. Avoid sticky headers covering focused content.",
+    "badExample": "<!-- Fixed header covers focused elements -->\n<header style='position: fixed; height: 80px'>",
+    "goodExample": "html { scroll-padding-top: 80px; }",
+    "codeHighlight": "scroll",
+    "affectedUsers": [
+      "Keyboard users"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-text-spacing-clipped",
+    "auditorTitle": "Text gets cut off with user spacing",
+    "ruleType": "wcag",
+    "auditorNotes": "When text spacing is increased (line-height, letter-spacing, word-spacing, paragraph spacing), text becomes clipped or overlaps. Users who need more spacing can't read the content.",
+    "wcagTechniques": [
+      {
+        "id": "C36",
+        "title": "Allowing for text spacing without loss of content",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/css/C36"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F104",
+        "title": "Failure due to text being clipped",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F104"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Use relative units (em, rem) and avoid fixed heights. Ensure containers expand to accommodate increased text spacing.",
+    "badExample": "<p style='height: 20px; overflow: hidden'>Text content...</p>",
+    "goodExample": "<p style='min-height: 20px'>Text content...</p>",
+    "codeHighlight": "height",
+    "affectedUsers": [
+      "Low vision users",
+      "Users with dyslexia"
+    ],
+    "fixDifficulty": "Medium"
+  },
+  {
+    "id": "custom-label-name-mismatch",
+    "auditorTitle": "Visible label differs from accessible name",
+    "ruleType": "wcag",
+    "auditorNotes": "The visible text label and the accessible name (what screen readers announce) are different. Voice control users can't activate the control by saying what they see.",
+    "wcagTechniques": [
+      {
+        "id": "G208",
+        "title": "Including the text of the visible label in the accessible name",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/general/G208"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F96",
+        "title": "Failure due to accessible name not containing visible text",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F96"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "The aria-label or aria-labelledby must include the exact visible text. If button says 'Send', aria-label should start with 'Send'.",
+    "badExample": "<button aria-label='submit-form'>Send</button>",
+    "goodExample": "<button aria-label='Send message'>Send</button>",
+    "codeHighlight": "aria-label",
+    "affectedUsers": [
+      "Voice control users",
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  },
+  {
+    "id": "custom-image-annotation",
+    "auditorTitle": "Image missing alt text",
+    "ruleType": "wcag",
+    "auditorNotes": "Image does not have alt text or appropriate ARIA labeling. Screen reader users cannot understand the image content or purpose.",
+    "wcagTechniques": [
+      {
+        "id": "H37",
+        "title": "Using alt attributes on img elements",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H37"
+      },
+      {
+        "id": "H67",
+        "title": "Using null alt for decorative images",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/html/H67"
+      }
+    ],
+    "wcagFailures": [
+      {
+        "id": "F65",
+        "title": "Failure due to omitting alt attribute",
+        "url": "https://www.w3.org/WAI/WCAG22/Techniques/failures/F65"
+      }
+    ],
+    "ariaPractices": null,
+    "clientFix": "Add alt text describing the image. Use alt='' for decorative images. Use aria-label for SVGs and background images.",
+    "badExample": "<img src='chart.png'>",
+    "goodExample": "<img src='chart.png' alt='Sales increased 25% in Q4'>",
+    "codeHighlight": "alt",
+    "affectedUsers": [
+      "Screen reader users"
+    ],
+    "fixDifficulty": "Easy"
+  }
+]
+</script>
+
+  <script>
+  (function() {
+    const grid = document.getElementById('grid');
+    const search = document.getElementById('search');
+    const results = document.getElementById('results');
+    const themeBtn = document.getElementById('themeBtn');
+    const filterBtns = document.querySelectorAll('.filter');
+
+    let rules = [];
+    let activeFilters = {};
+    let focusedIndex = -1;
+
+    function loadData() {
+      const el = document.getElementById('rules-data');
+      if (!el) return [];
+      const text = el.textContent.replace(/<!--\s*RULES_DATA_PLACEHOLDER\s*-->/, '');
+      try {
+        const parsed = JSON.parse(text);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    rules = loadData();
+    if (!rules.length) {
+      results.textContent = 'No rules loaded. Run generate-data.js to populate rules.json and inline data into this page.';
+      return;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function highlightKeyword(text, keyword) {
+      if (!keyword) return escapeHtml(text);
+      const re = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      return escapeHtml(text).replace(re, '<span class="highlight">$1</span>');
+    }
+
+    function renderLinks(arr) {
+      if (!arr || !arr.length) return '<span style="color:var(--muted);font-size:13px;">—</span>';
+      return arr.map(item => {
+        const label = item.id ? (item.id + ': ' + item.title) : (item.pattern || item.title || 'Link');
+        return `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`;
+      }).join('\n');
+    }
+
+    function renderAriaPractices(val) {
+      if (!val) return '<span style="color:var(--muted);font-size:13px;">—</span>';
+      if (typeof val === 'string') return `<a href="${escapeHtml(val)}" target="_blank" rel="noopener">${escapeHtml(val)}</a>`;
+      if (Array.isArray(val)) {
+        return val.map(item => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(item.pattern || item.title || 'Pattern')}</a>`).join('\n');
+      }
+      return '';
+    }
+
+    function difficultyClass(d) {
+      if (d === 'Easy') return 'difficulty-easy';
+      if (d === 'Medium') return 'difficulty-medium';
+      if (d === 'Hard') return 'difficulty-hard';
+      return '';
+    }
+
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1200);
+      }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1200);
+      });
+    }
+
+    function matches(rule, q) {
+      if (!q) return true;
+      const hay = (rule.id + ' ' + (rule.auditorTitle||'') + ' ' + (rule.auditorNotes||'')).toLowerCase();
+      return hay.includes(q.toLowerCase());
+    }
+
+    function passesFilters(rule) {
+      for (const key in activeFilters) {
+        const vals = activeFilters[key];
+        if (!vals || !vals.length) continue;
+        const ruleVal = rule[key];
+        if (!ruleVal) return false;
+        if (!vals.includes(ruleVal)) return false;
+      }
+      return true;
+    }
+
+    function render() {
+      const q = search.value.trim();
+      const filtered = rules.filter(r => matches(r, q) && passesFilters(r));
+      results.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`;
+      grid.innerHTML = '';
+      if (!filtered.length) {
+        grid.innerHTML = '<div class="empty">No rules match your search.</div>';
+        focusedIndex = -1;
+        return;
+      }
+      filtered.forEach((rule, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('role', 'listitem');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-expanded', 'false');
+        card.dataset.index = idx;
+
+        const issueType = rule.issueType || '—';
+        const ruleTypeLabel = rule.ruleType || '—';
+        const diffClass = difficultyClass(rule.fixDifficulty);
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="meta">
+              <div class="rule-id">${escapeHtml(rule.id)}</div>
+              <div class="rule-title">${highlightKeyword(rule.auditorTitle || 'Untitled', q)}</div>
+              <div class="pills">
+                <span class="pill">${escapeHtml(ruleTypeLabel)}</span>
+                <span class="pill ${diffClass}">${escapeHtml(rule.fixDifficulty || '—')}</span>
+                ${rule.issueType ? `<span class="pill">${escapeHtml(rule.issueType)}</span>` : ''}
+              </div>
+            </div>
+            <span class="chevron" aria-hidden="true">▼</span>
+          </div>
+          <div class="card-body">
+            <div class="section">
+              <div class="section-title">Auditor Notes</div>
+              <p>${highlightKeyword(rule.auditorNotes || '—', q)}</p>
+            </div>
+            <div class="section">
+              <div class="section-title">Client Fix</div>
+              <p>${escapeHtml(rule.clientFix || '—')}</p>
+            </div>
+            <div class="section">
+              <div class="section-title">Affected Users</div>
+              <div class="tag-list">
+                ${(rule.affectedUsers || []).map(u => `<span class="tag">${escapeHtml(u)}</span>`).join('') || '<span style="color:var(--muted);font-size:13px;">—</span>'}
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">WCAG Techniques</div>
+              <div class="links">${renderLinks(rule.wcagTechniques)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">WCAG Failures</div>
+              <div class="links">${renderLinks(rule.wcagFailures)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">ARIA Practices</div>
+              <div class="links">${renderAriaPractices(rule.ariaPractices)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Bad Example</div>
+              <div class="code-block">
+                <pre><code>${highlightKeyword(rule.badExample || '—', rule.codeHighlight)}</code></pre>
+                <button class="copy" data-code="${escapeHtml(rule.badExample || '')}">Copy</button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">Good Example</div>
+              <div class="code-block">
+                <pre><code>${highlightKeyword(rule.goodExample || '—', rule.codeHighlight)}</code></pre>
+                <button class="copy" data-code="${escapeHtml(rule.goodExample || '')}">Copy</button>
+              </div>
+            </div>
+          </div>
+        `;
+        card.querySelector('.card-header').addEventListener('click', () => toggleCard(card));
+        card.querySelectorAll('.copy').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyToClipboard(btn.dataset.code, btn);
+          });
+        });
+        grid.appendChild(card);
+      });
+      focusedIndex = -1;
+    }
+
+    function toggleCard(card) {
+      const expanded = card.getAttribute('aria-expanded') === 'true';
+      card.setAttribute('aria-expanded', String(!expanded));
+    }
+
+    function focusCard(index) {
+      const cards = grid.querySelectorAll('.card');
+      if (!cards.length) return;
+      if (index < 0) index = 0;
+      if (index >= cards.length) index = cards.length - 1;
+      focusedIndex = index;
+      cards[index].focus();
+    }
+
+    search.addEventListener('input', () => render());
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.filter;
+        const val = btn.dataset.value;
+        const pressed = btn.getAttribute('aria-pressed') === 'true';
+        btn.setAttribute('aria-pressed', String(!pressed));
+        if (!activeFilters[key]) activeFilters[key] = [];
+        if (!pressed) {
+          activeFilters[key].push(val);
+        } else {
+          activeFilters[key] = activeFilters[key].filter(v => v !== val);
+        }
+        render();
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== search) {
+        e.preventDefault();
+        search.focus();
+      }
+      if (e.key === 'Escape') {
+        if (document.activeElement === search) { search.blur(); return; }
+        const cards = grid.querySelectorAll('.card');
+        cards.forEach(c => c.setAttribute('aria-expanded', 'false'));
+      }
+      if (['ArrowDown','ArrowUp','Enter','Home','End'].includes(e.key)) {
+        const cards = grid.querySelectorAll('.card');
+        if (!cards.length) return;
+        if (['ArrowDown','ArrowUp','Home','End'].includes(e.key)) {
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowDown') focusCard(focusedIndex + 1);
+        if (e.key === 'ArrowUp') focusCard(focusedIndex - 1);
+        if (e.key === 'Home') focusCard(0);
+        if (e.key === 'End') focusCard(cards.length - 1);
+        if (e.key === 'Enter' && focusedIndex >= 0) {
+          e.preventDefault();
+          toggleCard(cards[focusedIndex]);
+        }
+      }
+    });
+
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (card) {
+        const cards = Array.from(grid.querySelectorAll('.card'));
+        focusedIndex = cards.indexOf(card);
+      }
+    });
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('re-theme', theme);
+      themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      themeBtn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+    const saved = localStorage.getItem('re-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(saved);
+    themeBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+    });
+
+    render();
+  })();
+  </script>
+</body>
+</html>
